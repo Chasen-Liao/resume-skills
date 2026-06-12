@@ -32,18 +32,45 @@ resume-builder → 生成通用版简历 → jd-tailorer → 针对不同 JD 生
 
 ## 安装
 
-将 `.skill` 文件导入 Claude Code 插件：
+### 方式一：通过 GitHub 链接安装（推荐）
 
-1. 打开 Claude Code
-2. 进入插件管理（`/plugin`）
-3. 点击「安装插件」
-4. 选择 `resume-builder.skill` 或 `jd-tailorer.skill` 文件
+1. 打开 Claude Code，输入 `/plugin`
+2. 在插件管理界面选择「安装插件」
+3. 粘贴本仓库地址：
+   ```
+   https://github.com/Chasen-Liao/resume-skills
+   ```
+4. 确认安装，Claude Code 会自动拉取仓库并注册两个技能
 
-或者整个项目作为插件安装：
+> 此方式需要本地已安装 Git，且网络可访问 GitHub。
 
-1. 打开 Claude Code
-2. 进入插件管理
-3. 选择「从本地安装」，指向本项目根目录
+### 方式二：通过 .skill 文件安装
+
+如果你只想安装其中一个技能，或离线环境使用：
+
+1. 从 [Releases](https://github.com/Chasen-Liao/resume-skills) 页面下载 `resume-builder.skill` 或 `jd-tailorer.skill`
+2. 打开 Claude Code，输入 `/plugin`
+3. 在插件管理界面选择「安装插件」
+4. 选择下载的 `.skill` 文件
+
+### 方式三：本地克隆后安装
+
+1. 先克隆仓库到本地：
+   ```bash
+   git clone https://github.com/Chasen-Liao/resume-skills.git
+   ```
+2. 打开 Claude Code，输入 `/plugin`
+3. 选择「安装插件」→「从本地安装」
+4. 指向克隆下来的 `resume-skills` 目录
+
+### 安装后验证
+
+安装成功后，在 Claude Code 中以自然语言输入即可触发技能：
+
+- **测试 resume-builder**：输入「帮我做一份简历」，Claude 会自动加载简历构建器技能
+- **测试 jd-tailorer**：输入「帮我针对这个 JD 改一下简历」，Claude 会自动加载 JD 定制器技能
+
+如果技能没有自动触发，可以手动输入 `/skill:resume-builder` 或 `/skill:jd-tailorer` 来激活。
 
 ## 项目结构
 
