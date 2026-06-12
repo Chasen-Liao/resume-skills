@@ -4,6 +4,8 @@
 
 ## 技能概览
 
+![builder](builder.png)
+
 ### 1. resume-builder — 简历构建器
 
 通过对话式采访，帮用户构建精美的 A4 HTML 简历。
