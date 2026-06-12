@@ -1,0 +1,8 @@
+{
+  "name": "resume-skills",
+  "description": "简历生成与JD匹配工具集：resume-builder 和 jd-tailorer 两个技能，支持精美的 A4 HTML 简历制作、PDF 导出，以及根据职位描述定制简历",
+  "author": {
+    "name": "Chasen",
+    "email": "2558891266@qq.com"
+  }
+}
