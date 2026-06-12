@@ -1,0 +1,18 @@
+{
+  "name": "resume-skills",
+  "owner": {
+    "name": "Chasen-Liao",
+    "github": "Chasen-Liao"
+  },
+  "metadata": {
+    "description": "简历生成与JD匹配工具集 - 精美的A4 HTML简历制作与职位描述定制"
+  },
+  "plugins": [
+    {
+      "name": "resume-skills",
+      "source": "./",
+      "description": "简历生成与JD匹配工具集：resume-builder 和 jd-tailorer 两个技能，支持精美的 A4 HTML 简历制作、PDF 导出，以及根据职位描述定制简历",
+      "category": "productivity"
+    }
+  ]
+}
