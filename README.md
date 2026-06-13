@@ -4,7 +4,14 @@
 
 ## 技能概览
 
+
 ![builder](builder.png)
+
+## 生成效果展示
+
+现代简约风格：
+
+![show](resume.png)
 
 ### 1. resume-builder — 简历构建器
 
