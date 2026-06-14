@@ -14,7 +14,11 @@
 
 ## 生成效果展示
 
-现代简约风格：
+6 种设计风格效果：
+
+| 现代简约 | 经典商务 | 创意个性 |
+|---------|---------|---------|
+| 日式极简 | 科技感 | 简约蓝色商务 |
 
 ![show](resume.png)
 
@@ -25,7 +29,7 @@
 | 功能 | 说明 |
 |------|------|
 | 对话式收集 | 逐步引导填写：个人信息、教育背景、实习/工作、项目、技能、校园经历、自我评价 |
-| 6 种设计风格 | 现代简约、经典商务、创意个性、日式极简、科技感、简约蓝色商务风 |
+| 6 种设计风格 | 现代简约、经典商务、创意个性、日式极简、科技感、简约蓝色商务风，每种含完整 HTML 参照样板 |
 | 18 套配色方案 | 每个风格 3 套完整色板（Primary/Accent/Background/Foreground/Card/Muted/Border） |
 | 13 组字体搭配 | 标题/正文配对，支持中英文混排 |
 | A4 单页强约束 | 紧凑排版参数 + 双栏布局 + PDF 导出验证 |
@@ -141,11 +145,12 @@ Claude:
 
 ```
 skills/resume-builder/
-├── SKILL.md                          # 技能主文件（工作流程、约束、示例）
+├── SKILL.md                          # 技能主文件（精简工作流程、硬约束、参考文献索引）
 └── references/
     ├── design-guidelines.md          # 设计美学指南（字体/色彩/空间/动画原则）
-    ├── color-palettes.md             # 六大风格-配色索引（指向 css/ 子文件夹）
+    ├── color-palettes.md             # 六大风格-配色索引 + 字体速查
     ├── content-writing.md            # 内容写作规范（STAR 法则 / 量化 / ATS 兼容）
+    ├── minimal-blue-business-reference.md # 简约蓝色商务风格设计参考与对比说明
     ├── css/
     │   ├── README.md                 # CSS 子文件夹使用说明
     │   ├── common.md                 # 通用紧凑排版 CSS（每次生成必用）
@@ -154,8 +159,7 @@ skills/resume-builder/
     │   ├── creative-bold.md          # 创意个性风格（3 套配色 + 字体 + 风格 CSS）
     │   ├── japanese-minimal.md       # 日式极简风格（3 套配色 + 字体 + 风格 CSS）
     │   ├── tech-dark.md              # 科技感风格（3 套配色 + 字体 + 风格 CSS）
-    │   ├── minimal-blue-business.md  # 简约蓝色商务风格（3 套配色 + 字体 + 风格 CSS）
-    │   └── minimal-blue-business-reference.md # 简约蓝色商务风格参考与对比说明
+    │   └── minimal-blue-business.md  # 简约蓝色商务风格（3 套配色 + 字体 + 风格 CSS）
     └── examples/
         ├── modern-minimal.html       # 现代简约风格 HTML 完整参考样板
         ├── classic-business.html     # 经典商务风格 HTML 完整参考样板
@@ -163,6 +167,11 @@ skills/resume-builder/
         ├── japanese-minimal.html     # 日式极简风格 HTML 完整参考样板
         ├── tech-dark.html            # 科技感风格 HTML 完整参考样板
         └── minimal-blue-business.html # 简约蓝色商务风格 HTML 完整参考样板
+
+skills/jd-tailorer/
+├── SKILL.md                          # 技能主文件（工作流程、约束）
+└── references/
+    └── matching-analysis.md          # 匹配分析报告模板
 ```
 
 ### 设计约束的执行链
@@ -236,5 +245,4 @@ MIT
 
 ## TODO
 
-1. 我想要把每一种风格最漂亮的 HTML 骨架都放到 Skills 当中，这样 Agent 就可以直接通过这个 Skill 来进行构建
-2. 然后改进一下简历编写时的语言风格的强约束和参考示例
+1. 继续优化各个风格的 HTML 骨架，确保每种风格都达到最佳视觉效果

@@ -1,39 +1,27 @@
 # CSS 配色子文件夹使用说明
 
-`references/css/` 包含以下文件，按需取用：
+`references/css/` 文件索引：
 
-| 文件 | 用途 | 何时使用 |
-|------|------|----------|
-| `common.md` | 通用排版 CSS（页面尺寸、打印设置、技能标签、双栏布局、防断裂等） | **每次生成简历都要用**，与配色文件组合 |
-| `modern-minimal.md` | 现代简约风格 3 套配色 + 字体 + 风格CSS要点 | 用户选择「现代简约」风格 |
-| `classic-business.md` | 经典商务风格 3 套配色 + 字体 + 风格CSS要点 | 用户选择「经典商务」风格 |
-| `creative-bold.md` | 创意个性风格 3 套配色 + 字体 + 风格CSS要点 | 用户选择「创意个性」风格 |
-| `japanese-minimal.md` | 日式极简风格 3 套配色 + 字体 + 风格CSS要点 | 用户选择「日式极简」风格 |
-| `tech-dark.md` | 科技感风格 3 套配色 + 字体 + 风格CSS要点 | 用户选择「科技感」风格 |
-| `minimal-blue-business.md` | 简约蓝色商务风格 3 套配色 + 字体 + 风格CSS要点 | 用户选择「简约蓝色商务」风格 |
+| 文件 | 用途 | 何时 |
+|------|------|------|
+| `common.md` | 通用排版 CSS（页面尺寸/打印/技能标签/双栏/防断裂） | 每次必用 |
+| `modern-minimal.md` | 3 套配色 + 字体 + 风格 CSS | 现代简约 |
+| `classic-business.md` | 3 套配色 + 字体 + 风格 CSS | 经典商务 |
+| `creative-bold.md` | 3 套配色 + 字体 + 风格 CSS | 创意个性 |
+| `japanese-minimal.md` | 3 套配色 + 字体 + 风格 CSS | 日式极简 |
+| `tech-dark.md` | 3 套配色 + 字体 + 风格 CSS | 科技感 |
+| `minimal-blue-business.md` | 3 套配色 + 字体 + 风格 CSS | 简约蓝色商务 |
 
-## 使用方式
+> 简约蓝色商务风格的设计原理、模块拆解与 Do's & Don'ts 参见 `../minimal-blue-business-reference.md`。
 
-生成简历 HTML 时：
+## 生成流程
 
-1. 先读 `common.md` — 把通用排版 CSS 写入 `<style>` 标签
-2. 再读对应风格文件 — 把该风格的 CSS 变量块插入 `:root`，替换 `common.md` 中 `/* === 颜色由风格文件提供 === */` 那一行
-3. 风格文件中的字体 import 和风格 CSS 要点也写入 `<style>`，作为该风格的专属覆盖
+1. 读 `common.md` — 通用排版 CSS 写入 `<style>`
+2. 读对应风格文件 — CSS 变量块插入 `:root`，字体 import + 风格 CSS 写入
+3. 配色未指定时默认选 A
 
-## 配色选择策略
+## 字体
 
-每个风格文件包含 3 套配色（A/B/C），选择依据：
-
-| 配色 | 适用场景 |
-|------|----------|
-| A | 默认首选，最经典/通用 |
-| B | 偏暖/偏绿，适合不同行业 |
-| C | 更柔和或更大胆，根据用户偏好 |
-
-用户未指定时默认选 A。
-
-## 字体使用
-
-- 优先系统字体栈（零网络依赖，打印最快）：`PingFang SC, Microsoft YaHei, sans-serif`
-- 如追求设计感，用风格文件中的 Google Fonts Import
+- 优先系统字体栈：`PingFang SC, Microsoft YaHei, sans-serif`
+- 追求设计感时用风格文件中的 Google Fonts Import
 - 中文简历始终包含中文回退字体
