@@ -2,6 +2,25 @@
 
 与风格配色文件组合使用。选择一个配色方案后，将其 CSS 变量块插入到 `:root` 中即可。
 
+> **注**：以下 class 命名为通用参考。各风格 HTML 示例（`examples/<style>.html`）中的实际 class 命名可能不同（如 `.layout-grid`、`.footer-layout` 等），生成时以 HTML 示例为准。
+
+## 颜色变量清单（各风格 CSS 文件必须定义）
+
+| 变量名 | 语义 | 示例值 |
+|--------|------|--------|
+| `--color-primary` | 主色/品牌色，用于标题、边框等核心元素 | `#0A2540` |
+| `--color-on-primary` | 主色上的前景色（文字） | `#FFFFFF` |
+| `--color-accent` | 点缀色/强调色，用于标签、装饰线等 | `#0066CC` |
+| `--color-on-accent` | 点缀色上的前景色 | `#FFFFFF` |
+| `--color-bg` | 页面背景色 | `#FFFFFF` |
+| `--color-fg` | 页面前景色（正文文字） | `#1D2A3A` |
+| `--color-card` | 卡片/高亮区域背景色 | `#F4F8FC` |
+| `--color-card-fg` | 卡片前景色 | `#1D2A3A` |
+| `--color-muted` | 柔和色，用于次要边框、分隔线 | `#E6F0FA` |
+| `--color-muted-fg` | 柔和色前景色，用于辅助文字 | `#5A7184` |
+| `--color-border` | 通用边框色 | `#D2E3F3` |
+| `--color-ring` | 焦点环/选中态颜色 | `#0A2540` |
+
 ```css
 /* === 页面尺寸 === */
 :root {
@@ -13,8 +32,8 @@
   /* 字号 */
   --fs-name: 24px;              /* 22-26px */
   --fs-section-title: 14px;     /* 13-15px */
-  --fs-body: 10.5px;            /* 10-11px */
-  --fs-meta: 9.5px;             /* 辅助信息最低 */
+  --fs-body: 10.5px;            /* 9.5-11px，部分风格可微调 */
+  --fs-meta: 9.5px;             /* 9-9.5px，辅助信息 */
 
   /* 间距 */
   --gap-section: 8mm;           /* ≤10mm 板块间距 */
@@ -47,24 +66,20 @@
   .no-print { display: none !important; }
 }
 
-/* === 技能标签 inline 排列 (节省纵向空间) === */
-ul.skill-tags {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* === 技能标签 badge 排列 === */
+.skill-tags-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 8px;
-  line-height: 1.4;
+  gap: 5px;
+  margin-top: 2px;
 }
-ul.skill-tags li {
-  display: inline-block;
+.skill-badge {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  padding: 1px 6px;
+  font-size: var(--fs-meta);
+  color: var(--color-fg);
   white-space: nowrap;
-}
-ul.skill-tags li:not(:last-child)::after {
-  content: "·";
-  margin-left: 8px;
-  color: var(--color-muted);
 }
 
 /* === 教育背景单行显示 === */
@@ -74,8 +89,8 @@ ul.skill-tags li:not(:last-child)::after {
   white-space: nowrap;
 }
 
-/* === 双栏布局 === */
-.resume-layout {
+/* === 双栏布局（根据风格和内容量选择使用） === */
+.layout-grid {
   display: grid;
   grid-template-columns: 32% 1fr;
   gap: 6mm;

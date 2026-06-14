@@ -49,3 +49,5 @@
 | 12 | Editorial Classic | Cormorant Garamond | Libre Baskerville | 经典商务 |
 
 中文始终包含回退字体：`PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif`
+
+> **注**：以各风格 `css/<style>.md` 中的推荐字体为准，本表仅供扩展选择参考。

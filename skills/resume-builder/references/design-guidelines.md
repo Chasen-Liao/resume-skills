@@ -11,7 +11,7 @@
 
 ## 字体排版
 
-- 拒绝 Inter、Roboto、Arial、Space Grotesk 等过度使用的字体
+- 谨慎使用 Inter、Roboto、Arial 等泛用字体；如搭配得当（如 Playfair Display + Inter）可保留，但避免标题和正文同时使用泛用字体
 - 中文字体：PingFang SC（现代）、Noto Serif SC（优雅）、Microsoft YaHei（稳重）
 - 标题/正文形成对比层次：字号层级 姓名 > 板块标题 > 公司/学校名 > 正文 > 辅助信息
 - 具体搭配见 `color-palettes.md` 字体速查表
@@ -25,7 +25,7 @@
 ## 空间构成
 
 - 单页强约束：所有紧凑排版参数在 `css/common.md` 中统一定义
-- 双栏布局优先（左侧窄栏技能/联系，右侧主栏经历/项目）
+- 根据风格和内容量选择单栏或双栏布局。双栏适合内容丰富的场景（左侧窄栏技能/联系，右侧主栏经历/项目）；单栏更通用
 - `orphans: 2; widows: 2;` 避免孤行，但不过度使用 `break-inside: avoid`
 
 ## 背景与视觉细节

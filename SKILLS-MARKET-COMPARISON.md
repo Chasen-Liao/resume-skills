@@ -74,7 +74,7 @@
 | **Skill 数量** | 1 个 | 20 个 | 2 个 |
 | **覆盖链路** | 仅定制 | 全链路（ATS / bullets / 求职信 / 面试 / 谈判） | 仅生成 + 定制 |
 | **输出物** | 对话文本 + Markdown 表格 | 对话文本 + Markdown 表格 | **HTML + 单页 A4 PDF（强制）** |
-| **模板/视觉** | ❌ 无 | ❌ 无 | ✅ 5 套 CSS 风格 + 设计指南 |
+| **模板/视觉** | ❌ 无 | ❌ 无 | ✅ 6 套 CSS 风格 + 设计指南 |
 | **跨 Skill 协作** | N/A | 隐式（Agent 自行编排） | **显式（第四步提到 jd-tailorer）** |
 | **强制约束** | 弱（仅 Limitations） | 弱 | **强（单页 A4 + PDF 验证）** |
 
@@ -250,6 +250,7 @@ resume-builder/references/
 ├── design-guidelines.md       设计美学指南
 ├── color-palettes.md          五大风格-配色索引
 ├── content-writing.md         内容写作规范（STAR / 量化 / ATS）
+├── minimal-blue-business-reference.md  简约蓝色商务参考指南（已合并至 CSS 文件）
 └── css/
     ├── README.md              CSS 子文件夹说明
     ├── common.md              通用紧凑排版 CSS（每次必用）
@@ -266,7 +267,7 @@ resume-builder/references/
 
 | Skill | 参考文档 | 风格设计 | 量化模板 |
 |---|---|---|---|
-| **本仓库** | ✅ 11 个 references（分层） | ✅ 5 套 CSS | ✅ 散落在 content-writing.md |
+| **本仓库** | ✅ 11 个 references（分层） | ✅ 6 套 CSS | ✅ 散落在 content-writing.md |
 | claude-office | ❌ 单文件（行业/Power Verbs 嵌正文） | ❌ | ✅ 内嵌量化公式 |
 | paramchoudhary | ❌ 单文件 | ❌ | ⚠️ 由 `resume-quantifier` Skill 单独处理 |
 
@@ -301,7 +302,7 @@ resume-builder/references/
 
 ### 8.3 本仓库的设计哲学
 > **"生成 → 定制"双层流水线 + 视觉一致性"**  
-> 先通用基础简历（HTML 模板 + 5 套风格）→ 再针对 JD 生成定制版本（沿用模板）。  
+> 先通用基础简历（HTML 模板 + 6 套风格）→ 再针对 JD 生成定制版本（沿用模板）。  
 > **优点**：视觉一致性 + 输出物可投递 + 强约束；**缺点**：覆盖面仅 2 个环节。
 
 ---
@@ -343,7 +344,7 @@ resume-builder/references/
 |---|---|---|---|
 | **唯一产出可打印 PDF 的 Agent Skill** | ✅ | ❌ | ❌ |
 | **唯一强约束"单页 A4" + PDF 自动验证** | ✅ | ❌ | ❌ |
-| **唯一提供 5 套视觉风格的 CSS 模板** | ✅ | ❌ | ❌ |
+| **唯一提供 6 套视觉风格的 CSS 模板** | ✅ | ❌ | ❌ |
 | **唯一显式"不编造经历"约束** | ✅ | ⚠️ 弱 | ❌ |
 | **唯一落盘 matching-analysis.md（可追溯）** | ✅ | ❌ | ❌ |
 | **触发词丰富度** | ✅（中英文多关键词） | ⚠️ 1 个 | ⚠️ 1 个 |
@@ -358,7 +359,7 @@ resume-builder/references/
 
 ### 11.1 调研结论
 1. **市场已存在 6 个直接竞品**，但均停留在"对话文本"层面，无一产出可打印 PDF。
-2. **本仓库的"双 Skill 分层 + 5 套 CSS + 单页 A4 强约束"是核心差异化**，值得保留并强化。
+2. **本仓库的"双 Skill 分层 + 6 套 CSS + 单页 A4 强约束"是核心差异化**，值得保留并强化。
 3. **元数据（category/tags/languages）和 Power Verbs/量化公式**是最容易借鉴、收益最大的两项改造。
 
 ### 11.2 推荐改造顺序

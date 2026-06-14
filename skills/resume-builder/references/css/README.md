@@ -12,7 +12,9 @@
 | `tech-dark.md` | 3 套配色 + 字体 + 风格 CSS | 科技感 |
 | `minimal-blue-business.md` | 3 套配色 + 字体 + 风格 CSS | 简约蓝色商务 |
 
-> 简约蓝色商务风格的设计原理、模块拆解与 Do's & Don'ts 参见 `../minimal-blue-business-reference.md`。
+> 简约蓝色商务风格的设计原理与 Do's & Don'ts 已合并至 `minimal-blue-business.md` 文件头部。
+
+> **提示**：各风格 CSS 文件的详细程度可能不同。部分风格（如 minimal-blue-business）包含完整的组件级 CSS（`.item-block`、`.skill-badge` 等），其他风格主要提供配色变量和风格要点。生成时以 `examples/<style>.html` 示例文件为组件结构的权威参考。
 
 ## 生成流程
 
