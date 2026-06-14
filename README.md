@@ -157,6 +157,11 @@ skills/resume-builder/
     │   ├── minimal-blue-business.md  # 简约蓝色商务风格（3 套配色 + 字体 + 风格 CSS）
     │   └── minimal-blue-business-reference.md # 简约蓝色商务风格参考与对比说明
     └── examples/
+        ├── modern-minimal.html       # 现代简约风格 HTML 完整参考样板
+        ├── classic-business.html     # 经典商务风格 HTML 完整参考样板
+        ├── creative-bold.html        # 创意个性风格 HTML 完整参考样板
+        ├── japanese-minimal.html     # 日式极简风格 HTML 完整参考样板
+        ├── tech-dark.html            # 科技感风格 HTML 完整参考样板
         └── minimal-blue-business.html # 简约蓝色商务风格 HTML 完整参考样板
 ```
 

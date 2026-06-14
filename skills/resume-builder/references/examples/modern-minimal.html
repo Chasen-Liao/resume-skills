@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>简历 - 现代简约风格</title>
+  <style>
+    /* === 引入 Google 字体 === */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+    /* === 现代简约风格配置 (基于 modern-minimal.md 整合与微调) === */
+    :root {
+      --page-width: 210mm;
+      --page-height: 297mm;
+      --page-margin: 10mm;
+      --content-width: 190mm;
+
+      /* 字号 */
+      --fs-name: 24px;
+      --fs-section-title: 13px;
+      --fs-body: 10px;
+      --fs-meta: 9px;
+
+      /* 间距 */
+      --gap-section: 6mm;
+      --gap-item: 3mm;
+      --gap-inline: 6mm;
+
+      /* 行高 */
+      --lh-heading: 1.2;
+      --lh-body: 1.35;
+      --lh-meta: 1.3;
+
+      /* === 现代简约配色 A: 黑白 + 蓝 === */
+      --color-primary: #18181B;
+      --color-on-primary: #FFFFFF;
+      --color-accent: #2563EB;
+      --color-on-accent: #FFFFFF;
+      --color-bg: #FAFAFA;
+      --color-fg: #09090B;
+      --color-card: #FFFFFF;
+      --color-card-fg: #09090B;
+      --color-muted: #E8ECF0;
+      --color-muted-fg: #64748B;
+      --color-border: #E4E4E7;
+      --color-destructive: #DC2626;
+      --color-on-destructive: #FFFFFF;
+      --color-ring: #2563EB;
+    }
+
+    /* === 基础样式与重置 === */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #E2E8F0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      font-size: var(--fs-body);
+      line-height: var(--lh-body);
+      color: var(--color-fg);
+      display: flex;
+      justify-content: center;
+      padding: 20px 0;
+    }
+
+    .resume {
+      width: var(--page-width);
+      height: var(--page-height);
+      background-color: var(--color-bg);
+      position: relative;
+      overflow: hidden;
+      padding: var(--page-margin);
+      border-radius: 0;           /* 现代简约：零圆角 */
+      box-shadow: none;           /* 现代简约：无阴影 */
+    }
+
+    /* === 顶部 Header === */
+    .resume-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 2px solid var(--color-primary);
+      padding-bottom: 8px;
+      margin-bottom: var(--gap-section);
+    }
+
+    .header-info h1 {
+      font-size: var(--fs-name);
+      font-weight: 700;
+      color: var(--color-primary);
+      margin: 0 0 2px 0;
+      line-height: var(--lh-heading);
+      letter-spacing: -0.5px;
+    }
+
+    .header-info .job-title {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--color-accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .header-contacts {
+      font-size: var(--fs-meta);
+      color: var(--color-muted-fg);
+      text-align: right;
+      line-height: var(--lh-meta);
+    }
+
+    .header-contacts a {
+      color: var(--color-muted-fg);
+      text-decoration: none;
+    }
+
+    .header-contacts a:hover {
+      color: var(--color-accent);
+    }
+
+    /* === 章节标题 === */
+    .section-title {
+      font-size: var(--fs-section-title);
+      font-weight: 700;
+      color: var(--color-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 3px;
+      margin-top: 0;
+      margin-bottom: 3.5mm;
+    }
+
+    /* === 章节与内容排版 === */
+    .section {
+      break-inside: avoid;
+      margin-bottom: var(--gap-section);
+    }
+
+    .item-block {
+      margin-bottom: var(--gap-item);
+    }
+
+    .item-block:not(:first-of-type) {
+      margin-top: var(--gap-item);
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .item-title {
+      color: var(--color-primary);
+      font-size: 10.5px;
+    }
+
+    .item-meta {
+      font-size: var(--fs-meta);
+      color: var(--color-muted-fg);
+      font-weight: normal;
+    }
+
+    /* 描述列表 */
+    ul.item-details {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    ul.item-details li {
+      position: relative;
+      padding-left: 10px;
+      margin-bottom: 2px;
+      text-align: justify;
+      color: var(--color-fg);
+    }
+
+    ul.item-details li::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: var(--color-accent);
+      font-weight: bold;
+    }
+
+    /* 教育背景单行 */
+    .education-line {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    .education-meta {
+      font-weight: normal;
+      color: var(--color-muted-fg);
+      font-size: var(--fs-meta);
+    }
+
+    /* === 技能与评价标签布局 === */
+    .skills-section-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--gap-item);
+    }
+
+    .skill-tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .skill-badge {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
+      padding: 2px 7px;
+      font-size: var(--fs-meta);
+      color: var(--color-fg);
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    /* 自我评价 */
+    .summary-block {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
+      padding: 6px 10px;
+      font-size: var(--fs-body);
+      line-height: 1.4;
+      text-align: justify;
+      color: var(--color-fg);
+    }
+
+    /* === 功能性按钮 === */
+    .no-print-toolbar {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: white;
+      padding: 12px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 180px;
+    }
+
+    .btn-export {
+      background-color: var(--color-primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 12px;
+      text-align: center;
+      transition: background-color 0.2s;
+    }
+
+    .btn-export:hover {
+      background-color: var(--color-accent);
+    }
+
+    .toolbar-tip {
+      font-size: 9.5px;
+      color: #64748B;
+      line-height: 1.3;
+    }
+
+    /* === 打印媒体查询 === */
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+        width: var(--page-width);
+        height: var(--page-height);
+      }
+      .resume {
+        box-shadow: none;
+        padding: var(--page-margin);
+      }
+      .no-print-toolbar {
+        display: none !important;
+      }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 功能侧边工具栏 -->
+  <div class="no-print-toolbar">
+    <button class="btn-export" onclick="window.print()">导出 PDF</button>
+    <div class="toolbar-tip">
+      <strong>提示：</strong><br>
+      在打印设置中：<br>
+      1. 目标打印机：另存为 PDF<br>
+      2. 纸张大小：A4<br>
+      3. 边距：无/默认<br>
+      4. 勾选「背景图形」
+    </div>
+  </div>
+
+  <div class="resume">
+    <!-- 顶部 Header -->
+    <header class="resume-header">
+      <div class="header-info">
+        <h1>张小明</h1>
+        <div class="job-title">前端开发工程师 / Frontend Engineer</div>
+      </div>
+      <div class="header-contacts">
+        <div>电话：139-0000-0000 | 邮箱：<a href="mailto:xiaoming.zhang@example.com">xiaoming.zhang@example.com</a></div>
+        <div>GitHub：<a href="https://github.com" target="_blank">github.com/xiaoming-dev</a> | Base：杭州</div>
+      </div>
+    </header>
+
+    <!-- 教育背景 -->
+    <section class="section">
+      <h2 class="section-title">教育背景</h2>
+      <div class="education-line">
+        <div>浙江大学 · 计算机科学与技术 · 工学学士</div>
+        <div class="education-meta">2022.09 - 2026.07</div>
+      </div>
+    </section>
+
+    <!-- 实习经历 -->
+    <section class="section">
+      <h2 class="section-title">实习经历</h2>
+      
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">阿里巴巴集团 · 前端研发实习生（商能大前端）</div>
+          <div class="item-meta">2025.06 - 2025.12</div>
+        </div>
+        <ul class="item-details">
+          <li>参与核心商家管理后台重构，基于 React + TypeScript 完成 15+ 复杂数据表单组件开发，提升组件复用率 35%。</li>
+          <li>主导系统首屏加载速度优化，引入路由懒加载与 CDN 资源分流，首屏渲染时间（FCP）由 2.4s 缩短至 1.1s。</li>
+          <li>配合 UX 设计师落地新版 Design System，修复响应式布局缺陷 20+，保障移动端高保真还原率达 99.5%。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 项目经验 -->
+    <section class="section">
+      <h2 class="section-title">项目经验</h2>
+
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">极简主义团队协作看板平台 · 个人独立开发</div>
+          <div class="item-meta">2024.10 - 2025.02</div>
+        </div>
+        <ul class="item-details">
+          <li>独立设计并实现响应式 Kanban 协作平台，前端采用 React + TailwindCSS + DnD-Kit，后端运行 Node.js + Express。</li>
+          <li>应用 WebSocket 实现多端看板卡片实时拖拽同步，并在网络断开时通过 LocalStorage 实现数据高可靠秒级暂存。</li>
+          <li>优化列表渲染性能，通过 React.memo 与虚拟化长列表，确保 1000+ 卡片高密度渲染时滚动帧率稳定在 60 FPS。</li>
+        </ul>
+      </div>
+
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">轻量级 Markdown 在线编辑预览器 · 独立作者</div>
+          <div class="item-meta">2024.04 - 2024.08</div>
+        </div>
+        <ul class="item-details">
+          <li>基于 Web Components 和 Marked.js 开发免打包在线解析工具，提供即时打字同步渲染与目录自动生成。</li>
+          <li>通过 Web Workers 异步执行 Markdown 解析逻辑，规避大文本录入时的 UI 线程阻塞，打字输入响应延迟低至 12ms。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 技能证书 -->
+    <section class="section">
+      <h2 class="section-title">专业技能</h2>
+      <div class="skill-tags-container">
+        <span class="skill-badge">HTML5 / CSS3</span>
+        <span class="skill-badge">JavaScript (ES6+)</span>
+        <span class="skill-badge">TypeScript</span>
+        <span class="skill-badge">React / Redux</span>
+        <span class="skill-badge">Vue.js</span>
+        <span class="skill-badge">Node.js (Express)</span>
+        <span class="skill-badge">Webpack / Vite</span>
+        <span class="skill-badge">Git 版本管理</span>
+        <span class="skill-badge">英语六级 (CET-6)</span>
+      </div>
+    </section>
+
+    <!-- 自我评价 -->
+    <section class="section">
+      <h2 class="section-title">自我评价</h2>
+      <div class="summary-block">
+        计算机科学专业本科生，主攻前端研发方向。具备扎实的 JavaScript 基础、React 生态开发经验和良好的代码设计习惯。追求极致的页面性能与用户体验，期望在前端工程化领域持续深耕。
+      </div>
+    </section>
+  </div>
+
+</body>
+</html>

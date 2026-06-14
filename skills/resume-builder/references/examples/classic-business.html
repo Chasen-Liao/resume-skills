@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>简历 - 经典商务风格</title>
+  <style>
+    /* === 引入 Google 字体 === */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+    /* === 经典商务风格配置 (基于 classic-business.md 整合与微调) === */
+    :root {
+      --page-width: 210mm;
+      --page-height: 297mm;
+      --page-margin: 10mm;
+      --content-width: 190mm;
+
+      /* 字号 */
+      --fs-name: 24px;
+      --fs-section-title: 13.5px;
+      --fs-body: 10.5px;
+      --fs-meta: 9.5px;
+
+      /* 间距 */
+      --gap-section: 7mm;
+      --gap-item: 3.5mm;
+      --gap-inline: 6mm;
+
+      /* 行高 */
+      --lh-heading: 1.25;
+      --lh-body: 1.4;
+      --lh-meta: 1.3;
+
+      /* === 经典商务配色 A: 深蓝 + 金 === */
+      --color-primary: #0F172A;
+      --color-on-primary: #FFFFFF;
+      --color-accent: #A16207;
+      --color-on-accent: #FFFFFF;
+      --color-bg: #F8FAFC;
+      --color-fg: #020617;
+      --color-card: #FFFFFF;
+      --color-card-fg: #020617;
+      --color-muted: #E8ECF1;
+      --color-muted-fg: #64748B;
+      --color-border: #E2E8F0;
+      --color-destructive: #DC2626;
+      --color-on-destructive: #FFFFFF;
+      --color-ring: #0F172A;
+    }
+
+    /* === 基础样式与重置 === */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #E2E8F0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: var(--fs-body);
+      line-height: var(--lh-body);
+      color: var(--color-fg);
+      display: flex;
+      justify-content: center;
+      padding: 20px 0;
+    }
+
+    .resume {
+      width: var(--page-width);
+      height: var(--page-height);
+      background-color: var(--color-bg);
+      position: relative;
+      overflow: hidden;
+      padding: var(--page-margin);
+      border-radius: 2px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    /* === 顶部 Header === */
+    .resume-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 2px solid var(--color-primary);
+      padding-bottom: 8px;
+      margin-bottom: var(--gap-section);
+    }
+
+    .header-info h1 {
+      font-family: 'Playfair Display', "Noto Serif SC", serif;
+      font-size: var(--fs-name);
+      font-weight: 700;
+      color: var(--color-primary);
+      margin: 0 0 2px 0;
+      line-height: var(--lh-heading);
+    }
+
+    .header-info .job-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-accent);
+      letter-spacing: 1px;
+    }
+
+    .header-contacts {
+      font-size: var(--fs-meta);
+      color: var(--color-muted-fg);
+      text-align: right;
+      line-height: 1.4;
+    }
+
+    .header-contacts a {
+      color: var(--color-muted-fg);
+      text-decoration: none;
+    }
+
+    .header-contacts a:hover {
+      color: var(--color-accent);
+    }
+
+    /* === 章节标题 === */
+    .section-title {
+      font-family: 'Playfair Display', "Noto Serif SC", serif;
+      font-size: var(--fs-section-title);
+      font-weight: 700;
+      color: var(--color-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1.5px solid var(--color-accent);
+      padding-bottom: 2px;
+      margin-top: 0;
+      margin-bottom: 4mm;
+    }
+
+    /* === 章节与内容排版 === */
+    .section {
+      break-inside: avoid;
+      margin-bottom: var(--gap-section);
+    }
+
+    .item-block {
+      margin-bottom: var(--gap-item);
+    }
+
+    .item-block:not(:first-of-type) {
+      margin-top: var(--gap-item);
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .item-title {
+      color: var(--color-primary);
+      font-size: 11px;
+    }
+
+    .item-meta {
+      font-size: var(--fs-meta);
+      color: var(--color-muted-fg);
+      font-weight: normal;
+    }
+
+    /* 描述列表 */
+    ul.item-details {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    ul.item-details li {
+      position: relative;
+      padding-left: 12px;
+      margin-bottom: 3px;
+      text-align: justify;
+    }
+
+    ul.item-details li::before {
+      content: "•";
+      position: absolute;
+      left: 2px;
+      color: var(--color-accent);
+    }
+
+    /* 教育背景单行 */
+    .education-line {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    .education-meta {
+      font-weight: normal;
+      color: var(--color-muted-fg);
+      font-size: var(--fs-meta);
+    }
+
+    /* === 技能与评价布局 === */
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--gap-item);
+    }
+
+    /* 技能标签列表 (经典商务：平底无边线 tag) */
+    .skill-tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .skill-badge {
+      background-color: var(--color-muted);
+      padding: 2px 8px;
+      font-size: var(--fs-meta);
+      color: var(--color-primary);
+      white-space: nowrap;
+      font-weight: 500;
+      border-radius: 2px;
+    }
+
+    /* 自我评价 */
+    .summary-block {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
+      padding: 8px 12px;
+      font-size: var(--fs-body);
+      line-height: 1.45;
+      text-align: justify;
+      color: var(--color-fg);
+    }
+
+    /* === 功能性按钮 === */
+    .no-print-toolbar {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: white;
+      padding: 12px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 180px;
+    }
+
+    .btn-export {
+      background-color: var(--color-primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 12px;
+      text-align: center;
+      transition: background-color 0.2s;
+    }
+
+    .btn-export:hover {
+      background-color: var(--color-accent);
+    }
+
+    .toolbar-tip {
+      font-size: 9.5px;
+      color: #64748B;
+      line-height: 1.3;
+    }
+
+    /* === 打印媒体查询 === */
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+        width: var(--page-width);
+        height: var(--page-height);
+      }
+      .resume {
+        box-shadow: none;
+        padding: var(--page-margin);
+      }
+      .no-print-toolbar {
+        display: none !important;
+      }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 功能侧边工具栏 -->
+  <div class="no-print-toolbar">
+    <button class="btn-export" onclick="window.print()">导出 PDF</button>
+    <div class="toolbar-tip">
+      <strong>提示：</strong><br>
+      在打印设置中：<br>
+      1. 目标打印机：另存为 PDF<br>
+      2. 纸张大小：A4<br>
+      3. 边距：无/默认<br>
+      4. 勾选「背景图形」
+    </div>
+  </div>
+
+  <div class="resume">
+    <!-- 顶部 Header -->
+    <header class="resume-header">
+      <div class="header-info">
+        <h1>王明轩</h1>
+        <div class="job-title">资深商业分析师 / Senior Business Analyst</div>
+      </div>
+      <div class="header-contacts">
+        <div>电话：136-1234-5678 | 邮箱：<a href="mailto:mingxuan.wang@example.com">mingxuan.wang@example.com</a></div>
+        <div>LinkedIn：<a href="https://linkedin.com" target="_blank">linkedin.com/in/mingxuan-wang</a> | 城市：上海</div>
+      </div>
+    </header>
+
+    <!-- 教育背景 -->
+    <section class="section">
+      <h2 class="section-title">教育背景</h2>
+      <div class="education-line">
+        <div>复旦大学 · 金融学 · 经济学硕士</div>
+        <div class="education-meta">2021.09 - 2024.06</div>
+      </div>
+    </section>
+
+    <!-- 工作经历 -->
+    <section class="section">
+      <h2 class="section-title">工作经历</h2>
+      
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">麦肯锡咨询公司 · 商业分析顾问</div>
+          <div class="item-meta">2024.07 - 至今</div>
+        </div>
+        <ul class="item-details">
+          <li>主导 3 家 500 强消费品企业数字化转型战略规划，实施供应链精细化建模，降低企业运营成本 14.2%。</li>
+          <li>深度调研零售市场占有率及品类增长趋势，清洗及分析 100万+ 交易记录，产出商业分析报告 5 份，帮助客户决策新品投放计划。</li>
+          <li>协调多方利益相关者，跨团队管理 6 名顾问开展市场尽职调查项目，提前 2 天交付高价值咨询建议书。</li>
+        </ul>
+      </div>
+
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">毕马威华振会计师事务所 · 数据分析实习生</div>
+          <div class="item-meta">2023.06 - 2023.12</div>
+        </div>
+        <ul class="item-details">
+          <li>协助项目审计组进行底表财务数据核对与逻辑校验，利用 Python 编写自动化对账脚本，提升核数效率 80%。</li>
+          <li>编写 SQL 提取异常交易数据流，处理 5 个主要银行账户明细审计，成功识别 2 处重大往来对账偏差。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 项目经验 -->
+    <section class="section">
+      <h2 class="section-title">重大项目</h2>
+
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">大型零售集团智能补货策略设计 · 项目组长</div>
+          <div class="item-meta">2024.10 - 2025.01</div>
+        </div>
+        <ul class="item-details">
+          <li>设计基于历史销售模式的库存预测模型，建立多维时间序列分析框架，使核心 SKU 库存周转率提升 18.5%。</li>
+          <li>编写数据可视化仪表板（PowerBI），追踪区域周转效率指标，实现数据可视化决策链，覆盖全国 200 余家门店。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 专业技能 -->
+    <section class="section">
+      <h2 class="section-title">专业技能</h2>
+      <div class="skill-tags-container">
+        <span class="skill-badge">商业策略规划</span>
+        <span class="skill-badge">行业/竞品分析</span>
+        <span class="skill-badge">数据清洗 (Python / SQL)</span>
+        <span class="skill-badge">财务建模 (Excel VBA)</span>
+        <span class="skill-badge">Tableau / PowerBI</span>
+        <span class="skill-badge">英语专业八级 (TEM-8)</span>
+      </div>
+    </section>
+
+    <!-- 自我评价 -->
+    <section class="section">
+      <h2 class="section-title">自我评价</h2>
+      <div class="summary-block">
+        金融学硕士毕业生，具备突出的数据分析与商业敏锐度。拥有跨国管理咨询机构实操经验，熟练掌握商业战略框架与数据建模工具。沟通协调能力强，期望在商业分析与战略规划领域贡献专业价值。
+      </div>
+    </section>
+  </div>
+
+</body>
+</html>

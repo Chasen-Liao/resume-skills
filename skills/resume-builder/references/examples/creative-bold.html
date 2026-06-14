@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>简历 - 创意个性风格</title>
+  <style>
+    /* === 引入 Google 字体 === */
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+
+    /* === 创意个性风格配置 (基于 creative-bold.md 整合与微调) === */
+    :root {
+      --page-width: 210mm;
+      --page-height: 297mm;
+      --page-margin: 10mm;
+      --content-width: 190mm;
+
+      /* 字号 */
+      --fs-name: 26px;
+      --fs-section-title: 15px;
+      --fs-body: 10.5px;
+      --fs-meta: 9.5px;
+
+      /* 间距 */
+      --gap-section: 6mm;
+      --gap-item: 3mm;
+      --gap-inline: 6mm;
+
+      /* 行高 */
+      --lh-heading: 1.1;
+      --lh-body: 1.35;
+      --lh-meta: 1.3;
+
+      /* === 创意个性配色 A: 黑白 + 粉 === */
+      --color-primary: #18181B;
+      --color-on-primary: #FFFFFF;
+      --color-accent: #EC4899;
+      --color-on-accent: #FFFFFF;
+      --color-bg: #FAFAFA;
+      --color-fg: #09090B;
+      --color-card: #FFFFFF;
+      --color-card-fg: #09090B;
+      --color-muted: #E8ECF0;
+      --color-muted-fg: #64748B;
+      --color-border: #18181B; /* 粗黑边框 */
+      --color-destructive: #DC2626;
+      --color-on-destructive: #FFFFFF;
+      --color-ring: #EC4899;
+    }
+
+    /* === 基础样式与重置 === */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #E2E8F0;
+      font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: var(--fs-body);
+      line-height: var(--lh-body);
+      color: var(--color-fg);
+      display: flex;
+      justify-content: center;
+      padding: 20px 0;
+    }
+
+    .resume {
+      width: var(--page-width);
+      height: var(--page-height);
+      background-color: var(--color-bg);
+      position: relative;
+      overflow: hidden;
+      padding: var(--page-margin);
+      border-radius: 0;
+      border: 3px solid var(--color-border); /* 粗重边缘 */
+    }
+
+    /* === 布局网格 === */
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 32% 1fr;
+      height: calc(100% - 22mm); /* 扣除头部高度 */
+      gap: 6mm;
+    }
+
+    /* === 顶部 Header === */
+    .resume-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid var(--color-border);
+      padding-bottom: 8px;
+      margin-bottom: var(--gap-section);
+      height: 16mm;
+    }
+
+    .header-info h1 {
+      font-family: 'Bebas Neue', "PingFang SC", sans-serif;
+      font-size: var(--fs-name);
+      color: var(--color-primary);
+      margin: 0;
+      line-height: var(--lh-heading);
+      letter-spacing: 1.5px;
+    }
+
+    .header-info .job-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 1px;
+    }
+
+    .header-contacts {
+      font-size: var(--fs-meta);
+      font-weight: 500;
+      text-align: right;
+      line-height: 1.35;
+    }
+
+    .header-contacts a {
+      color: var(--color-fg);
+      text-decoration: underline;
+      text-decoration-color: var(--color-accent);
+      text-decoration-thickness: 1.5px;
+    }
+
+    .header-contacts a:hover {
+      color: var(--color-accent);
+    }
+
+    /* === 章节标题 (带有粉色几何方块点缀) === */
+    .section-title {
+      font-family: 'Bebas Neue', "PingFang SC", sans-serif;
+      font-size: var(--fs-section-title);
+      font-weight: 900;
+      color: var(--color-primary);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 0;
+      margin-bottom: 3mm;
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid var(--color-border);
+      padding-bottom: 2px;
+    }
+
+    .section-title::before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background: var(--color-accent);
+      margin-right: 6px;
+    }
+
+    /* === 章节内容 === */
+    .section {
+      break-inside: avoid;
+      margin-bottom: var(--gap-section);
+    }
+
+    /* 经历与项目卡片：Brutalism 线框卡片 */
+    .item-block {
+      border: 1.5px solid var(--color-border);
+      padding: 6px 8px;
+      background-color: var(--color-card);
+      margin-bottom: var(--gap-item);
+    }
+
+    .item-block:not(:first-of-type) {
+      margin-top: var(--gap-item);
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .item-title {
+      color: var(--color-primary);
+      font-size: 10px;
+    }
+
+    .item-meta {
+      font-size: var(--fs-meta);
+      color: var(--color-muted-fg);
+      font-weight: normal;
+    }
+
+    /* 描述列表 */
+    ul.item-details {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    ul.item-details li {
+      position: relative;
+      padding-left: 10px;
+      margin-bottom: 2px;
+      text-align: justify;
+      font-size: 9.5px;
+    }
+
+    ul.item-details li::before {
+      content: "▪";
+      position: absolute;
+      left: 0;
+      color: var(--color-accent);
+      font-size: 8px;
+    }
+
+    /* 教育背景单行 */
+    .education-block {
+      border: 1.5px solid var(--color-border);
+      padding: 6px 8px;
+      margin-bottom: var(--gap-item);
+    }
+
+    .education-block div {
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    .education-meta {
+      font-weight: normal !important;
+      color: var(--color-muted-fg);
+      font-size: var(--fs-meta);
+      margin-top: 1px;
+    }
+
+    /* 技能标签列表 (粗黑边框小卡片) */
+    .skill-tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .skill-badge {
+      background-color: var(--color-card);
+      border: 1.5px solid var(--color-border);
+      padding: 1px 6px;
+      font-size: var(--fs-meta);
+      color: var(--color-fg);
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    /* 自我评价高亮卡片 (右下倾斜阴影效果) */
+    .summary-block {
+      background-color: var(--color-card);
+      border: 1.5px solid var(--color-border);
+      padding: 8px 10px;
+      font-size: 9.5px;
+      line-height: 1.4;
+      text-align: justify;
+      box-shadow: 3px 3px 0px var(--color-accent); /* 粗色块硬阴影 */
+      margin-top: 4px;
+      margin-right: 3px;
+    }
+
+    /* === 功能性按钮 === */
+    .no-print-toolbar {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: white;
+      padding: 12px;
+      border-radius: 0;
+      border: 2px solid var(--color-border);
+      width: 180px;
+    }
+
+    .btn-export {
+      background-color: var(--color-primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 12px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .btn-export:hover {
+      background-color: var(--color-accent);
+    }
+
+    .toolbar-tip {
+      font-size: 9.5px;
+      color: #64748B;
+      line-height: 1.3;
+    }
+
+    /* === 打印媒体查询 === */
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+        width: var(--page-width);
+        height: var(--page-height);
+      }
+      .resume {
+        box-shadow: none;
+        padding: var(--page-margin);
+      }
+      .no-print-toolbar {
+        display: none !important;
+      }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 功能侧边工具栏 -->
+  <div class="no-print-toolbar">
+    <button class="btn-export" onclick="window.print()">EXPORT PDF</button>
+    <div class="toolbar-tip">
+      <strong>提示：</strong><br>
+      在打印设置中：<br>
+      1. 目标打印机：另存为 PDF<br>
+      2. 纸张大小：A4<br>
+      3. 边距：无/默认<br>
+      4. 勾选「背景图形」
+    </div>
+  </div>
+
+  <div class="resume">
+    <!-- 顶部 Header -->
+    <header class="resume-header">
+      <div class="header-info">
+        <h1>ZHOU DONG / 周冬</h1>
+        <div class="job-title">UI-UX Designer / 交互设计师</div>
+      </div>
+      <div class="header-contacts">
+        <div>TEL: 135-9999-9999 | MAIL: <a href="mailto:dong.zhou@example.com">dong.zhou@example.com</a></div>
+        <div>PORTFOLIO: <a href="https://behance.net" target="_blank">behance.net/dong-design</a> | BASE: 深圳</div>
+      </div>
+    </header>
+
+    <!-- 左右网格分栏 -->
+    <div class="layout-grid">
+      <!-- 左栏：教育、技能、评价 -->
+      <div class="left-col">
+        <!-- 教育背景 -->
+        <section class="section">
+          <h2 class="section-title">EDUCATION</h2>
+          <div class="education-block">
+            <div>广州美术学院</div>
+            <div>视觉传达设计 · 艺术学学士</div>
+            <div class="education-meta">2021.09 - 2025.07</div>
+          </div>
+        </section>
+
+        <!-- 专业技能 -->
+        <section class="section">
+          <h2 class="section-title">SKILLS</h2>
+          <div class="skill-tags-container">
+            <span class="skill-badge">UI/UX Design</span>
+            <span class="skill-badge">交互原型 (Figma)</span>
+            <span class="skill-badge">动效设计 (AE)</span>
+            <span class="skill-badge">视觉传达</span>
+            <span class="skill-badge">3D 建模 (C4D)</span>
+            <span class="skill-badge">前端开发 (HTML/CSS)</span>
+            <span class="skill-badge">用户调研</span>
+            <span class="skill-badge">英语六级 (CET-6)</span>
+          </div>
+        </section>
+
+        <!-- 自我评价 -->
+        <section class="section">
+          <h2 class="section-title">PROFILE</h2>
+          <div class="summary-block">
+            视觉传达方向设计学学士。具备敏锐的视觉感知与系统的交互逻辑设计能力，能熟练完成全链路原型开发与动效表达。热爱探索前沿设计趋势，期望为高成长性产品团队带来卓越的美学与体验价值。
+          </div>
+        </section>
+      </div>
+
+      <!-- 右栏：项目与工作 -->
+      <div class="right-col">
+        <!-- 实习经历 -->
+        <section class="section">
+          <h2 class="section-title">EXPERIENCE</h2>
+          
+          <div class="item-block">
+            <div class="item-header">
+              <div class="item-title">腾讯科技有限公司 · 交互设计实习生 (WXG)</div>
+              <div class="item-meta">2024.07 - 2024.12</div>
+            </div>
+            <ul class="item-details">
+              <li>负责微信视频号“个人主页”改版设计，独立主导交互流程梳理并输出 12 套高保真原型，改版后转化留存率提升 7.8%。</li>
+              <li>协助搭建视频号交互组件规范，维护 Sketch/Figma 库中 50+ 通用交互模板，提升团队原型搭建效率 40%。</li>
+              <li>参与 12 次用户深度访谈，挖掘交互核心痛点，成功推动 3 项产品功能决策优化落地。</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- 项目经验 -->
+        <section class="section">
+          <h2 class="section-title">PROJECTS</h2>
+
+          <div class="item-block">
+            <div class="item-header">
+              <div class="item-title">“无界”智能办公空间协同 App · UI/UX 负责人</div>
+              <div class="item-meta">2024.02 - 2024.06</div>
+            </div>
+            <ul class="item-details">
+              <li>主导面向中小企业的全平台办公协同系统设计，建立完整的 UI 设计语言与全链路交互框架体系。</li>
+              <li>设计创新的手势操作逻辑与卡片布局，测试阶段使得复杂办公流操作步数减少 22%，用户体验满意度评分达 94.6 分。</li>
+              <li>项目在 Behance 开源展示，斩获 3000+ Appreciations，并获设计界多名大咖推荐分享。</li>
+            </ul>
+          </div>
+
+          <div class="item-block">
+            <div class="item-header">
+              <div class="item-title">盲盒潮流玩具电商小程序视觉设计 · 视觉设计</div>
+              <div class="item-meta">2023.09 - 2023.12</div>
+            </div>
+            <ul class="item-details">
+              <li>负责小程序 0 到 1 视觉规范制定，采用潮酷赛博风视觉调性，产出 60+ 核心插画资产。</li>
+              <li>主导开盒交互动效设计，首月上线促成盲盒开盒订单 5000+，购买支付转化率较旧版本提高 15.3%。</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

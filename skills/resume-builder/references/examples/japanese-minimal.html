@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>简历 - 日式极简风格</title>
+  <style>
+    /* === 引入 Google 字体 === */
+    @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Raleway:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
+
+    /* === 日式极简风格配置 (基于 japanese-minimal.md 整合与微调) === */
+    :root {
+      --page-width: 210mm;
+      --page-height: 297mm;
+      --page-margin: 10mm;
+      --content-width: 190mm;
+
+      /* 字号 (日式极简偏小以创造留白感) */
+      --fs-name: 22px;
+      --fs-section-title: 12.5px;
+      --fs-body: 9.8px;
+      --fs-meta: 9px;
+
+      /* 间距 */
+      --gap-section: 6mm;
+      --gap-item: 3mm;
+      --gap-inline: 6mm;
+
+      /* 行高 (紧凑) */
+      --lh-heading: 1.2;
+      --lh-body: 1.35;
+      --lh-meta: 1.3;
+
+      /* === 日式极简配色 A: 米白 + 深棕 === */
+      --color-primary: #57534E;
+      --color-on-primary: #FFFFFF;
+      --color-accent: #D97706;
+      --color-on-accent: #FFFFFF;
+      --color-bg: #FFFBEB;
+      --color-fg: #1E293B;
+      --color-card: #FFFFFF;
+      --color-card-fg: #1E293B;
+      --color-muted: #F5F4F0;
+      --color-muted-fg: #64748B;
+      --color-border: #EEEDED;
+      --color-destructive: #DC2626;
+      --color-on-destructive: #FFFFFF;
+      --color-ring: #78716C;
+    }
+
+    /* === 基础样式与重置 === */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #E2E8F0;
+      font-family: 'Raleway', 'Noto Serif SC', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: var(--fs-body);
+      line-height: var(--lh-body);
+      color: var(--color-fg);
+      display: flex;
+      justify-content: center;
+      padding: 20px 0;
+    }
+
+    /* 打印微调：确保打印时字体清晰 */
+    @media print {
+      .resume, p, span, li, .section-title {
+        font-weight: 400 !important;
+      }
+    }
+
+    .resume {
+      width: var(--page-width);
+      height: var(--page-height);
+      background-color: var(--color-bg);
+      position: relative;
+      overflow: hidden;
+      padding: var(--page-margin);
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    /* === 顶部 Header === */
+    .resume-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 1px solid rgba(87, 83, 78, 0.2);
+      padding-bottom: 8px;
+      margin-bottom: var(--gap-section);
+    }
+
+    .header-info h1 {
+      font-family: 'Noto Serif SC', serif;
+      font-size: var(--fs-name);
+      font-weight: 500;
+      color: var(--color-primary);
+      margin: 0 0 3px 0;
+      letter-spacing: 0.04em;
+    }
+
+    .header-info .job-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-accent);
+      letter-spacing: 1.5px;
+    }
+
+    .header-contacts {
+      font-size: var(--fs-meta);
+      color: var(--color-muted-fg);
+      text-align: right;
+      line-height: 1.4;
+      font-family: 'Raleway', sans-serif;
+    }
+
+    .header-contacts a {
+      color: var(--color-muted-fg);
+      text-decoration: none;
+    }
+
+    .header-contacts a:hover {
+      color: var(--color-accent);
+    }
+
+    /* === 章节标题 === */
+    .section-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: var(--fs-section-title);
+      font-weight: 500;
+      color: var(--color-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 0;
+      margin-bottom: 4mm;
+    }
+
+    /* 日式风格：细微的小底边线代替粗长线 */
+    .section-title::after {
+      content: "";
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: var(--color-primary);
+      margin-top: 4px;
+      opacity: 0.3;
+    }
+
+    /* === 章节与内容排版 === */
+    .section {
+      break-inside: avoid;
+      margin-bottom: var(--gap-section);
+    }
+
+    .item-block {
+      margin-bottom: var(--gap-item);
+    }
+
+    .item-block:not(:first-of-type) {
+      margin-top: var(--gap-item);
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-weight: 700;
+      margin-bottom: 2px;
+      color: var(--color-primary);
+    }
+
+    .item-title {
+      font-size: 10px;
+    }
+
+    .item-meta {
+      font-size: var(--fs-meta);
+      color: var(--color-muted-fg);
+      font-weight: normal;
+    }
+
+    /* 描述列表 */
+    ul.item-details {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    ul.item-details li {
+      position: relative;
+      padding-left: 10px;
+      margin-bottom: 2px;
+      text-align: justify;
+      color: var(--color-fg);
+    }
+
+    ul.item-details li::before {
+      content: "▫";
+      position: absolute;
+      left: 0;
+      color: var(--color-accent);
+      font-weight: bold;
+    }
+
+    /* 教育背景单行 */
+    .education-line {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    .education-meta {
+      font-weight: normal;
+      color: var(--color-muted-fg);
+      font-size: var(--fs-meta);
+    }
+
+    /* 技能标签列表 (日式极简：极简灰色轻量标签) */
+    .skill-tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .skill-badge {
+      background-color: var(--color-muted);
+      border: 1px solid rgba(87, 83, 78, 0.15);
+      padding: 1px 6px;
+      font-size: var(--fs-meta);
+      color: var(--color-primary);
+      white-space: nowrap;
+    }
+
+    /* 自我评价 */
+    .summary-block {
+      background-color: transparent;
+      border-left: 1.5px solid var(--color-accent);
+      padding: 4px 8px;
+      font-size: var(--fs-body);
+      line-height: 1.4;
+      text-align: justify;
+      color: var(--color-fg);
+    }
+
+    /* === 功能性按钮 === */
+    .no-print-toolbar {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: white;
+      padding: 12px;
+      border: 1px solid var(--color-border);
+      width: 180px;
+    }
+
+    .btn-export {
+      background-color: var(--color-primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 12px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .btn-export:hover {
+      background-color: var(--color-accent);
+    }
+
+    .toolbar-tip {
+      font-size: 9.5px;
+      color: #64748B;
+      line-height: 1.3;
+    }
+
+    /* === 打印媒体查询 === */
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+        width: var(--page-width);
+        height: var(--page-height);
+      }
+      .resume {
+        box-shadow: none;
+        padding: var(--page-margin);
+      }
+      .no-print-toolbar {
+        display: none !important;
+      }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 功能侧边工具栏 -->
+  <div class="no-print-toolbar">
+    <button class="btn-export" onclick="window.print()">PRINT CV</button>
+    <div class="toolbar-tip">
+      <strong>提示：</strong><br>
+      在打印设置中：<br>
+      1. 目标打印机：另存为 PDF<br>
+      2. 纸张大小：A4<br>
+      3. 边距：无/默认<br>
+      4. 勾选「背景图形」
+    </div>
+  </div>
+
+  <div class="resume">
+    <!-- 顶部 Header -->
+    <header class="resume-header">
+      <div class="header-info">
+        <h1>松本 雅人 / Matsumoto Masato</h1>
+        <div class="job-title">茶道文化策划人 / Cultural Project Manager</div>
+      </div>
+      <div class="header-contacts">
+        <div>TEL: 186-0000-0000 | MAIL: <a href="mailto:masato@example.com">masato@example.com</a></div>
+        <div>PORTFOLIO: <a href="https://cultureshaper.jp" target="_blank">cultureshaper.jp</a> | BASE: 京都</div>
+      </div>
+    </header>
+
+    <!-- 教育背景 -->
+    <section class="section">
+      <h2 class="section-title">教育背景</h2>
+      <div class="education-line">
+        <div>京都大学 · 东亚文化研究 · 文学硕士</div>
+        <div class="education-meta">2020.04 - 2023.03</div>
+      </div>
+    </section>
+
+    <!-- 工作经历 -->
+    <section class="section">
+      <h2 class="section-title">职能经历</h2>
+      
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">京都文化交流中心 · 文化项目主管</div>
+          <div class="item-meta">2023.04 - 至今</div>
+        </div>
+        <ul class="item-details">
+          <li>策划并落地 6 场大型东亚茶文化联展，跨国协调 12 家艺术机构，吸引线上线下观众 8.5万人次。</li>
+          <li>设计并推广传统茶艺数字化体验交互项目，使文化中心周均接待年轻访客数提升 35.8%。</li>
+          <li>负责项目预算统筹与外部赞助联络，成功获得日本文化厅项目资金资助 1500万日元。</li>
+        </ul>
+      </div>
+
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">传统茶室「无心庵」 · 茶道策划顾问 (兼任)</div>
+          <div class="item-meta">2021.10 - 2023.03</div>
+        </div>
+        <ul class="item-details">
+          <li>主导面向国际游客的英文茶道研学课设计，开发体验手册 2 册，首年转化外籍学员 350 余人。</li>
+          <li>优化茶室线上订座系统，应用简约日式 UI 设计框架重构预订表单，将预订转化率提升 18.2%。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 项目经验 -->
+    <section class="section">
+      <h2 class="section-title">独立项目</h2>
+
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">“青苔与茶”数字文化空间营造 · 项目发起人</div>
+          <div class="item-meta">2022.05 - 2022.11</div>
+        </div>
+        <ul class="item-details">
+          <li>设计结合物联网传感的智能茶席交互原型，通过采集环境湿度控制音效，展现庭院枯山水意象。</li>
+          <li>在京都当代艺术节上展出，获日本媒体专题报道 3 次，被评为最受期待的先锋空间设计之一。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 技能证书 -->
+    <section class="section">
+      <h2 class="section-title">专业资质</h2>
+      <div class="skill-tags-container">
+        <span class="skill-badge">里千家茶道中传级别</span>
+        <span class="skill-badge">日本书道五段资质</span>
+        <span class="skill-badge">跨文化活动策划</span>
+        <span class="skill-badge">文案撰写与新媒体运营</span>
+        <span class="skill-badge">网页交互技术 (HTML/CSS)</span>
+        <span class="skill-badge">日语 (JLPT N1)</span>
+        <span class="skill-badge">英语 (TOEIC 850)</span>
+      </div>
+    </section>
+
+    <!-- 自我评价 -->
+    <section class="section">
+      <h2 class="section-title">自我评价</h2>
+      <div class="summary-block">
+        东亚文化研究硕士毕业生。拥有扎实的茶文化背景与跨国项目管理实力。执着于传统美学在当代语境下的创造性转化，期望能为致力于文化出海或艺术策划的创新团队贡献力量。
+      </div>
+    </section>
+  </div>
+
+</body>
+</html>

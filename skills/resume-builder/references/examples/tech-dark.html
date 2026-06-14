@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>简历 - 科技感风格</title>
+  <style>
+    /* === 引入 Google 字体 === */
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    /* === 科技感风格配置 (基于 tech-dark.md 整合与微调) === */
+    :root {
+      --page-width: 210mm;
+      --page-height: 297mm;
+      --page-margin: 10mm;
+      --content-width: 190mm;
+
+      /* 字号 */
+      --fs-name: 24px;
+      --fs-section-title: 13px;
+      --fs-body: 10px;
+      --fs-meta: 9px;
+
+      /* 间距 */
+      --gap-section: 6mm;
+      --gap-item: 3mm;
+      --gap-inline: 6mm;
+
+      /* 行高 */
+      --lh-heading: 1.2;
+      --lh-body: 1.4; /* 深色背景下行高可适当松一些 */
+      --lh-meta: 1.3;
+
+      /* === 科技感配色 A: 深黑 + 蓝 === */
+      --color-primary: #0F172A;
+      --color-on-primary: #FFFFFF;
+      --color-accent: #3B82F6;
+      --color-on-accent: #FFFFFF;
+      --color-bg: #020617; /* OLED 优化: 深黑底色 */
+      --color-fg: #F8FAFC;
+      --color-card: #0E1223;
+      --color-card-fg: #F8FAFC;
+      --color-muted: #1A1E2F;
+      --color-muted-fg: #94A3B8;
+      --color-border: #334155;
+      --color-destructive: #EF4444;
+      --color-on-destructive: #FFFFFF;
+      --color-ring: #3B82F6;
+    }
+
+    /* === 基础样式与重置 === */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #0B0F19;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: var(--fs-body);
+      line-height: var(--lh-body);
+      color: var(--color-fg);
+      display: flex;
+      justify-content: center;
+      padding: 20px 0;
+    }
+
+    .resume {
+      width: var(--page-width);
+      height: var(--page-height);
+      background-color: var(--color-bg);
+      position: relative;
+      overflow: hidden;
+      padding: var(--page-margin);
+      border-radius: 0;
+      border: 1px solid var(--color-border);
+      color-scheme: dark;
+    }
+
+    /* === 顶部 Header === */
+    .resume-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 10px;
+      margin-bottom: var(--gap-section);
+      height: 18mm;
+    }
+
+    .header-info h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: var(--fs-name);
+      font-weight: 700;
+      color: var(--color-on-primary);
+      margin: 0 0 2px 0;
+      letter-spacing: -0.5px;
+      text-shadow: 0 0 1px rgba(255,255,255,0.3); /* 微妙的发光 */
+    }
+
+    .header-info .job-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-accent);
+      letter-spacing: 0.5px;
+    }
+
+    .header-contacts {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--fs-meta);
+      color: var(--color-muted-fg);
+      text-align: right;
+      line-height: 1.4;
+    }
+
+    .header-contacts a {
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+
+    .header-contacts a:hover {
+      text-decoration: underline;
+    }
+
+    /* === 章节标题 === */
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: var(--fs-section-title);
+      font-weight: 700;
+      color: var(--color-accent); /* 霓虹色标题 */
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 2px;
+      margin-top: 0;
+      margin-bottom: 4mm;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title::after {
+      content: "</>";
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--color-border);
+      font-weight: normal;
+    }
+
+    /* === 章节与内容排版 === */
+    .section {
+      break-inside: avoid;
+      margin-bottom: var(--gap-section);
+    }
+
+    .item-block {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
+      padding: 6px 10px;
+      margin-bottom: var(--gap-item);
+    }
+
+    .item-block:not(:first-of-type) {
+      margin-top: var(--gap-item);
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-weight: 700;
+      margin-bottom: 3px;
+      color: var(--color-on-primary);
+    }
+
+    .item-title {
+      font-size: 10.5px;
+    }
+
+    .item-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--fs-meta);
+      color: var(--color-muted-fg);
+      font-weight: normal;
+    }
+
+    /* 描述列表 */
+    ul.item-details {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    ul.item-details li {
+      position: relative;
+      padding-left: 14px;
+      margin-bottom: 2px;
+      text-align: justify;
+      color: var(--color-fg);
+    }
+
+    ul.item-details li::before {
+      content: ">";
+      position: absolute;
+      left: 0;
+      color: var(--color-accent);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: bold;
+    }
+
+    /* 教育背景单行 */
+    .education-line {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      color: var(--color-on-primary);
+      padding: 4px 8px;
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
+    }
+
+    .education-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: normal;
+      color: var(--color-muted-fg);
+      font-size: var(--fs-meta);
+    }
+
+    /* 技能标签列表 (代码底色徽章) */
+    .skill-tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .skill-badge {
+      font-family: 'JetBrains Mono', monospace;
+      background-color: var(--color-muted);
+      border: 1px solid var(--color-border);
+      padding: 1px 6px;
+      font-size: var(--fs-meta);
+      color: var(--color-fg);
+      white-space: nowrap;
+    }
+
+    /* 自我评价 (终端风格盒) */
+    .summary-block {
+      background-color: var(--color-card);
+      border-left: 3px solid var(--color-accent);
+      border-right: 1px solid var(--color-border);
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+      padding: 8px 10px;
+      font-size: var(--fs-body);
+      line-height: 1.45;
+      text-align: justify;
+      color: var(--color-fg);
+    }
+
+    /* === 功能性按钮 === */
+    .no-print-toolbar {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #0E1223;
+      padding: 12px;
+      border: 1px solid var(--color-border);
+      width: 180px;
+    }
+
+    .btn-export {
+      background-color: var(--color-accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 12px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .btn-export:hover {
+      background-color: #2563EB;
+    }
+
+    .toolbar-tip {
+      font-size: 9.5px;
+      color: #94A3B8;
+      line-height: 1.3;
+    }
+
+    /* === 打印媒体查询 (自动颜色反转) === */
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    @media print {
+      :root {
+        --color-bg: #FFFFFF !important;
+        --color-fg: #0F172A !important;
+        --color-card: #FFFFFF !important;
+        --color-card-fg: #0F172A !important;
+        --color-muted: #F1F5F9 !important;
+        --color-muted-fg: #475569 !important;
+        --color-border: #E2E8F0 !important;
+        --color-on-primary: #0F172A !important;
+      }
+
+      body {
+        background-color: white;
+        padding: 0;
+        width: var(--page-width);
+        height: var(--page-height);
+        color: var(--color-fg);
+      }
+      .resume {
+        box-shadow: none;
+        padding: var(--page-margin);
+        border: none;
+        color-scheme: light;
+      }
+      .no-print-toolbar {
+        display: none !important;
+      }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 功能侧边工具栏 -->
+  <div class="no-print-toolbar">
+    <button class="btn-export" onclick="window.print()">PRINT --PDF</button>
+    <div class="toolbar-tip">
+      <strong>提示：</strong><br>
+      在打印设置中：<br>
+      1. 目标打印机：另存为 PDF<br>
+      2. 纸张大小：A4<br>
+      3. 边距：无/默认<br>
+      4. 勾选「背景图形」<br>
+      （打印时会自动反色为白底）
+    </div>
+  </div>
+
+  <div class="resume">
+    <!-- 顶部 Header -->
+    <header class="resume-header">
+      <div class="header-info">
+        <h1>LINUX_FAN / 林向阳</h1>
+        <div class="job-title">DevOps Engineer / 运维开发工程师</div>
+      </div>
+      <div class="header-contacts">
+        <div>TEL: 188-1111-2222 | MAIL: <a href="mailto:xy.lin@example.com">xy.lin@example.com</a></div>
+        <div>GITHUB: <a href="https://github.com" target="_blank">github.com/xiangyang-ops</a> | BASE: 北京</div>
+      </div>
+    </header>
+
+    <!-- 教育背景 -->
+    <section class="section">
+      <h2 class="section-title">01. EDUCATION / 教育背景</h2>
+      <div class="education-line">
+        <div>北京邮电大学 · 计算机科学与技术 · 工学学士</div>
+        <div class="education-meta">2021.09 - 2025.07</div>
+      </div>
+    </section>
+
+    <!-- 工作经历 -->
+    <section class="section">
+      <h2 class="section-title">02. WORK EXPERIENCE / 工作经历</h2>
+      
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">美团网 · 基础研发平台 / SRE 运维实习生</div>
+          <div class="item-meta">2024.06 - 2024.12</div>
+        </div>
+        <ul class="item-details">
+          <li>负责核心容器化平台 Kubernetes 集群日常运维，定位并修复组件服务故障 30+，保障可用性（SLA）达 99.99%。</li>
+          <li>基于 Python & Golang 研发集群资源自动化调度检测脚本，智能清理僵尸 Pod 2000+，释放闲置计算资源 12.5%。</li>
+          <li>主导 Prometheus + Grafana 告警降噪治理，设计动态阈值告警规则，将无效告警风暴降低 65%。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 项目经验 -->
+    <section class="section">
+      <h2 class="section-title">03. PROJECTS / 实践项目</h2>
+
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">企业级高可用 CI/CD 自动化部署流水线设计 · 独立设计</div>
+          <div class="item-meta">2024.01 - 2024.05</div>
+        </div>
+        <ul class="item-details">
+          <li>设计并落地基于 GitLab CI + Docker + Ansible 的容器化持续集成与蓝绿发布自动部署管道。</li>
+          <li>引入 SonarQube 代码质量静态扫描网关，保障每次提交代码测试通过率达 100%，项目上线周期缩短 40%。</li>
+          <li>运用 Kubernetes 滚动更新机制，结合 Ingress 定向路由权重，实现生产发布过程 0 业务中断时间（Zero Downtime）。</li>
+        </ul>
+      </div>
+
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">分布式系统实时链路日志聚合器 · 核心开发</div>
+          <div class="item-meta">2023.09 - 2023.12</div>
+        </div>
+        <ul class="item-details">
+          <li>基于 ELK Stack 架构，搭建超轻量日志实时传输代理，主导过滤插件设计。</li>
+          <li>优化 Elasticsearch 索引模型，对高频查询字段建立倒排索引优化，将千万级日志检索响应时间缩短 50%。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 技能证书 -->
+    <section class="section">
+      <h2 class="section-title">04. TECH SKILLS / 技能矩阵</h2>
+      <div class="skill-tags-container">
+        <span class="skill-badge">Linux (CentOS/Ubuntu)</span>
+        <span class="skill-badge">Kubernetes (K8s)</span>
+        <span class="skill-badge">Docker Container</span>
+        <span class="skill-badge">Python / Golang</span>
+        <span class="skill-badge">Prometheus / Grafana</span>
+        <span class="skill-badge">CI/CD (GitLab / Jenkins)</span>
+        <span class="skill-badge">Ansible / Terraform</span>
+        <span class="skill-badge">Shell Scripting</span>
+        <span class="skill-badge">AWS / Cloud computing</span>
+      </div>
+    </section>
+
+    <!-- 自我评价 -->
+    <section class="section">
+      <h2 class="section-title">05. PROFILE / 自我评价</h2>
+      <div class="summary-block">
+        热爱 Linux 及开源技术生态的计算机专业毕业生。掌握 Kubernetes 容器编排、云原生监控体系及基础设施即代码（IaC）流程。具备优秀的故障排查与自动化脚本编写技能，期望在 DevOps 领域持续攻坚。
+      </div>
+    </section>
+  </div>
+
+</body>
+</html>
