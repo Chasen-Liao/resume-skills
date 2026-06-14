@@ -86,15 +86,11 @@
   border-radius: 0;           /* Brutalism: 零圆角 */
 }
 .section-title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: 'Bebas Neue', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
   font-size: 16px;
+  font-weight: 900;
   letter-spacing: 0.06em;
   position: relative;
-}
-/* 配色 C (深色) 额外注意 */
-.dark-theme .resume {
-  border-radius: 0;
-  border: 2px solid var(--color-border);
 }
 /* 色块分区标注 */
 .section-title::before {

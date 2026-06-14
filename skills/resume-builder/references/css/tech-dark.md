@@ -89,6 +89,19 @@
 body {
   background: var(--color-bg);
 }
+/* 打印时自动反转颜色，避免纯黑打印灾难 */
+@media print {
+  :root {
+    --color-bg: #FFFFFF !important;
+    --color-fg: #0F172A !important;
+    --color-card: #FFFFFF !important;
+    --color-card-fg: #0F172A !important;
+    --color-muted: #F1F5F9 !important;
+    --color-muted-fg: #475569 !important;
+    --color-border: #E2E8F0 !important;
+  }
+  .resume { color-scheme: light; }
+}
 .section-title {
   color: var(--color-accent);   /* 霓虹色标题 */
   letter-spacing: 0.06em;

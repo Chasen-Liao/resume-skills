@@ -73,7 +73,7 @@
 
 | 方案 | 标题 | 正文 | Google Fonts Import |
 |------|------|------|---------------------|
-| Minimal Swiss | Inter (600-700) | Inter (400) | `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');` |
+| Minimal Swiss | Plus Jakarta Sans (600-700) | Plus Jakarta Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');` |
 | Geometric Modern | Outfit (500-700) | Work Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&display=swap');` |
 
 中文: `PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif`

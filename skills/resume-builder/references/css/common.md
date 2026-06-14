@@ -48,18 +48,24 @@
 }
 
 /* === 技能标签 inline 排列 (节省纵向空间) === */
-.skill-tags {
+ul.skill-tags {
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 6px;
+  gap: 2px 8px;
   line-height: 1.4;
 }
-.skill-tag {
-  display: inline;
+ul.skill-tags li {
+  display: inline-block;
   white-space: nowrap;
 }
-.skill-tag::after { content: " · "; color: var(--color-muted); }
-.skill-tag:last-child::after { content: ""; }
+ul.skill-tags li:not(:last-child)::after {
+  content: "·";
+  margin-left: 8px;
+  color: var(--color-muted);
+}
 
 /* === 教育背景单行显示 === */
 .education-line {
@@ -83,5 +89,8 @@
 p, li {
   widows: 2;
   orphans: 2;
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
 }
 ```

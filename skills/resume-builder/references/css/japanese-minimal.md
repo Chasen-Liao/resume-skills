@@ -12,7 +12,7 @@
 
 ```css
 :root {
-  --color-primary: #78716C;
+  --color-primary: #57534E;
   --color-on-primary: #FFFFFF;
   --color-accent: #D97706;
   --color-on-accent: #FFFFFF;
@@ -86,7 +86,13 @@
 .resume {
   border-radius: 0;
   box-shadow: none;
-  font-weight: 300-400;
+  font-weight: 300;
+}
+/* 解决打印时细体字难以辨认的问题 */
+@media print {
+  .resume, p, span, li, .section-title {
+    font-weight: 400 !important;
+  }
 }
 .section-title {
   font-weight: 300;
