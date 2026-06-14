@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>简历 - 简约蓝色商务风格</title>
+  <style>
+    /* === 引入 Google 字体 === */
+    @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+
+    /* === 通用紧凑排版 CSS (基于 common.md 整合与微调) === */
+    :root {
+      --page-width: 210mm;
+      --page-height: 297mm;
+      --page-margin: 10mm;
+      --content-width: 190mm;
+
+      /* 字号 */
+      --fs-name: 24px;
+      --fs-section-title: 13.5px;
+      --fs-body: 10.5px;
+      --fs-meta: 9.5px;
+
+      /* 间距 */
+      --gap-section: 6.5mm;
+      --gap-item: 3mm;
+      --gap-inline: 6mm;
+
+      /* 行高 */
+      --lh-heading: 1.2;
+      --lh-body: 1.35;
+      --lh-meta: 1.3;
+
+      /* === 简约蓝色商务配色 A: 深蓝 + 冰蓝 (Navy & Ice Wash) === */
+      --color-primary: #0A2540;
+      --color-on-primary: #FFFFFF;
+      --color-accent: #0066CC;
+      --color-on-accent: #FFFFFF;
+      --color-bg: #FFFFFF;
+      --color-fg: #1D2A3A;
+      --color-card: #F4F8FC;
+      --color-card-fg: #1D2A3A;
+      --color-muted: #E6F0FA;
+      --color-muted-fg: #5A7184;
+      --color-border: #D2E3F3;
+      --color-destructive: #DC2626;
+      --color-on-destructive: #FFFFFF;
+      --color-ring: #0A2540;
+    }
+
+    /* === 基础样式与重置 === */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #F1F5F9;
+      font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: var(--fs-body);
+      line-height: var(--lh-body);
+      color: var(--color-fg);
+      display: flex;
+      justify-content: center;
+      padding: 20px 0;
+    }
+
+    .resume {
+      width: var(--page-width);
+      height: var(--page-height);
+      background-color: var(--color-bg);
+      position: relative;
+      overflow: hidden;
+      padding: var(--page-margin) var(--page-margin) var(--page-margin) calc(var(--page-margin) + 8px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    /* === 左侧装饰竖条 === */
+    .resume::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-accent) 100%);
+    }
+
+    /* === 顶部三栏 Header === */
+    .resume-header {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 15px;
+      border-bottom: 2px solid var(--color-primary);
+      padding-bottom: 8px;
+      margin-bottom: var(--gap-section);
+    }
+
+    .header-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .header-info h1 {
+      font-family: 'Lexend', sans-serif;
+      font-size: var(--fs-name);
+      font-weight: 700;
+      color: var(--color-primary);
+      margin: 0 0 3px 0;
+      line-height: var(--lh-heading);
+    }
+
+    .header-info .job-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-accent);
+      letter-spacing: 0.5px;
+    }
+
+    .header-contacts {
+      font-size: var(--fs-meta);
+      color: var(--color-muted-fg);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .header-contacts a {
+      color: var(--color-muted-fg);
+      text-decoration: none;
+    }
+
+    .header-contacts a:hover {
+      color: var(--color-accent);
+    }
+
+    .header-photo {
+      width: 46px;
+      height: 58px;
+      border: 1px solid var(--color-border);
+      background-color: var(--color-card);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 8px;
+      color: var(--color-muted-fg);
+      overflow: hidden;
+    }
+
+    /* === 线性章节标题 === */
+    .section-title {
+      display: flex;
+      align-items: center;
+      font-family: 'Lexend', sans-serif;
+      font-size: var(--fs-section-title);
+      font-weight: 700;
+      color: var(--color-primary);
+      text-transform: uppercase;
+      margin-top: 0;
+      margin-bottom: 5mm;
+    }
+
+    .section-title::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 13px;
+      background-color: var(--color-accent);
+      margin-right: 8px;
+      border-radius: 2px;
+    }
+
+    .section-title::after {
+      content: "";
+      flex-grow: 1;
+      height: 1px;
+      background-color: var(--color-border);
+      margin-left: 10px;
+    }
+
+    /* === 章节与内容排版 === */
+    .section {
+      break-inside: avoid;
+      margin-bottom: var(--gap-section);
+    }
+
+    /* 块级项目卡片：左边线 + 顶部分割线 */
+    .item-block {
+      border-left: 2px solid var(--color-muted);
+      padding-left: 10px;
+      margin-left: 2px;
+      margin-bottom: var(--gap-item);
+      transition: border-color 0.2s;
+    }
+
+    .item-block:hover {
+      border-left-color: var(--color-accent);
+    }
+
+    .item-block:not(:first-of-type) {
+      border-top: 1px dashed var(--color-border);
+      padding-top: var(--gap-item);
+      margin-top: var(--gap-item);
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .item-title {
+      color: var(--color-primary);
+      font-size: 11px;
+    }
+
+    .item-meta {
+      font-size: var(--fs-meta);
+      color: var(--color-muted-fg);
+      font-weight: normal;
+    }
+
+    /* 经历描述列表 */
+    ul.item-details {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    ul.item-details li {
+      position: relative;
+      padding-left: 10px;
+      margin-bottom: 2px;
+      text-align: justify;
+      text-justify: inter-word;
+    }
+
+    ul.item-details li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--color-accent);
+    }
+
+    /* 教育背景单行 */
+    .education-line {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      color: var(--color-primary);
+      padding-left: 4px;
+    }
+
+    .education-meta {
+      font-weight: normal;
+      color: var(--color-muted-fg);
+      font-size: var(--fs-meta);
+    }
+
+    /* === 底部双栏信息区 === */
+    .footer-layout {
+      display: grid;
+      grid-template-columns: 48% 48%;
+      gap: 4%;
+      margin-top: var(--gap-item);
+    }
+
+    /* 轻量标签系统 */
+    .skill-tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 4px;
+    }
+
+    .skill-badge {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-left: 3px solid var(--color-accent);
+      padding: 1px 6px;
+      font-size: var(--fs-meta);
+      color: var(--color-fg);
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+
+    /* 自我评价 summary：浅蓝背景与左边强调线 */
+    .summary-block {
+      background-color: var(--color-card);
+      border-left: 4px solid var(--color-primary);
+      padding: 8px 10px;
+      border-radius: 0 4px 4px 0;
+      font-size: var(--fs-body);
+      line-height: 1.4;
+      text-align: justify;
+    }
+
+    /* === 功能性按钮 === */
+    .no-print-toolbar {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: white;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      width: 180px;
+    }
+
+    .btn-export {
+      background-color: var(--color-accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.2s;
+    }
+
+    .btn-export:hover {
+      background-color: #0052a3;
+    }
+
+    .toolbar-tip {
+      font-size: 9.5px;
+      color: #64748B;
+      line-height: 1.3;
+    }
+
+    /* === 打印媒体查询 === */
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+        width: var(--page-width);
+        height: var(--page-height);
+      }
+      .resume {
+        box-shadow: none;
+        padding: var(--page-margin) var(--page-margin) var(--page-margin) calc(var(--page-margin) + 8px);
+      }
+      .no-print-toolbar {
+        display: none !important;
+      }
+      /* 强制打印背景和彩色属性 */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 功能侧边工具栏 -->
+  <div class="no-print-toolbar">
+    <button class="btn-export" onclick="window.print()">导出 PDF</button>
+    <div class="toolbar-tip">
+      <strong>提示：</strong><br>
+      在打印设置中：<br>
+      1. 目标打印机：另存为 PDF<br>
+      2. 纸张大小：A4<br>
+      3. 边距：无/默认<br>
+      4. 勾选「背景图形」
+    </div>
+  </div>
+
+  <div class="resume">
+    <!-- 顶部 Header -->
+    <header class="resume-header">
+      <div class="header-info">
+        <h1>李智远</h1>
+        <div class="job-title">高级产品经理 / Senior Product Manager</div>
+      </div>
+      <div class="header-contacts">
+        <div>电话：138-0000-0000</div>
+        <div>邮箱：<a href="mailto:alex.li@example.com">alex.li@example.com</a></div>
+        <div>个人主页：<a href="https://github.com" target="_blank">github.com/alex-li</a></div>
+      </div>
+      <div class="header-photo">
+        <span>证件照</span>
+      </div>
+    </header>
+
+    <!-- 教育背景 -->
+    <section class="section">
+      <h2 class="section-title">教育背景</h2>
+      <div class="education-line">
+        <div>北京大学 · 计算机科学与技术 · 工学硕士</div>
+        <div class="education-meta">2020.09 - 2023.07</div>
+      </div>
+    </section>
+
+    <!-- 工作经历 -->
+    <section class="section">
+      <h2 class="section-title">工作经历</h2>
+      
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">北京字节跳动科技有限公司 · 资深产品经理</div>
+          <div class="item-meta">2023.07 - 至今</div>
+        </div>
+        <ul class="item-details">
+          <li>主导抖音电商推荐算法策略优化，通过 A/B 测试迭代，使商品核心转化率提升 14.5%，DAU 贡献值增加 220万。</li>
+          <li>协调 15 人跨职能团队，重构个性化推荐引擎，将冷启动用户次留率提高 8.2%，系统QPS承受力提升 3 倍。</li>
+        </ul>
+      </div>
+
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">腾讯科技（深圳）有限公司 · 产品经理助理（实习）</div>
+          <div class="item-meta">2022.03 - 2022.09</div>
+        </div>
+        <ul class="item-details">
+          <li>参与微信视频号创作者助手功能设计，分析 5万+ 创作者活跃数据，设计个性化灵感模块，上线后周活跃创作者数提升 18.2%。</li>
+          <li>协助编写产品需求文档（PRD）8 份，产出高质量低保真原型，跨部门对接开发与测试，推进 3 个版本顺利上线。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 项目经验 -->
+    <section class="section">
+      <h2 class="section-title">项目经验</h2>
+
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">智能内容分发平台设计 · 项目负责人</div>
+          <div class="item-meta">2022.09 - 2023.03</div>
+        </div>
+        <ul class="item-details">
+          <li>独立设计基于双塔模型的商品内容召回系统，使用 Python + TensorFlow 搭建原型，在线测试点击率（CTR）提升 23%。</li>
+          <li>推动 5 名研发工程师完成核心模块落地，通过多级缓存策略将接口响应延迟从 350ms 降至 90ms，实现单页高响应。</li>
+        </ul>
+      </div>
+
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title">跨平台低代码原型组件库 · 独立发起人</div>
+          <div class="item-meta">2021.10 - 2022.02</div>
+        </div>
+        <ul class="item-details">
+          <li>基于 Electron & Web Components 构建快速原型工具，内置 40+ 商务风高复用组件，实现拖拽即成高保真。</li>
+          <li>在校内及开源社区推广使用，获得 1200+ Star，帮助 150 余名初级设计/开发人员提升原型输出效率 45%。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 底部双栏信息区 -->
+    <div class="footer-layout">
+      <!-- 技能与标签 -->
+      <section class="section">
+        <h2 class="section-title">技能与语言</h2>
+        <div class="skill-tags-container">
+          <span class="skill-badge">产品规划</span>
+          <span class="skill-badge">用户增长</span>
+          <span class="skill-badge">数据分析</span>
+          <span class="skill-badge">推荐算法</span>
+          <span class="skill-badge">A/B 测试</span>
+          <span class="skill-badge">Axure/Figma</span>
+          <span class="skill-badge">Python</span>
+          <span class="skill-badge">SQL</span>
+          <span class="skill-badge">英语六级 (CET-6)</span>
+        </div>
+      </section>
+
+      <!-- 自我评价 -->
+      <section class="section">
+        <h2 class="section-title">自我评价</h2>
+        <div class="summary-block">
+          计算机科学专业硕士，主攻数据与推荐策略方向。具备推荐系统架构设计、跨团队协作及核心指标量化提升能力。期望在智能推荐及AI产品领域深耕，为用户及商业增长贡献价值。
+        </div>
+      </section>
+    </div>
+  </div>
+
+</body>
+</html>

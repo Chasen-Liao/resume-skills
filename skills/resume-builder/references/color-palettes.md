@@ -4,7 +4,7 @@
 
 ---
 
-## 五大简历风格 → 配色映射
+## 六大简历风格 → 配色映射
 
 每个风格的完整 CSS（3 套配色变量 + 推荐字体 + 风格 CSS 要点）已拆分到 `references/css/` 子文件夹中，生成时按需取用：
 
@@ -15,6 +15,7 @@
 | 创意个性 | [`css/creative-bold.md`](css/creative-bold.md) | 3 套 |
 | 日式极简 | [`css/japanese-minimal.md`](css/japanese-minimal.md) | 3 套 |
 | 科技感 | [`css/tech-dark.md`](css/tech-dark.md) | 3 套 |
+| 简约蓝色商务 | [`css/minimal-blue-business.md`](css/minimal-blue-business.md) | 3 套 |
 
 另见 [`css/README.md`](css/README.md) 了解使用方式和配色选择策略。
 
@@ -109,6 +110,24 @@
 | Font B | DM Sans (sans) | IBM Plex Sans (sans) | Manrope (sans) |
 | CSS 关键词 | `.dark` 主题, 高对比文字, 霓虹点缀色, `text-shadow: 0 0 10px` 克制使用 | 同左 | 同左 |
 | 排版密度 | 深色背景可适当松一些(line-height 1.4), 但板块间距仍需 ≤10mm | 同左 | 同左 |
+
+### 6. 简约蓝色商务 (Minimal Blue Business)
+
+对应 ui-ux-pro-max 风格：**Corporate Trust** + **Minimal Business 字体**
+
+| Token | 配色 A (深蓝+冰蓝) | 配色 B (钴蓝+浅灰蓝) | 配色 C (钢蓝+柔蓝) |
+|-------|--------------------|--------------------|--------------------|
+| Primary | `#0A2540` | `#1E3A8A` | `#2B4C7E` |
+| Accent | `#0066CC` | `#0284C7` | `#4A90E2` |
+| Background | `#FFFFFF` | `#F8FAFC` | `#FAFBFC` |
+| Foreground | `#1D2A3A` | `#0F172A` | `#2C3E50` |
+| Card | `#F4F8FC` | `#F0F6FC` | `#F2F6FA` |
+| Muted | `#E6F0FA` | `#E2E8F0` | `#E5ECF4` |
+| Border | `#D2E3F3` | `#CBD5E1` | `#CFD9E5` |
+| Font H | Lexend (sans) | Outfit (sans) | Poppins (sans) |
+| Font B | Source Sans 3 (sans) | Work Sans (sans) | Open Sans (sans) |
+| CSS 关键词 | 左侧装饰竖条, 线性章节标题, 左边线卡片, 浅蓝 wash 总结区 | 同左 | 同左 |
+| 排版密度 | 紧凑优先: line-height 1.35, 板块间距 ≤8mm | 同左 | 同左 |
 
 ---
 
