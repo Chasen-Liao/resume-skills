@@ -92,7 +92,14 @@
       border-bottom: 3px solid var(--color-border);
       padding-bottom: 8px;
       margin-bottom: var(--gap-section);
-      height: 16mm;
+      min-height: 16mm;
+      height: auto;
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .header-info h1 {
@@ -116,7 +123,7 @@
     .header-contacts {
       font-size: var(--fs-meta);
       font-weight: 500;
-      text-align: right;
+      text-align: left;
       line-height: 1.35;
     }
 
@@ -129,6 +136,24 @@
 
     .header-contacts a:hover {
       color: var(--color-accent);
+    }
+
+    .header-right {
+      flex-shrink: 0;
+    }
+
+    .photo-wrapper {
+      width: 68px;
+      height: 86px;
+      border: 2px solid var(--color-border);
+      background-color: var(--color-card);
+      box-shadow: 2px 2px 0px var(--color-accent);
+    }
+
+    .profile-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     /* === 章节标题 (带有粉色几何方块点缀) === */
@@ -348,13 +373,20 @@
   <div class="resume">
     <!-- 顶部 Header -->
     <header class="resume-header">
-      <div class="header-info">
-        <h1>ZHOU DONG / 周冬</h1>
-        <div class="job-title">UI-UX Designer / 交互设计师</div>
+      <div class="header-left">
+        <div class="header-info">
+          <h1>ZHOU DONG / 周冬</h1>
+          <div class="job-title">UI-UX Designer / 交互设计师</div>
+        </div>
+        <div class="header-contacts">
+          <div>TEL: 135-9999-9999 | MAIL: <a href="mailto:dong.zhou@example.com">dong.zhou@example.com</a></div>
+          <div>PORTFOLIO: <a href="https://behance.net" target="_blank">behance.net/dong-design</a> | BASE: 深圳</div>
+        </div>
       </div>
-      <div class="header-contacts">
-        <div>TEL: 135-9999-9999 | MAIL: <a href="mailto:dong.zhou@example.com">dong.zhou@example.com</a></div>
-        <div>PORTFOLIO: <a href="https://behance.net" target="_blank">behance.net/dong-design</a> | BASE: 深圳</div>
+      <div class="header-right">
+        <div class="photo-wrapper">
+          <img src="avatar.png" alt="头像" class="profile-photo">
+        </div>
       </div>
     </header>
 

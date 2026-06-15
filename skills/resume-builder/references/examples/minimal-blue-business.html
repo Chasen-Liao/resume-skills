@@ -138,8 +138,8 @@
     }
 
     .header-photo {
-      width: 46px;
-      height: 58px;
+      width: 66px;
+      height: 84px;
       border: 1px solid var(--color-border);
       background-color: var(--color-card);
       display: flex;
@@ -148,6 +148,13 @@
       font-size: 8px;
       color: var(--color-muted-fg);
       overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .header-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     /* === 线性章节标题 === */
@@ -393,7 +400,7 @@
         <div>个人主页：<a href="https://github.com" target="_blank">github.com/alex-li</a></div>
       </div>
       <div class="header-photo">
-        <span>证件照</span>
+        <img src="avatar.png" alt="头像">
       </div>
     </header>
 

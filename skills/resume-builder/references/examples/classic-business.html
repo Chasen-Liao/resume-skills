@@ -5,46 +5,42 @@
   <title>简历 - 经典商务风格</title>
   <style>
     /* === 引入 Google 字体 === */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-    /* === 经典商务风格配置 (基于 classic-business.md 整合与微调) === */
+    /* === 经典商务配置 === */
     :root {
       --page-width: 210mm;
       --page-height: 297mm;
-      --page-margin: 10mm;
-      --content-width: 190mm;
+      --page-margin: 12mm;
+      --content-width: 186mm;
 
       /* 字号 */
-      --fs-name: 24px;
+      --fs-name: 28px;
       --fs-section-title: 13.5px;
       --fs-body: 10.5px;
       --fs-meta: 9.5px;
 
       /* 间距 */
-      --gap-section: 7mm;
+      --gap-section: 6.5mm;
       --gap-item: 3.5mm;
-      --gap-inline: 6mm;
 
       /* 行高 */
-      --lh-heading: 1.25;
-      --lh-body: 1.4;
-      --lh-meta: 1.3;
+      --lh-heading: 1.2;
+      --lh-body: 1.45;
+      --lh-meta: 1.35;
 
-      /* === 经典商务配色 A: 深蓝 + 金 === */
-      --color-primary: #0F172A;
+      /* === 经典黑白配色 === */
+      --color-primary: #000000;
       --color-on-primary: #FFFFFF;
-      --color-accent: #A16207;
+      --color-accent: #000000;
       --color-on-accent: #FFFFFF;
-      --color-bg: #F8FAFC;
-      --color-fg: #020617;
+      --color-bg: #FFFFFF;
+      --color-fg: #000000;
       --color-card: #FFFFFF;
-      --color-card-fg: #020617;
-      --color-muted: #E8ECF1;
-      --color-muted-fg: #64748B;
-      --color-border: #E2E8F0;
-      --color-destructive: #DC2626;
-      --color-on-destructive: #FFFFFF;
-      --color-ring: #0F172A;
+      --color-card-fg: #000000;
+      --color-muted: #F3F4F6;
+      --color-muted-fg: #4B5563;
+      --color-border: #000000;
     }
 
     /* === 基础样式与重置 === */
@@ -72,67 +68,77 @@
       position: relative;
       overflow: hidden;
       padding: var(--page-margin);
-      border-radius: 2px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
     }
 
     /* === 顶部 Header === */
     .resume-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      border-bottom: 2px solid var(--color-primary);
-      padding-bottom: 8px;
       margin-bottom: var(--gap-section);
     }
 
-    .header-info h1 {
-      font-family: 'Playfair Display', "Noto Serif SC", serif;
+    .header-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-bottom: 8px;
+    }
+
+    .resume-title {
       font-size: var(--fs-name);
       font-weight: 700;
       color: var(--color-primary);
-      margin: 0 0 2px 0;
+      letter-spacing: 2px;
       line-height: var(--lh-heading);
     }
 
-    .header-info .job-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--color-accent);
-      letter-spacing: 1px;
+    .job-intent {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--color-primary);
+      margin-bottom: 2px;
     }
 
-    .header-contacts {
-      font-size: var(--fs-meta);
-      color: var(--color-muted-fg);
-      text-align: right;
-      line-height: 1.4;
+    .header-line {
+      height: 4.5px;
+      background-color: var(--color-primary);
+      width: 100%;
     }
 
-    .header-contacts a {
-      color: var(--color-muted-fg);
-      text-decoration: none;
+    /* === 章节标题 (斜切标签 + 底横线) === */
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      border-bottom: 2px solid var(--color-primary);
+      margin-bottom: 3.5mm;
+      padding-bottom: 0;
+      break-inside: avoid;
     }
 
-    .header-contacts a:hover {
-      color: var(--color-accent);
-    }
-
-    /* === 章节标题 === */
-    .section-title {
-      font-family: 'Playfair Display', "Noto Serif SC", serif;
+    .section-title-tag {
+      background-color: var(--color-primary);
+      color: var(--color-on-primary);
+      padding: 4px 24px 4px 12px;
+      font-weight: 700;
       font-size: var(--fs-section-title);
+      letter-spacing: 1.5px;
+      clip-path: polygon(0 0, 100% 0, calc(100% - 15px) 100%, 0 100%);
+      display: inline-block;
+      line-height: 1.2;
+    }
+
+    .section-title-en {
+      font-size: 11.5px;
       font-weight: 700;
       color: var(--color-primary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-bottom: 1.5px solid var(--color-accent);
+      margin-left: 12px;
       padding-bottom: 2px;
-      margin-top: 0;
-      margin-bottom: 4mm;
+      text-transform: none;
+      font-family: 'Inter', sans-serif;
     }
 
-    /* === 章节与内容排版 === */
+    /* === 章节排版 === */
     .section {
       break-inside: avoid;
       margin-bottom: var(--gap-section);
@@ -142,27 +148,102 @@
       margin-bottom: var(--gap-item);
     }
 
-    .item-block:not(:first-of-type) {
-      margin-top: var(--gap-item);
+    .item-block:last-child {
+      margin-bottom: 0;
     }
 
-    .item-header {
+    /* === 个人信息布局 === */
+    .personal-info-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .info-details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      row-gap: 9px;
+      column-gap: 20px;
+      flex: 1;
+    }
+
+    .info-detail-item {
+      display: flex;
+      align-items: center;
+      font-size: var(--fs-body);
+      color: var(--color-fg);
+    }
+
+    .info-icon {
+      width: 14px;
+      height: 14px;
+      margin-right: 8px;
+      fill: var(--color-primary);
+      flex-shrink: 0;
+    }
+
+    .info-label {
+      font-weight: bold;
+      color: var(--color-fg);
+    }
+
+    .info-value {
+      color: var(--color-fg);
+    }
+
+    .photo-wrapper {
+      width: 90px;
+      height: 112px;
+      border: 1px solid var(--color-border);
+      padding: 3px;
+      background-color: #ffffff;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* === 经历排版 === */
+    .experience-row {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
       font-weight: 700;
-      margin-bottom: 3px;
+      font-size: var(--fs-body);
+      color: var(--color-fg);
+      margin-bottom: 3.5px;
     }
 
-    .item-title {
-      color: var(--color-primary);
-      font-size: 11px;
+    .experience-time {
+      width: 140px;
+      text-align: left;
     }
 
-    .item-meta {
-      font-size: var(--fs-meta);
-      color: var(--color-muted-fg);
-      font-weight: normal;
+    .experience-org {
+      flex: 1;
+      text-align: center;
+    }
+
+    .experience-role {
+      width: 140px;
+      text-align: right;
+    }
+
+    .experience-sub-info {
+      font-size: var(--fs-body);
+      color: var(--color-fg);
+      margin-bottom: 3.5px;
+    }
+
+    .experience-label-bold {
+      font-weight: bold;
     }
 
     /* 描述列表 */
@@ -173,65 +254,26 @@
 
     ul.item-details li {
       position: relative;
-      padding-left: 12px;
+      padding-left: 14px;
       margin-bottom: 3px;
       text-align: justify;
+      font-size: var(--fs-body);
+      color: var(--color-fg);
     }
 
     ul.item-details li::before {
       content: "•";
       position: absolute;
-      left: 2px;
-      color: var(--color-accent);
-    }
-
-    /* 教育背景单行 */
-    .education-line {
-      display: flex;
-      justify-content: space-between;
-      font-weight: 700;
+      left: 3px;
+      font-weight: bold;
       color: var(--color-primary);
     }
 
-    .education-meta {
-      font-weight: normal;
-      color: var(--color-muted-fg);
-      font-size: var(--fs-meta);
-    }
-
-    /* === 技能与评价布局 === */
-    .footer-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: var(--gap-item);
-    }
-
-    /* 技能标签列表 (经典商务：平底无边线 tag) */
-    .skill-tags-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 2px;
-    }
-
-    .skill-badge {
-      background-color: var(--color-muted);
-      padding: 2px 8px;
-      font-size: var(--fs-meta);
-      color: var(--color-primary);
-      white-space: nowrap;
-      font-weight: 500;
-      border-radius: 2px;
-    }
-
-    /* 自我评价 */
-    .summary-block {
-      background-color: var(--color-card);
-      border: 1px solid var(--color-border);
-      padding: 8px 12px;
-      font-size: var(--fs-body);
-      line-height: 1.45;
+    /* 自我评价段落 */
+    .summary-text {
       text-align: justify;
+      font-size: var(--fs-body);
+      line-height: var(--lh-body);
       color: var(--color-fg);
     }
 
@@ -264,7 +306,7 @@
     }
 
     .btn-export:hover {
-      background-color: var(--color-accent);
+      background-color: #333333;
     }
 
     .toolbar-tip {
@@ -318,90 +360,143 @@
   <div class="resume">
     <!-- 顶部 Header -->
     <header class="resume-header">
-      <div class="header-info">
-        <h1>王明轩</h1>
-        <div class="job-title">资深商业分析师 / Senior Business Analyst</div>
+      <div class="header-main">
+        <h1 class="resume-title">个人简历</h1>
+        <div class="job-intent">求职意向：市场专员</div>
       </div>
-      <div class="header-contacts">
-        <div>电话：136-1234-5678 | 邮箱：<a href="mailto:mingxuan.wang@example.com">mingxuan.wang@example.com</a></div>
-        <div>LinkedIn：<a href="https://linkedin.com" target="_blank">linkedin.com/in/mingxuan-wang</a> | 城市：上海</div>
-      </div>
+      <div class="header-line"></div>
     </header>
+
+    <!-- 个人信息 -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-title-tag">个人信息</div>
+        <div class="section-title-en">Personal information</div>
+      </div>
+      <div class="personal-info-container">
+        <div class="info-details-grid">
+          <div class="info-detail-item">
+            <!-- 姓名图标：人形 -->
+            <svg class="info-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <span class="info-label">姓名：</span><span class="info-value">张小可</span>
+          </div>
+          <div class="info-detail-item">
+            <!-- 籍贯图标：定位/房子 -->
+            <svg class="info-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span class="info-label">籍贯：</span><span class="info-value">广东省深圳市</span>
+          </div>
+          <div class="info-detail-item">
+            <!-- 出生年月图标：日历 -->
+            <svg class="info-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+            <span class="info-label">出生年月：</span><span class="info-value">2002年3月</span>
+          </div>
+          <div class="info-detail-item">
+            <!-- 毕业院校图标：毕业帽 -->
+            <svg class="info-icon" viewBox="0 0 24 24"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+            <span class="info-label">毕业院校：</span><span class="info-value">可瓦大学</span>
+          </div>
+          <div class="info-detail-item">
+            <!-- 手机号码图标：听筒 -->
+            <svg class="info-icon" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            <span class="info-label">手机号码：</span><span class="info-value">13066668888</span>
+          </div>
+          <div class="info-detail-item">
+            <!-- 邮箱图标：信封 -->
+            <svg class="info-icon" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            <span class="info-label">邮箱：</span><span class="info-value">cnsupport@canva.com</span>
+          </div>
+        </div>
+        <div class="photo-wrapper">
+          <img src="avatar.png" alt="头像" class="profile-photo">
+        </div>
+      </div>
+    </section>
 
     <!-- 教育背景 -->
     <section class="section">
-      <h2 class="section-title">教育背景</h2>
-      <div class="education-line">
-        <div>复旦大学 · 金融学 · 经济学硕士</div>
-        <div class="education-meta">2021.09 - 2024.06</div>
+      <div class="section-header">
+        <div class="section-title-tag">教育背景</div>
+        <div class="section-title-en">Educational background</div>
+      </div>
+      <div class="item-block">
+        <div class="experience-row">
+          <div class="experience-time">2020.09-2024.06</div>
+          <div class="experience-org">可瓦大学</div>
+          <div class="experience-role">市场营销专业</div>
+        </div>
+        <div class="experience-sub-info">
+          <span class="experience-label-bold">GPA：</span>3.6 (专业前10%)
+        </div>
+        <div class="experience-sub-info">
+          <span class="experience-label-bold">主修课程：</span>国际商务英语，概率论与数理统计，线性代数，涉外经济法，企业会计学，企业经济统计学，国际运输与保险，管理系统中计算机应用。
+        </div>
       </div>
     </section>
 
-    <!-- 工作经历 -->
+    <!-- 实习经历 -->
     <section class="section">
-      <h2 class="section-title">工作经历</h2>
+      <div class="section-header">
+        <div class="section-title-tag">实习经历</div>
+        <div class="section-title-en">Internship experience</div>
+      </div>
+      <div class="item-block">
+        <div class="experience-row">
+          <div class="experience-time">2024.02-2024.05</div>
+          <div class="experience-org">可瓦科技公司</div>
+          <div class="experience-role">市场部实习生</div>
+        </div>
+        <ul class="item-details">
+          <li>搜集市场反馈并进行客户关系维护，提高公司的口碑，优化销售不足。</li>
+          <li>根据公司产品定位和目标人群开展推广活动，并在线下进行协助宣传，效果显著。</li>
+          <li>独立进行竞品分析并撰写发展方案。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 校园经历 -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-title-tag">校园经历</div>
+        <div class="section-title-en">Campus experience</div>
+      </div>
       
       <div class="item-block">
-        <div class="item-header">
-          <div class="item-title">麦肯锡咨询公司 · 商业分析顾问</div>
-          <div class="item-meta">2024.07 - 至今</div>
+        <div class="experience-row">
+          <div class="experience-time">2021.09-2022.06</div>
+          <div class="experience-org">可瓦大学</div>
+          <div class="experience-role">校宣传中心主编</div>
         </div>
         <ul class="item-details">
-          <li>主导 3 家 500 强消费品企业数字化转型战略规划，实施供应链精细化建模，降低企业运营成本 14.2%。</li>
-          <li>深度调研零售市场占有率及品类增长趋势，清洗及分析 100万+ 交易记录，产出商业分析报告 5 份，帮助客户决策新品投放计划。</li>
-          <li>协调多方利益相关者，跨团队管理 6 名顾问开展市场尽职调查项目，提前 2 天交付高价值咨询建议书。</li>
+          <li>负责部员的培训并组织相关交流会议。</li>
+          <li>制定各部门职能规划，统筹协调各部门发展，提高工作效率。</li>
         </ul>
       </div>
 
-      <div class="item-block">
-        <div class="item-header">
-          <div class="item-title">毕马威华振会计师事务所 · 数据分析实习生</div>
-          <div class="item-meta">2023.06 - 2023.12</div>
+      <div class="item-block" style="margin-top: var(--gap-item);">
+        <div class="experience-row">
+          <div class="experience-time">2020.09-2021.06</div>
+          <div class="experience-org">可瓦大学</div>
+          <div class="experience-role">记者部部长</div>
         </div>
         <ul class="item-details">
-          <li>协助项目审计组进行底表财务数据核对与逻辑校验，利用 Python 编写自动化对账脚本，提升核数效率 80%。</li>
-          <li>编写 SQL 提取异常交易数据流，处理 5 个主要银行账户明细审计，成功识别 2 处重大往来对账偏差。</li>
+          <li>多次组织并参与对优秀学生个人、优秀教师、优秀集体的采访。</li>
+          <li>多次撰稿并刊登于校公众号平台，点击量破万。</li>
         </ul>
-      </div>
-    </section>
-
-    <!-- 项目经验 -->
-    <section class="section">
-      <h2 class="section-title">重大项目</h2>
-
-      <div class="item-block">
-        <div class="item-header">
-          <div class="item-title">大型零售集团智能补货策略设计 · 项目组长</div>
-          <div class="item-meta">2024.10 - 2025.01</div>
-        </div>
-        <ul class="item-details">
-          <li>设计基于历史销售模式的库存预测模型，建立多维时间序列分析框架，使核心 SKU 库存周转率提升 18.5%。</li>
-          <li>编写数据可视化仪表板（PowerBI），追踪区域周转效率指标，实现数据可视化决策链，覆盖全国 200 余家门店。</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- 专业技能 -->
-    <section class="section">
-      <h2 class="section-title">专业技能</h2>
-      <div class="skill-tags-container">
-        <span class="skill-badge">商业策略规划</span>
-        <span class="skill-badge">行业/竞品分析</span>
-        <span class="skill-badge">数据清洗 (Python / SQL)</span>
-        <span class="skill-badge">财务建模 (Excel VBA)</span>
-        <span class="skill-badge">Tableau / PowerBI</span>
-        <span class="skill-badge">英语专业八级 (TEM-8)</span>
       </div>
     </section>
 
     <!-- 自我评价 -->
-    <section class="section">
-      <h2 class="section-title">自我评价</h2>
-      <div class="summary-block">
-        金融学硕士毕业生，具备突出的数据分析与商业敏锐度。拥有跨国管理咨询机构实操经验，熟练掌握商业战略框架与数据建模工具。沟通协调能力强，期望在商业分析与战略规划领域贡献专业价值。
+    <section class="section" style="margin-bottom: 0;">
+      <div class="section-header">
+        <div class="section-title-tag">自我评价</div>
+        <div class="section-title-en">Self-evaluation</div>
       </div>
+      <p class="summary-text">
+        本人是市场营销专业本科毕业生，有丰富的营销知识体系做基础；对于市场营销方面的前沿和动向有一定的了解，善于分析和获取经验，熟悉网络推广，有独立的见解和经验，个性开朗，容易相处，团队荣誉感强，有明确的职业规划。
+      </p>
     </section>
   </div>
 
 </body>
 </html>
+

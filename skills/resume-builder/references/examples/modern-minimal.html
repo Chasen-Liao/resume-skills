@@ -86,6 +86,12 @@
       margin-bottom: var(--gap-section);
     }
 
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
     .header-info h1 {
       font-size: var(--fs-name);
       font-weight: 700;
@@ -106,7 +112,7 @@
     .header-contacts {
       font-size: var(--fs-meta);
       color: var(--color-muted-fg);
-      text-align: right;
+      text-align: left;
       line-height: var(--lh-meta);
     }
 
@@ -117,6 +123,25 @@
 
     .header-contacts a:hover {
       color: var(--color-accent);
+    }
+
+    .header-right {
+      flex-shrink: 0;
+      margin-bottom: 2px;
+    }
+
+    .photo-wrapper {
+      width: 66px;
+      height: 84px;
+      border: 1px solid var(--color-border);
+      padding: 2px;
+      background-color: #ffffff;
+    }
+
+    .profile-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     /* === 章节标题 === */
@@ -319,13 +344,20 @@
   <div class="resume">
     <!-- 顶部 Header -->
     <header class="resume-header">
-      <div class="header-info">
-        <h1>张小明</h1>
-        <div class="job-title">前端开发工程师 / Frontend Engineer</div>
+      <div class="header-left">
+        <div class="header-info">
+          <h1>张小明</h1>
+          <div class="job-title">前端开发工程师 / Frontend Engineer</div>
+        </div>
+        <div class="header-contacts">
+          <div>电话：139-0000-0000 | 邮箱：<a href="mailto:xiaoming.zhang@example.com">xiaoming.zhang@example.com</a></div>
+          <div>GitHub：<a href="https://github.com" target="_blank">github.com/xiaoming-dev</a> | Base：杭州</div>
+        </div>
       </div>
-      <div class="header-contacts">
-        <div>电话：139-0000-0000 | 邮箱：<a href="mailto:xiaoming.zhang@example.com">xiaoming.zhang@example.com</a></div>
-        <div>GitHub：<a href="https://github.com" target="_blank">github.com/xiaoming-dev</a> | Base：杭州</div>
+      <div class="header-right">
+        <div class="photo-wrapper">
+          <img src="avatar.png" alt="头像" class="profile-photo">
+        </div>
       </div>
     </header>
 

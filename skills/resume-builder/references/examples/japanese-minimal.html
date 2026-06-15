@@ -93,6 +93,12 @@
       margin-bottom: var(--gap-section);
     }
 
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
     .header-info h1 {
       font-family: 'Noto Serif SC', serif;
       font-size: var(--fs-name);
@@ -112,7 +118,7 @@
     .header-contacts {
       font-size: var(--fs-meta);
       color: var(--color-muted-fg);
-      text-align: right;
+      text-align: left;
       line-height: 1.4;
       font-family: 'Raleway', sans-serif;
     }
@@ -124,6 +130,26 @@
 
     .header-contacts a:hover {
       color: var(--color-accent);
+    }
+
+    .header-right {
+      flex-shrink: 0;
+      margin-bottom: 2px;
+    }
+
+    .photo-wrapper {
+      width: 66px;
+      height: 84px;
+      border: 1px solid rgba(87, 83, 78, 0.2);
+      padding: 3px;
+      background-color: #ffffff;
+    }
+
+    .profile-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: grayscale(10%);
     }
 
     /* === 章节标题 === */
@@ -328,13 +354,20 @@
   <div class="resume">
     <!-- 顶部 Header -->
     <header class="resume-header">
-      <div class="header-info">
-        <h1>松本 雅人 / Matsumoto Masato</h1>
-        <div class="job-title">茶道文化策划人 / Cultural Project Manager</div>
+      <div class="header-left">
+        <div class="header-info">
+          <h1>松本 雅人 / Matsumoto Masato</h1>
+          <div class="job-title">茶道文化策划人 / Cultural Project Manager</div>
+        </div>
+        <div class="header-contacts">
+          <div>TEL: 186-0000-0000 | MAIL: <a href="mailto:masato@example.com">masato@example.com</a></div>
+          <div>PORTFOLIO: <a href="https://cultureshaper.jp" target="_blank">cultureshaper.jp</a> | BASE: 京都</div>
+        </div>
       </div>
-      <div class="header-contacts">
-        <div>TEL: 186-0000-0000 | MAIL: <a href="mailto:masato@example.com">masato@example.com</a></div>
-        <div>PORTFOLIO: <a href="https://cultureshaper.jp" target="_blank">cultureshaper.jp</a> | BASE: 京都</div>
+      <div class="header-right">
+        <div class="photo-wrapper">
+          <img src="avatar.png" alt="头像" class="profile-photo">
+        </div>
       </div>
     </header>
 

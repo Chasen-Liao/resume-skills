@@ -85,7 +85,14 @@
       border-bottom: 1px solid var(--color-border);
       padding-bottom: 10px;
       margin-bottom: var(--gap-section);
-      height: 18mm;
+      min-height: 18mm;
+      height: auto;
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
     }
 
     .header-info h1 {
@@ -110,7 +117,7 @@
       font-family: 'JetBrains Mono', monospace;
       font-size: var(--fs-meta);
       color: var(--color-muted-fg);
-      text-align: right;
+      text-align: left;
       line-height: 1.4;
     }
 
@@ -121,6 +128,25 @@
 
     .header-contacts a:hover {
       text-decoration: underline;
+    }
+
+    .header-right {
+      flex-shrink: 0;
+    }
+
+    .photo-wrapper {
+      width: 66px;
+      height: 84px;
+      border: 1px solid var(--color-accent);
+      padding: 2px;
+      background-color: var(--color-card);
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+    }
+
+    .profile-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     /* === 章节标题 === */
@@ -355,13 +381,20 @@
   <div class="resume">
     <!-- 顶部 Header -->
     <header class="resume-header">
-      <div class="header-info">
-        <h1>LINUX_FAN / 林向阳</h1>
-        <div class="job-title">DevOps Engineer / 运维开发工程师</div>
+      <div class="header-left">
+        <div class="header-info">
+          <h1>LINUX_FAN / 林向阳</h1>
+          <div class="job-title">DevOps Engineer / 运维开发工程师</div>
+        </div>
+        <div class="header-contacts">
+          <div>TEL: 188-1111-2222 | MAIL: <a href="mailto:xy.lin@example.com">xy.lin@example.com</a></div>
+          <div>GITHUB: <a href="https://github.com" target="_blank">github.com/xiangyang-ops</a> | BASE: 北京</div>
+        </div>
       </div>
-      <div class="header-contacts">
-        <div>TEL: 188-1111-2222 | MAIL: <a href="mailto:xy.lin@example.com">xy.lin@example.com</a></div>
-        <div>GITHUB: <a href="https://github.com" target="_blank">github.com/xiangyang-ops</a> | BASE: 北京</div>
+      <div class="header-right">
+        <div class="photo-wrapper">
+          <img src="avatar.png" alt="头像" class="profile-photo">
+        </div>
       </div>
     </header>
 
