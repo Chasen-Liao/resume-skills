@@ -55,13 +55,13 @@ CSS 文件包含 3 套配色变量 + 推荐字体 + 风格 CSS。`css/common.md`
 - 技能标签用 `<span class="skill-badge">` 排列，badge 样式由风格 CSS 定义（ATS 友好）
 - 内含「导出 PDF」按钮
 
-### 第三步半：PDF 验证（强制执行，不可跳过）
+### 第四步：PDF 验证（强制执行，不可跳过）
 
 1. 导出 PDF：`npx playwright pdf <html> <output.pdf>`
-2. 检查页数：`python -c "import PyPDF2; r = PyPDF2.PdfReader('<pdf>'); print(len(r.pages))"`
+2. 检查页数：`python -c "from pypdf import PdfReader; print(len(PdfReader('<pdf>').pages))"`
 3. 页数 > 1 → 按优先级修复：缩小页边距(≥8mm) → 压缩间距 → 缩行高(≥1.25) → 减字号(正文≥9.5px) → 精简文字 → 切换双栏
 
-### 第四步：交付
+### 第五步：交付
 
 告知文件位置、打印 PDF 方法、可用 jd-tailorer 针对 JD 定制。
 

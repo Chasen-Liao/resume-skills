@@ -80,34 +80,85 @@
 
 中文: `Noto Serif SC, Noto Sans SC, PingFang SC, Microsoft YaHei, sans-serif`
 
-## 风格 CSS 要点
+## 组件级 CSS
 
 ```css
-.resume {
-  border-radius: 0;
-  box-shadow: none;
-  font-weight: 300;
+/* === 顶部 Header === */
+.resume-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid rgba(87, 83, 78, 0.2);
+  padding-bottom: 8px;
+  margin-bottom: var(--gap-section);
 }
-/* 解决打印时细体字难以辨认的问题 */
-@media print {
-  .resume, p, span, li, .section-title {
-    font-weight: 400 !important;
-  }
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
-.section-title {
-  font-weight: 300;
-  letter-spacing: 0.08em;       /* 加宽字间距, 日式风格 */
-  font-size: 13px;
-}
-.name {
+
+.header-info h1 {
   font-family: 'Noto Serif SC', serif;
-  font-weight: 400;
+  font-size: var(--fs-name);
+  font-weight: 500;
+  color: var(--color-primary);
+  margin: 0 0 3px 0;
   letter-spacing: 0.04em;
 }
-.section {
-  margin-bottom: 7mm;           /* 比通用值更紧凑 */
+
+.header-info .job-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-accent);
+  letter-spacing: 1.5px;
 }
-/* 分隔线用细线代替粗色块 */
+
+.header-contacts {
+  font-size: var(--fs-meta);
+  color: var(--color-muted-fg);
+  text-align: left;
+  line-height: 1.4;
+}
+
+.header-contacts a {
+  color: var(--color-muted-fg);
+  text-decoration: none;
+}
+
+.header-right {
+  flex-shrink: 0;
+  margin-bottom: 2px;
+}
+
+.photo-wrapper {
+  width: 66px;
+  height: 84px;
+  border: 1px solid rgba(87, 83, 78, 0.2);
+  padding: 3px;
+  background-color: #ffffff;
+}
+
+.profile-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(10%);
+}
+
+/* === 章节标题 === */
+.section-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: var(--fs-section-title);
+  font-weight: 500;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0;
+  margin-bottom: 4mm;
+}
+
 .section-title::after {
   content: "";
   display: block;
@@ -116,5 +167,136 @@
   background: var(--color-primary);
   margin-top: 4px;
   opacity: 0.3;
+}
+
+/* === 章节与内容排版 === */
+.section {
+  break-inside: avoid;
+  margin-bottom: var(--gap-section);
+}
+
+.item-block {
+  margin-bottom: var(--gap-item);
+}
+
+.item-block:not(:first-of-type) {
+  margin-top: var(--gap-item);
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-weight: 700;
+  margin-bottom: 2px;
+  color: var(--color-primary);
+}
+
+.item-title {
+  font-size: 10px;
+}
+
+.item-meta {
+  font-size: var(--fs-meta);
+  color: var(--color-muted-fg);
+  font-weight: normal;
+}
+
+ul.item-details {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+ul.item-details li {
+  position: relative;
+  padding-left: 10px;
+  margin-bottom: 2px;
+  text-align: justify;
+}
+
+ul.item-details li::before {
+  content: "▫";
+  position: absolute;
+  left: 0;
+  color: var(--color-accent);
+  font-weight: bold;
+}
+
+/* 教育背景单行 */
+.education-line {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.education-meta {
+  font-weight: normal;
+  color: var(--color-muted-fg);
+  font-size: var(--fs-meta);
+}
+
+/* 技能标签（极简灰色轻量标签） */
+.skill-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.skill-badge {
+  background-color: var(--color-muted);
+  border: 1px solid rgba(87, 83, 78, 0.15);
+  padding: 1px 6px;
+  font-size: var(--fs-meta);
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+/* 自我评价（左侧强调线） */
+.summary-block {
+  background-color: transparent;
+  border-left: 1.5px solid var(--color-accent);
+  padding: 4px 8px;
+  font-size: var(--fs-body);
+  line-height: 1.4;
+  text-align: justify;
+}
+
+/* 导出按钮工具栏 */
+.no-print-toolbar {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: white;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  width: 180px;
+}
+
+.btn-export {
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 12px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.btn-export:hover {
+  background-color: var(--color-accent);
+}
+
+.toolbar-tip {
+  font-size: 9.5px;
+  color: #64748B;
+  line-height: 1.3;
 }
 ```
