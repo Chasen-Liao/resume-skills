@@ -13,13 +13,40 @@
 
 ## 生成效果展示
 
-6 种设计风格效果：
+6 种设计风格预览（点击可查看大图）：
 
-| 现代简约 | 经典商务 | 创意个性 |
-|---------|---------|---------|
-| 日式极简 | 科技感 | 简约蓝色商务 |
-
-![show](resume.png)
+<table>
+<tr>
+  <td align="center"><b>现代简约</b></td>
+  <td align="center"><b>经典商务</b></td>
+  <td align="center"><b>创意个性</b></td>
+</tr>
+<tr>
+  <td><img src="assets/modern-minimal.png" width="280" alt="现代简约"></td>
+  <td><img src="assets/classic-business.png" width="280" alt="经典商务"></td>
+  <td><img src="assets/creative-bold.png" width="280" alt="创意个性"></td>
+</tr>
+<tr>
+  <td>大量留白 · 高对比 · 几何线条<br>无阴影 · 字体优雅克制</td>
+  <td>深蓝主调 · 稳重专业 · 传统排版<br>衬线标题 + 无衬线正文</td>
+  <td>大胆配色 · 不对称布局 · 几何分隔<br>视觉冲击力强 · Brutalism 风格</td>
+</tr>
+<tr>
+  <td align="center"><b>日式极简</b></td>
+  <td align="center"><b>科技感</b></td>
+  <td align="center"><b>简约蓝色商务</b></td>
+</tr>
+<tr>
+  <td><img src="assets/japanese-minimal.png" width="280" alt="日式极简"></td>
+  <td><img src="assets/tech-dark.png" width="280" alt="科技感"></td>
+  <td><img src="assets/minimal-blue-business.png" width="280" alt="简约蓝色商务"></td>
+</tr>
+<tr>
+  <td>极简克制 · 柔和暖色 · 大面积留白<br>轻质字体 · 呼吸感强</td>
+  <td>深色背景 · 高对比文字 · 霓虹点缀<br>科技感字体 · 终端/代码美学</td>
+  <td>深蓝主调 · 左侧装饰竖条 · 虚实线结合<br>稳重与极简的平衡</td>
+</tr>
+</table>
 
 ### 1. resume-builder — 简历构建器
 
