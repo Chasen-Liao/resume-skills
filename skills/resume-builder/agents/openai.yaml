@@ -1,0 +1,7 @@
+interface:
+  display_name: "Resume Builder"
+  short_description: "Create a polished, ATS-aware A4 resume"
+  default_prompt: "Use $resume-builder to create a polished one-page HTML resume from my experience."
+
+policy:
+  allow_implicit_invocation: true

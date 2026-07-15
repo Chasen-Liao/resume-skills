@@ -1,9 +1,6 @@
 ---
 name: jd-tailorer
 description: 根据职位描述(JD)定制简历的技能。当用户提到「JD」「职位描述」「岗位匹配」「针对...改简历」「投递」「求职」「招聘要求」「Job Description」或者提供具体职位链接/文本要求修改简历时使用。支持上传或粘贴 JD 文本，自动进行关键词匹配和内容优化，基于已有简历生成针对该岗位的定制版 HTML 和 PDF。
-category: hr
-tags: [resume, jd, job-description, job-application, career, 简历, 求职, 投递, 岗位匹配]
-languages: [zh, en]
 ---
 
 # JD 简历定制器 (JD Tailorer)
@@ -12,7 +9,13 @@ languages: [zh, en]
 
 ## 前置条件
 
-需已有基础简历。若无，建议先用 resume-builder 创建。
+需已有基础简历。若无，建议先用 `resume-builder` 创建；若当前环境未安装该 skill，则先让用户提供现有简历内容或 HTML 文件。
+
+## 参考文件解析
+
+- 所有相对路径都以本 `SKILL.md` 所在目录为基准，不以当前工作目录为基准。
+- 若 `resume-builder` 与本 skill 一起安装，优先读取 `../resume-builder/references/content-writing.md`、`../resume-builder/references/design-guidelines.md` 和对应的 CSS 文件。
+- 若只安装本 skill，直接使用本文件中的硬约束，并沿用用户提供的基础简历中的 CSS、版式和颜色；不要因为缺少共享参考文件而停止工作。
 
 ## 工作流程
 

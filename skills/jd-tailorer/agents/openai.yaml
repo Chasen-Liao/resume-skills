@@ -1,0 +1,7 @@
+interface:
+  display_name: "JD Resume Tailorer"
+  short_description: "Tailor a resume to a job description"
+  default_prompt: "Use $jd-tailorer to tailor my resume to the job description without inventing experience."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,11 +1,13 @@
-# Resume Skills — Claude Code 插件
+# Resume Skills — 跨智能体简历技能
 
-一套基于 HTML 的简历生成与 JD 匹配工具集，作为 Claude Code 插件使用。
+一套基于 HTML 的简历生成与 JD 匹配工具集，兼容 Claude Code、Codex 以及其他 Agent Skills 规范的智能体。
 
 “这一套skills是我在制作简历中和投递简历中总结出来的，先用 resume-builder 生成一份通用的简历母版，之后只需要发送对应的 JD.md 给Agent，Agent就可以针对JD来生成对应的简历”
 
 > 帮你优化简历和针对JD来制作对应岗位的简历！
 > 祝愿你能通过本skills来找到更好的工作！
+
+支持的智能体：Claude Code、Codex，以及兼容 Agent Skills 标准的其他工具。
 
 ## 技能概览
 
@@ -84,51 +86,74 @@ resume-builder → 生成通用版简历 → jd-tailorer → 针对不同 JD 生
 
 先建立一份内容扎实、排版美观的通版简历，再针对每个目标岗位做 JD 定制，比海投同一份简历的通过率高数倍。
 
-## 安装
+## 安装与配置
 
-### 方式一：通过 GitHub 链接安装（推荐）
+### 一键安装 Claude Code + Codex（推荐）
 
-1. 打开 Claude Code，输入 `/plugin`
-2. 在插件管理界面选择「安装插件」
-3. 粘贴本仓库地址：
+本仓库已经按 Agent Skills 通用规范组织。确保已安装 Node.js，然后从 GitHub 安装两个 skill：
 
-   ```
-   https://github.com/Chasen-Liao/resume-skills
-   ```
+```bash
+npx skills add Chasen-Liao/resume-skills --skill '*' --agent claude-code --agent codex --yes
+```
 
-4. 确认安装，Claude Code 会自动拉取仓库并注册两个技能
+默认安装到当前项目，适合随项目提交并与团队共享。若希望全局安装到所有项目，使用：
 
-> 此方式需要本地已安装 Git，且网络可访问 GitHub。
+```bash
+npx skills add Chasen-Liao/resume-skills --skill '*' --agent claude-code --agent codex --global --yes
+```
 
-### 方式二：通过 .skill 文件安装
+只安装一个 skill：
 
-如果你只想安装其中一个技能，或离线环境使用：
+```bash
+npx skills add Chasen-Liao/resume-skills --skill resume-builder --agent codex --yes
+npx skills add Chasen-Liao/resume-skills --skill jd-tailorer --agent claude-code --yes
+```
 
-1. 从 [Releases](https://github.com/Chasen-Liao/resume-skills) 页面下载 `resume-builder.skill` 或 `jd-tailorer.skill`
-2. 打开 Claude Code，输入 `/plugin`
-3. 在插件管理界面选择「安装插件」
-4. 选择下载的 `.skill` 文件
+安装后重新打开或新建智能体会话即可触发：
 
-### 方式三：本地克隆后安装
+- **测试 `resume-builder`**：输入「帮我做一份简历」
+- **测试 `jd-tailorer`**：输入「帮我针对这个 JD 改一下简历」
 
-1. 先克隆仓库到本地：
+如果技能没有自动触发，可以在支持显式 skill 调用的客户端中输入 `$resume-builder` 或 `$jd-tailorer`。
+
+### Claude Code 插件安装
+
+Claude Code 用户仍可通过 `/plugin` 添加本仓库地址：
+
+```
+https://github.com/Chasen-Liao/resume-skills
+```
+
+仓库中的 `.claude-plugin/` 和 `skills/` 会作为插件清单与技能目录使用；`.skill` 压缩包仍可作为离线备选。
+
+### 发布到 skills.sh / npx skills
+
+`npx skills` 不需要单独上传 npm 包。它从 GitHub 仓库读取标准的 `SKILL.md`，因此发布流程是：
+
+1. 将本仓库公开发布到 GitHub。
+2. 确认每个 skill 都位于 `skills/<skill-name>/SKILL.md`。
+3. 发布前在本地检查：
 
    ```bash
-   git clone https://github.com/Chasen-Liao/resume-skills.git
+   npx skills add . --list
    ```
 
-2. 打开 Claude Code，输入 `/plugin`
-3. 选择「安装插件」→「从本地安装」
-4. 指向克隆下来的 `resume-skills` 目录
+4. 发布后，用户即可执行上面的安装命令；`skills.sh` 会根据安装数据收录仓库。
 
-### 安装后验证
+也可以直接指定 GitHub 地址进行安装：
 
-安装成功后，在 Claude Code 中以自然语言输入即可触发技能：
+```bash
+npx skills add https://github.com/Chasen-Liao/resume-skills --skill '*' --agent claude-code --agent codex --yes
+```
 
-- **测试 resume-builder**：输入「帮我做一份简历」，Claude 会自动加载简历构建器技能
-- **测试 jd-tailorer**：输入「帮我针对这个 JD 改一下简历」，Claude 会自动加载 JD 定制器技能
+### 单独安装与兼容性
 
-如果技能没有自动触发，可以手动输入 `/skill:resume-builder` 或 `/skill:jd-tailorer` 来激活。
+两个 skill 可以单独安装：
+
+- `resume-builder`：从零创建通用 HTML 简历。
+- `jd-tailorer`：基于已有简历和 JD 生成定制版简历。
+
+同时安装两个 skill 时，`jd-tailorer` 会复用 `resume-builder` 的写作规范和视觉参考；只安装 `jd-tailorer` 时，它仍可沿用用户提供的基础简历样式和内置硬约束完成工作。
 
 ## 使用示例
 
@@ -176,6 +201,7 @@ Claude:
 ```
 skills/resume-builder/
 ├── SKILL.md                          # 技能主文件（精简工作流程、硬约束、参考文献索引）
+├── agents/openai.yaml                # Codex 的显示名称与默认提示词
 └── references/
     ├── design-guidelines.md          # 设计美学指南（字体/色彩/空间/动画原则）
     ├── color-palettes.md             # 六大风格-配色索引 + 字体速查
@@ -199,6 +225,7 @@ skills/resume-builder/
 
 skills/jd-tailorer/
 ├── SKILL.md                          # 技能主文件（工作流程、约束）
+├── agents/openai.yaml                # Codex 的显示名称与默认提示词
 └── references/
     └── matching-analysis.md          # 匹配分析报告模板
 ```

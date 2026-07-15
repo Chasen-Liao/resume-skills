@@ -1,9 +1,6 @@
 ---
 name: resume-builder
 description: 通过对话式采访构建精美简历的技能。当用户提到「简历」「resume」「CV」「求职」「找工作」「面试」「制作简历」「生成简历」或者想要创建一个展示个人经历和技能的网页时使用。支持 HTML 简历生成、A4 纸打印布局、PDF 导出。能够引导用户逐步完善简历内容，从个人信息到项目经历全面覆盖。
-category: hr
-tags: [resume, cv, job-application, career, 简历, 求职, 找工作]
-languages: [zh, en]
 ---
 
 # 简历构建器 (Resume Builder)
