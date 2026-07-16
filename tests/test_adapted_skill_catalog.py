@@ -29,6 +29,25 @@ class AdaptedSkillCatalogTests(unittest.TestCase):
         self.assertIn("data-resume-editor-template", content)
         self.assertIn("data-resume-editor-id", content)
 
+    def test_matching_report_uses_traceable_requirement_states(self):
+        content = (SKILLS / "jd-tailorer" / "references" / "matching-analysis.md").read_text(encoding="utf-8")
+        self.assertIn("要求 ID", content)
+        self.assertIn("JD 来源", content)
+        self.assertIn("候选人证据", content)
+        self.assertIn("直接匹配", content)
+        self.assertNotIn("关键词覆盖率", content)
+        self.assertNotIn("JD 高频要求", content)
+
+    def test_skill_instructions_do_not_claim_unsupported_pdf_checks(self):
+        content = (SKILLS / "resume-builder" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertNotIn("页数、裁切、复制文本、链接和字体", content)
+        self.assertIn("PDF 页数和可提取文本", content)
+
+    def test_resume_builder_requires_portable_visual_resources(self):
+        content = (SKILLS / "resume-builder" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("data URL", content)
+        self.assertIn("系统字体回退", content)
+
 
 if __name__ == "__main__":
     unittest.main()

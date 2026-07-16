@@ -39,6 +39,14 @@ evidence:
 metric_status: verified    # verified/estimated/unverified/not_applicable
 ```
 
+### 私有事实文件
+
+在项目目录外的用户私有工作区，将全部已确认 claim 保存为 `resume-facts.yaml`；以 [`resume-facts.example.yaml`](resume-facts.example.yaml) 为最小结构。它是母版和 JD 定制版的唯一事实源，HTML/PDF 只是由它生成的交付物。
+
+- `claims` 只保存通过用户确认、可进入最终简历的事实。
+- `pending_claims` 可记录从旧简历、JD 分析或改写建议中发现的待确认字段；它们不得进入最终 HTML/PDF。
+- 每个确认后的 claim 记录 `confirmed_at`；若用户更新或撤回事实，更新该记录而不是静默改写历史定制版。
+
 ### 字段定义
 
 - `source`：事实来源。`user` 是候选人直接确认；`resume` 是已有简历原文；`artifact` 是作品、代码、成绩单、证书、上线记录等材料；`derived` 只能表示对已有事实的保守归纳，不能表示新事实来源。JD、市场文章和模板示例不得作为候选人事实来源。

@@ -1,0 +1,19 @@
+# Copy this file to a private resume workspace as resume-facts.yaml.
+# Keep only confirmed claims in final outputs. Pending fields are analysis records, not resume content.
+facts_version: 1
+candidate:
+  last_confirmed_at: null
+
+claims: []
+
+# Add a record only after the user confirms it:
+# - claim_id: "project-example-01"
+#   section: "projects"
+#   claim: "A specific, confirmed statement"
+#   source: "user"
+#   confidence: "high"
+#   evidence: ["What supports this statement"]
+#   metric_status: "not_applicable"
+#   confirmed_at: "2026-07-16"
+
+pending_claims: []

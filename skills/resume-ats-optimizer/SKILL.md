@@ -16,6 +16,12 @@ python skills/resume-builder/scripts/validate_resume.py --html <resume.html> --m
 python skills/resume-builder/scripts/validate_resume.py --pdf <resume.pdf>
 ```
 
+## 协作入口
+
+这是母版生成后和 JD 定制版生成后的**质量关卡**。默认检查并报告解析风险与关键词/事实缺口，但不静默修改简历；用户确认后，才将呈现修复交回 `resume-builder` 或 `jd-tailorer`。
+
+没有 JD 时只检查可解析性和结构；有 JD 时把“可直接改善的呈现问题”与“必须保留的真实能力缺口”分开报告。它不替代 JD 分析，也不决定是否投递。
+
 ## 工作流
 
 1. 检查输入格式、是否存在可提取文本、标准章节标题和正文阅读顺序。

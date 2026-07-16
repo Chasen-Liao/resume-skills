@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Resume Skills 从安装、建立母版到按 JD 生成岗位简历的完整中文教程。">
+  <meta name="color-scheme" content="light dark">
+  <title>Resume Skills 完整教程</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到正文</a>
+  <div class="reading-progress" aria-hidden="true"><span id="reading-progress"></span></div>
+
+  <header class="site-header">
+    <a class="brand" href="#overview" aria-label="Resume Skills 教程首页">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M8 5.5h12l4 4v17H8z"></path>
+        <path d="M20 5.5v5h5M12 15h8M12 19h8M12 23h5"></path>
+      </svg>
+      <span>Resume Skills</span>
+      <small>完整教程</small>
+    </a>
+    <div class="header-actions">
+      <a class="header-link" href="https://github.com/Chasen-Liao/resume-skills">GitHub</a>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="切换深浅色主题" title="切换深浅色主题">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"></path><circle cx="12" cy="12" r="4"></circle></svg>
+      </button>
+      <button class="icon-button menu-button" id="menu-toggle" type="button" aria-expanded="false" aria-controls="sidebar" aria-label="打开教程目录">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar">
+      <nav aria-label="教程章节">
+        <p class="nav-label">从零到第一次投递</p>
+        <a href="#overview" class="active"><span>01</span>先理解完整流程</a>
+        <a href="#install"><span>02</span>安装全部 Skills</a>
+        <a href="#workspace"><span>03</span>建立私有工作区</a>
+        <a href="#first-run"><span>04</span>第一次运行 Workflow</a>
+        <a href="#facts"><span>05</span>确认事实库</a>
+        <a href="#template"><span>06</span>选择模式与模板</a>
+        <a href="#canvas"><span>07</span>预览、微调与 PDF</a>
+        <a href="#jd"><span>08</span>按 JD 生成岗位简历</a>
+        <a href="#ats"><span>09</span>ATS 投递前审计</a>
+        <a href="#versions"><span>10</span>用 Git 管理版本</a>
+        <a href="#updates"><span>11</span>持续更新与多次投递</a>
+        <a href="#troubleshooting"><span>12</span>常见问题</a>
+      </nav>
+      <div class="sidebar-note">
+        <strong>核心原则</strong>
+        <p>事实只确认一次，母版长期维护；每个 JD 都从母版派生，不反向覆盖母版。</p>
+      </div>
+    </aside>
+
+    <main id="main-content">
+      <section class="hero" id="overview" data-section>
+        <div class="eyebrow">从安装到第一次投递 · 中文完整指南</div>
+        <h1>把真实经历变成一套<br><em>可持续维护</em>的简历系统</h1>
+        <p class="hero-lead">如果工作区是空的，就从 <code>resume-workflow</code> 开始建立事实库和母版；有了母版以后，只需要提供 JD，就能生成对应公司的岗位简历。</p>
+        <div class="hero-actions">
+          <a class="primary-button" href="#install">开始安装</a>
+          <a class="secondary-button" href="#jd">我已经有母版</a>
+        </div>
+        <dl class="hero-stats">
+          <div><dt>7</dt><dd>个协作 Skills</dd></div>
+          <div><dt>6</dt><dd>套视觉模板</dd></div>
+          <div><dt>1</dt><dd>份唯一事实源</dd></div>
+        </dl>
+      </section>
+
+      <section class="chapter intro-chapter" data-section>
+        <div class="chapter-heading">
+          <span class="chapter-number">01</span>
+          <div><p class="kicker">先看全局</p><h2>你最终会得到什么</h2></div>
+        </div>
+        <p>Resume Skills 不是一个在线填表网站，而是一组让 AI 按稳定规则工作的 Agent Skills。它将内容事实、视觉母版、岗位定制和版本记录分开，避免每投一个岗位就重新做一份简历。</p>
+
+        <div class="decision-grid">
+          <article class="decision-card">
+            <span class="status-dot"></span>
+            <p class="card-label">工作区为空</p>
+            <h3>调用 Workflow 建立母版</h3>
+            <p>上传旧简历或从零接受采访，确认事实，选择输出模式与模板，生成可长期维护的母版。</p>
+            <code>$resume-workflow</code>
+          </article>
+          <article class="decision-card accent-card">
+            <span class="status-dot"></span>
+            <p class="card-label">已经有母版</p>
+            <h3>直接输入目标 JD</h3>
+            <p>先看匹配证据与真实缺口，再确认变更预览，生成独立的公司/岗位版本。</p>
+            <code>母版 + JD → 定制版</code>
+          </article>
+        </div>
+
+        <div class="flow" aria-label="简历工作流">
+          <div><span>输入</span><strong>旧简历或真实经历</strong></div>
+          <i aria-hidden="true"></i>
+          <div><span>确认</span><strong>resume-facts.yaml</strong></div>
+          <i aria-hidden="true"></i>
+          <div><span>生成</span><strong>简历母版</strong></div>
+          <i aria-hidden="true"></i>
+          <div><span>投递</span><strong>JD 岗位版本</strong></div>
+        </div>
+
+        <div class="callout important">
+          <strong>事实边界</strong>
+          <p>JD、模板示例和 AI 建议都不是你的经历。任何技能、数字、职责或成果只有在你确认后，才能进入最终简历。</p>
+        </div>
+      </section>
+
+      <section class="chapter" id="install" data-section>
+        <div class="chapter-heading">
+          <span class="chapter-number">02</span>
+          <div><p class="kicker">准备环境</p><h2>安装全部 Skills</h2></div>
+        </div>
+        <p>建议一次安装完整技能集，因为 JD 定制、ATS 审计和版本管理会共享事实契约与写作规范。安装 Skill 不要求先安装 npm 包；npm CLI 只用于打开本地 Canvas。</p>
+
+        <h3>2.1 检查 Node.js</h3>
+        <p>需要 Node.js 20 或更高版本。打开 PowerShell、Windows Terminal 或其他终端：</p>
+        <div class="code-block">
+          <div class="code-header"><span>PowerShell / Terminal</span><button type="button" data-copy-target="code-node">复制</button></div>
+          <pre id="code-node"><code>node --version
+npm --version</code></pre>
+        </div>
+        <p>如果第一条命令显示 <code>v20.x</code> 或更高版本，可以继续。若提示命令不存在，请先从 Node.js 官方网站安装 LTS 版本，然后重新打开终端。</p>
+
+        <h3>2.2 安装全部 Skills</h3>
+        <div class="code-block">
+          <div class="code-header"><span>安装到当前项目</span><button type="button" data-copy-target="code-install">复制</button></div>
+          <pre id="code-install"><code>npx skills add Chasen-Liao/resume-skills </code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header"><span>全局安装示例</span><button type="button" data-copy-target="code-global">复制</button></div>
+          <pre id="code-global"><code>npx skills add Chasen-Liao/resume-skills --skill '*' --global --yes</code></pre>
+        </div>
+
+        <h3>2.3 确认安装结果</h3>
+        <p>安装后重新打开或新建 Agent 会话。你应该能够显式调用 <code>$resume-workflow</code>。如果客户端没有自动触发，直接在提示词里写出 Skill 名称即可。</p>
+        <div class="checklist">
+          <label><input type="checkbox"> Node.js 版本不低于 20</label>
+          <label><input type="checkbox"> 完整 Skill 集已安装</label>
+          <label><input type="checkbox"> 已重新打开 Agent 会话</label>
+        </div>
+      </section>
+
+      <section class="chapter" id="workspace" data-section>
+        <div class="chapter-heading">
+          <span class="chapter-number">03</span>
+          <div><p class="kicker">保护隐私</p><h2>建立私有简历工作区</h2></div>
+        </div>
+        <p>真实简历包含手机号、邮箱、学校和经历，不要把它们放进 Resume Skills 的公开源码仓库。请在项目目录外创建一个独立文件夹，后续事实库、母版和 JD 定制版都保存在这里。</p>
+
+        <div class="code-block">
+          <div class="code-header"><span>Windows PowerShell 示例</span><button type="button" data-copy-target="code-workspace">复制</button></div>
+          <pre id="code-workspace"><code>New-Item -ItemType Directory -Path "D:\MyResume" -Force
+Set-Location "D:\MyResume"</code></pre>
+        </div>
+
+        <div class="callout warning">
+          <strong>不要公开个人信息</strong>
+          <p>默认只在本机保存。即使以后使用 Git，也先使用本地私有仓库；除非你已经清理所有隐私字段，否则不要推送到公开 GitHub 仓库。</p>
+        </div>
+
+        <h3>推荐目录结构</h3>
+        <div class="file-tree" role="region" aria-label="推荐目录结构" tabindex="0">
+          <pre><code>MyResume/
+├── resume-facts.yaml            # 唯一事实源
+├── master/
+│   ├── resume-visual.html       # 视觉母版
+│   ├── resume-visual.pdf
+│   ├── resume-ats.html          # 按需生成
+│   └── resume-ats.pdf
+└── tailored/
+    └── company-role/
+        ├── jd.md
+        ├── resume-visual.html
+        ├── resume-ats.html
+        ├── matching-analysis.md
+        └── version-notes.md</code></pre>
+        </div>
+      </section>
+
+      <section class="chapter" id="first-run" data-section>
+        <div class="chapter-heading">
+          <span class="chapter-number">04</span>
+          <div><p class="kicker">第一次使用</p><h2>在空工作区调用 Workflow</h2></div>
+        </div>
+        <p>当目录中还没有 <code>resume-facts.yaml</code> 和母版时，从 <code>$resume-workflow</code> 开始。Workflow 会判断你是导入已有简历还是从零接受采访。</p>
+
+        <h3>路线 A：你已经有旧简历</h3>
+        <div class="code-block prompt-block">
+          <div class="code-header"><span>复制给 Agent</span><button type="button" data-copy-target="prompt-import">复制提示词</button></div>
+          <pre id="prompt-import"><code>使用 $resume-workflow 帮我建立简历母版。
+我会提供一份已有简历，请先解析并列出：
+1. 已识别且需要我确认的事实；
+2. 模糊、冲突或可能过期的信息；
+3. 最近经历、项目和技能中需要补充的内容。
+
+请一次只问一个最重要的问题。不要把解析内容直接当作事实，
+也不要编造经历、技术、数字或成果。</code></pre>
+        </div>
+        <p>可提供 PDF、DOCX、HTML 或可复制文本。扫描 PDF 或 OCR 结果可能不准确，Agent 应标记不确定内容，并要求你确认或提供可复制文本。</p>
+
+        <h3>路线 B：你没有任何简历</h3>
+        <div class="code-block prompt-block">
+          <div class="code-header"><span>复制给 Agent</span><button type="button" data-copy-target="prompt-new">复制提示词</button></div>
+          <pre id="prompt-new"><code>使用 $resume-workflow 从零帮我建立简历母版。
+请逐步采访我，从基础信息开始，一次只问一个问题。
+优先追问真实角色、行动、交付物和可核验结果。
+没有可信数字时不要替我估算，也不要为了填满模板编内容。</code></pre>
+        </div>
+
+        <h3>Workflow 应该如何提问</h3>
+        <ol class="step-list">
+          <li><span>1</span><div><strong>先问最近变化</strong><p>例如新项目、实习、比赛、开源贡献、课程成绩或技能变化。</p></div></li>
+          <li><span>2</span><div><strong>再问影响最大的缺口</strong><p>例如项目角色不清、结果没有证据、时间冲突或技能熟练度缺少依据。</p></div></li>
+          <li><span>3</span><div><strong>最后补齐基础字段</strong><p>联系方式、教育时间、链接和求职方向等投递必需信息。</p></div></li>
+        </ol>
+      </section>
+
+      <section class="chapter" id="facts" data-section>
+        <div class="chapter-heading">
+          <span class="chapter-number">05</span>
+          <div><p class="kicker">唯一事实源</p><h2>确认 resume-facts.yaml</h2></div>
+        </div>
+        <p><code>resume-facts.yaml</code> 是整套流程最重要的文件。它不是视觉简历，而是一份可追溯的事实库：每条对外陈述都记录来源、证据、置信度和确认时间。</p>
+
+        <div class="code-block">
+          <div class="code-header"><span>事实记录示例</span><button type="button" data-copy-target="code-facts">复制</button></div>
+          <pre id="code-facts"><code>facts_version: 1
+claims:
+  - claim_id: "project-rag-01"
+    section: "projects"
+    claim: "实现课程资料的检索增强问答原型"
+    source: "user"
+    confidence: "high"
+    evidence:
+      - "候选人确认独立完成检索与生成链路"
+    metric_status: "not_applicable"
+    confirmed_at: "2026-07-16"
+
+pending_claims: []</code></pre>
+        </div>
+
+        <table>
+          <thead><tr><th>字段</th><th>意义</th><th>进入最终简历的要求</th></tr></thead>
+          <tbody>
+            <tr><td><code>source</code></td><td>来自用户、旧简历或可核验材料</td><td>来源明确</td></tr>
+            <tr><td><code>confidence</code></td><td>当前证据是否充分且一致</td><td>低置信度必须回访</td></tr>
+            <tr><td><code>evidence</code></td><td>为什么可以这样写</td><td>至少有可理解的依据</td></tr>
+            <tr><td><code>metric_status</code></td><td>数字是否已核实</td><td>未验证数字不能进入成稿</td></tr>
+            <tr><td><code>confirmed_at</code></td><td>用户最后确认时间</td><td>用于判断信息是否过期</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout note">
+          <strong>pending_claims 的作用</strong>
+          <p>旧简历解析出的模糊内容、JD 中缺失的要求和未经确认的改写建议可以暂存在这里，但绝不能复制进最终 HTML/PDF。</p>
+        </div>
+      </section>
+
+      <section class="chapter" id="template" data-section>
+        <div class="chapter-heading">
+          <span class="chapter-number">06</span>
+          <div><p class="kicker">内容确认后再选样式</p><h2>选择输出模式与模板</h2></div>
+        </div>
+        <p>事实确认完成后，先选择输出模式。如果选择视觉版，再从六套 A4 模板中选择一种。视觉选择不应改变事实内容。</p>
+
+        <div class="compare-grid">
+          <article><p class="card-label">视觉 HTML/PDF</p><h3>适合人工阅读</h3><ul><li>更强的层级、色彩和版式</li><li>可进入本地 Canvas 微调</li><li>适合作品集、邮件和直接投递</li></ul></article>
+          <article><p class="card-label">ATS-safe HTML/PDF</p><h3>优先机器解析</h3><ul><li>单栏、标准标题、纯文本顺序</li><li>减少复杂表格与装饰</li><li>不能保证通过任何 ATS</li></ul></article>
+        </div>
+
+        <h3>六套视觉模板</h3>
+        <div class="template-grid">
+          <div><strong>现代简约</strong><span>留白、高对比、克制</span></div>
+          <div><strong>经典商务</strong><span>深蓝、稳重、专业</span></div>
+          <div><strong>创意个性</strong><span>大胆配色、强辨识度</span></div>
+          <div><strong>日式极简</strong><span>暖色、轻质、呼吸感</span></div>
+          <div><strong>科技感</strong><span>深色、高对比、终端美学</span></div>
+          <div><strong>简约蓝色商务</strong><span>清晰、克制、通用</span></div>
+        </div>
+
+        <div class="code-block prompt-block">
+          <div class="code-header"><span>选择示例</span><button type="button" data-copy-target="prompt-style">复制提示词</button></div>
+          <pre id="prompt-style"><code>事实内容已经确认。请生成视觉 HTML/PDF 母版，
+使用“现代简约”模板，并同时保留 ATS-safe 版本。
+两种输出必须使用同一份 resume-facts.yaml，不要改变事实。</code></pre>
+        </div>
+      </section>
+
+      <section class="chapter" id="canvas" data-section>
+        <div class="chapter-heading">
+          <span class="chapter-number">07</span>
+          <div><p class="kicker">最后一公里</p><h2>预览、微调与导出 PDF</h2></div>
+        </div>
+        <p>视觉母版生成后，可以使用本地 Canvas 检查 A4 页面并做受限微调。Canvas 只负责已有文字和排版，不负责 AI 改写、JD 匹配或结构重排。</p>
+
+        <div class="code-block">
+          <div class="code-header"><span>在简历目录中运行</span><button type="button" data-copy-target="code-canvas">复制</button></div>
+          <pre id="code-canvas"><code>npx @chasen-liao/resume-skills editor resume-visual.html</code></pre>
+        </div>
+
+        <div class="compare-grid compact">
+          <article><p class="card-label">可以调整</p><ul><li>已有文字</li><li>字号、字重、颜色、对齐</li><li>行高、段后距、页边距和主题色</li></ul></article>
+          <article><p class="card-label">不支持</p><ul><li>凭空添加或改写经历</li><li>自由拖拽与结构重排</li><li>图片编辑与 JD 匹配</li></ul></article>
+        </div>
+
+        <ol class="step-list">
+          <li><span>1</span><div><strong>打开视觉 HTML</strong><p>命令会启动本地服务并尝试自动打开浏览器。</p></div></li>
+          <li><span>2</span><div><strong>检查溢出与可读性</strong><p>出现溢出时先删减低相关内容或调整间距，不要压缩到难以阅读。</p></div></li>
+          <li><span>3</span><div><strong>导出编辑后的 HTML</strong><p>固定生成 <code>&lt;原文件名&gt;-edited.html</code>，不覆盖原文件。</p></div></li>
+          <li><span>4</span><div><strong>浏览器打印 PDF</strong><p>纸张选择 A4，按需要关闭浏览器默认页眉和页脚。</p></div></li>
+        </ol>
+      </section>
+
+      <section class="chapter" id="jd" data-section>
+        <div class="chapter-heading">
+          <span class="chapter-number">08</span>
+          <div><p class="kicker">已有母版后的日常入口</p><h2>输入 JD，生成岗位简历</h2></div>
+        </div>
+        <p>有了 <code>resume-facts.yaml</code> 和母版后，不需要再次调用完整采访流程。把目标 JD 交给 Agent，它会先分析要求，再展示变更预览，最后生成独立岗位目录。</p>
+
+        <div class="code-block prompt-block">
+          <div class="code-header"><span>岗位定制提示词</span><button type="button" data-copy-target="prompt-jd">复制提示词</button></div>
+          <pre id="prompt-jd"><code>我已有 resume-facts.yaml 和简历母版。
+请分析下面的 JD，先给我：
+1. 必需条件、加分项和岗位职责；
+2. 我的直接匹配、相关证据、真实缺口和待确认项；
+3. 定制版的变更预览，包括前置、弱化和措辞调整。
+
+等我确认后再生成定制版。不要把 JD 要求当成我的经历。
+
+[在这里粘贴 JD]</code></pre>
+        </div>
+
+        <h3>你应该先看到变更预览</h3>
+        <table>
+          <thead><tr><th>JD 关注点</th><th>候选人事实</th><th>计划调整</th></tr></thead>
+          <tbody>
+            <tr><td>React 性能优化</td><td>项目中有首屏优化证据</td><td>前置项目并突出已确认结果</td></tr>
+            <tr><td>LLM 应用开发</td><td>事实库中有 RAG 项目</td><td>使用一致术语对齐 JD</td></tr>
+            <tr><td>推荐系统经验</td><td>没有相关 claim</td><td>保留为真实缺口，不写入简历</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout important">
+          <strong>确认后才生成</strong>
+          <p>你可以拒绝某项措辞或排序。定制版只能重排、强调、压缩或对齐已有事实，不能新增技能和成果。</p>
+        </div>
+      </section>
+
+      <section class="chapter" id="ats" data-section>
+        <div class="chapter-heading">
+          <span class="chapter-number">09</span>
+          <div><p class="kicker">投递前质量关卡</p><h2>运行 ATS 审计</h2></div>
+        </div>
+        <p>ATS 审计会把“可以修复的呈现问题”和“不能伪造的事实缺口”分开。它用于降低机器解析风险，不保证通过筛选，也不代表录用概率。</p>
+
+        <div class="audit-grid">
+          <article><span>A</span><h3>解析与格式</h3><p>检查可提取文本、标准章节标题、正文顺序、复杂表格、图片文字和页数。</p></article>
+          <article><span>B</span><h3>关键词证据</h3><p>区分精确匹配、相关表达与缺失项，并追溯到事实库和 JD 来源。</p></article>
+          <article><span>C</span><h3>修复建议</h3><p>呈现问题可在确认后修复；真实能力缺口只能追问或保留。</p></article>
+        </div>
+
+        <div class="code-block prompt-block">
+          <div class="code-header"><span>ATS 审计提示词</span><button type="button" data-copy-target="prompt-ats">复制提示词</button></div>
+          <pre id="prompt-ats"><code>请对这份岗位定制简历做 ATS 审计。
+将问题分成：
+1. 可以直接修复的格式与解析风险；
+2. 需要我确认的事实；
+3. 必须保留的真实能力缺口。
+
+不要堆砌关键词，也不要承诺一定通过 ATS。</code></pre>
+        </div>
+      </section>
+
+      <section class="chapter" id="versions" data-section>
+        <div class="chapter-heading">
+          <span class="chapter-number">10</span>
+          <div><p class="kicker">可追溯、可回滚</p><h2>用 Git 管理母版和投递版本</h2></div>
+        </div>
+        <p>Git 很适合记录事实库和岗位版本的变化，但所有初始化、提交和推送都应由你明确确认。通常一个本地私有仓库就足够；每个 JD 用独立目录和提交记录，不必为每家公司创建分支。</p>
+
+        <div class="code-block">
+          <div class="code-header"><span>首次初始化（确认后执行）</span><button type="button" data-copy-target="code-git-init">复制</button></div>
+          <pre id="code-git-init"><code>git init
+git add resume-facts.yaml master
+git commit -m "建立简历事实库与母版"</code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><span>生成岗位版本后</span><button type="button" data-copy-target="code-git-jd">复制</button></div>
+          <pre id="code-git-jd"><code>git add tailored/company-role
+git commit -m "定制：公司名 - 岗位名"</code></pre>
+        </div>
+
+        <h3>什么时候才需要分支</h3>
+        <p>只有当你要同时试验互斥的母版方向，例如“前端工程”和“AI 产品”两套长期定位时，才考虑分支。普通岗位定制留在 <code>tailored/</code> 并提交即可。</p>
+        <div class="callout warning">
+          <strong>远程仓库必须谨慎</strong>
+          <p>如果确实需要跨设备同步，请使用私有仓库，并再次检查提交中是否包含手机号、邮箱、住址、证件或其他敏感信息。</p>
+        </div>
+      </section>
+
+      <section class="chapter" id="updates" data-section>
+        <div class="chapter-heading">
+          <span class="chapter-number">11</span>
+          <div><p class="kicker">长期维护</p><h2>更新母版并继续投递</h2></div>
+        </div>
+        <p>以后有新实习、新项目或技能变化时，先更新事实库与母版，再生成新的 JD 版本。不要直接在旧岗位版本上累积事实，否则多个版本会逐渐漂移。</p>
+
+        <div class="code-block prompt-block">
+          <div class="code-header"><span>更新母版提示词</span><button type="button" data-copy-target="prompt-update">复制提示词</button></div>
+          <pre id="prompt-update"><code>使用 $resume-workflow 更新我的简历母版。
+请先读取现有 resume-facts.yaml，询问我最近发生的变化，
+只对新增、变化或可能过期的字段做增量追问。
+等我确认后再更新事实库和母版，不要覆盖历史岗位版本。</code></pre>
+        </div>
+
+        <h3>推荐维护节奏</h3>
+        <ul class="maintenance-list">
+          <li><strong>经历发生变化时</strong><span>立即补充事实和证据，避免几个月后忘记细节。</span></li>
+          <li><strong>开始一轮求职时</strong><span>确认联系方式、链接、求职方向和最近经历。</span></li>
+          <li><strong>每次正式投递前</strong><span>检查 JD 变更预览、ATS 报告、PDF 页数和文件名。</span></li>
+          <li><strong>收到面试反馈后</strong><span>可以调整表达与排序，但不能反向虚构事实。</span></li>
+        </ul>
+      </section>
+
+      <section class="chapter" id="troubleshooting" data-section>
+        <div class="chapter-heading">
+          <span class="chapter-number">12</span>
+          <div><p class="kicker">遇到问题先看这里</p><h2>常见问题与排查</h2></div>
+        </div>
+
+        <div class="faq-list">
+          <details>
+            <summary>Agent 没有自动调用 resume-workflow</summary>
+            <p>重新打开会话，并在提示词中显式写出 <code>$resume-workflow</code>。还要确认安装时使用了 <code>--skill '*'</code>，而不是只安装单个 skill。</p>
+          </details>
+          <details>
+            <summary>旧 PDF 解析出来的时间或数字不准确</summary>
+            <p>不要直接进入最终简历。把它放在待确认列表，提供可复制文本或由你逐项确认。扫描件和 OCR 内容默认需要更严格复核。</p>
+          </details>
+          <details>
+            <summary>AI 一直追问数字，但我没有数据</summary>
+            <p>明确告诉它使用真实的角色、范围、交付物、上线/验收状态等非数字证据。没有可信数字时不应估算。</p>
+          </details>
+          <details>
+            <summary>生成的 PDF 超过一页</summary>
+            <p>先删减低相关内容，再压缩间距和行高。不要删除关键事实，也不要把正文缩小到难以阅读。资深候选人可根据实际情况保留合理页数。</p>
+          </details>
+          <details>
+            <summary>Canvas 无法打开 HTML</summary>
+            <p>Canvas 只支持带 Resume Skills 编辑协议的内置视觉模板。ATS-safe HTML 或外部模板可能无法打开，可直接用浏览器查看并打印。</p>
+          </details>
+          <details>
+            <summary>JD 要求我没有的技能，应该怎么办</summary>
+            <p>如实标记缺口，不要写入技能栏。可以展示相关证据，但要明确它只是相关而非直接匹配。</p>
+          </details>
+          <details>
+            <summary>是否应该把整个简历仓库推到 GitHub</summary>
+            <p>默认不建议。GitHub Pages 站点可以公开，但真实简历工作区应保持本地或使用私有仓库，并排除敏感信息。</p>
+          </details>
+        </div>
+
+        <div class="final-cta">
+          <p class="kicker">准备好了</p>
+          <h2>从一个空目录开始</h2>
+          <p>安装完整 Skill 集，创建私有工作区，然后把第一条提示词交给 <code>$resume-workflow</code>。</p>
+          <button type="button" class="primary-button copy-final" data-copy-target="prompt-import">复制第一条提示词</button>
+        </div>
+      </section>
+
+      <footer>
+        <p>Resume Skills · 以事实为边界的简历工作流</p>
+        <div><a href="https://github.com/Chasen-Liao/resume-skills">GitHub 仓库</a><a href="https://github.com/Chasen-Liao/resume-skills#readme">README</a><a href="#overview">回到顶部</a></div>
+      </footer>
+    </main>
+  </div>
+  <div class="toast" id="copy-toast" role="status" aria-live="polite">已复制到剪贴板</div>
+</body>
+</html>

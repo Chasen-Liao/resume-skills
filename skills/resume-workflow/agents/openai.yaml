@@ -1,0 +1,4 @@
+interface:
+  display_name: "Resume Workflow"
+  short_description: "Build and tailor a traceable resume"
+  default_prompt: "Use $resume-workflow to create or update my master resume and tailor it for a job."

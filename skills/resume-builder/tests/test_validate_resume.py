@@ -61,6 +61,13 @@ class ValidateResumeTests(unittest.TestCase):
         self.assertIn("font", result.stdout.lower())
         self.assertIn("relative", result.stdout.lower())
 
+    def test_all_builtin_visual_templates_pass_visual_validation(self):
+        examples = ROOT / "skills" / "resume-builder" / "references" / "examples"
+        for template in examples.glob("*.html"):
+            with self.subTest(template=template.name):
+                result = run_validator("--html", template, "--mode", "visual")
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_html_required_text_missing_fails(self):
         result = run_validator(
             "--html", FIXTURES / "good_ats.html", "--required-text", "Missing phrase"

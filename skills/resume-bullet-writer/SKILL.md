@@ -11,6 +11,12 @@ description: 改写、诊断或补强简历经历和项目 bullet。当用户要
 
 每次改写前读取 [简历事实契约](../resume-builder/references/resume-contract.md) 和按需读取 [写作规范](../resume-builder/references/content-writing.md)。两者优先于“每条一定有数字”的通用建议。
 
+## 协作入口
+
+这是**条件触发**的内容助手，不是主流程的固定步骤。仅在用户主动要求，或 `resume-builder` / `jd-tailorer` 发现经历职责化、贡献不清、证据不足或与岗位关联较弱时建议使用。
+
+改写候选必须由用户确认后，才能回到母版或 JD 定制版；只缺事实时输出追问，不把建议直接写入最终 HTML/PDF。
+
 ## 工作流
 
 1. 拆解原句中的背景、个人行动、技术/方法、交付物、结果和证据。
