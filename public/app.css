@@ -15,11 +15,13 @@ body { margin: 0; min-width: 960px; }
 .skip-link:focus { top: 12px; }
 .app-header { min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: #101827; color: white; box-shadow: 0 1px 0 rgb(255 255 255 / 8%); font-size: 14px; }
 .app-header strong { font-size: 15px; letter-spacing: -.01em; }
+.brand { display: inline-flex; align-items: center; gap: 8px; }
+.brand-mark { width: 24px; height: 24px; flex: 0 0 auto; stroke: #93c5fd; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
 #source-name { max-width: 34ch; overflow: hidden; color: #bfdbfe; text-overflow: ellipsis; white-space: nowrap; }
 #save-status { margin-left: auto; color: #bbf7d0; font-size: 13px; }
 .layout { display: grid; grid-template-columns: 260px minmax(600px, 1fr) 280px; min-height: calc(100vh - 56px); }
 .guide, .inspector { padding: 24px 20px; border-right: 1px solid var(--line); background: rgb(255 255 255 / 92%); font-size: 14px; }
-.guide { position: sticky; top: 0; align-self: start; min-height: calc(100vh - 56px); }
+.guide { position: sticky; top: 0; display: flex; flex-direction: column; align-self: start; min-height: calc(100vh - 56px); }
 .inspector { border-right: 0; border-left: 1px solid var(--line); }
 .guide h1 { margin: 0 0 14px; font-size: 20px; line-height: 1.25; letter-spacing: -.03em; }
 .guide p { margin: 0 0 12px; color: var(--muted); line-height: 1.65; }
@@ -42,5 +44,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 button:disabled { cursor: wait; opacity: .68; transform: none; }
 hr { margin: 22px 0; border: 0; border-top: 1px solid var(--line); }
 .status { margin-top: 22px !important; color: #9a4d08 !important; font-size: 13px; line-height: 1.55; }
+.project-meta { display: grid; gap: 6px; margin-top: auto; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.4; }
+.project-meta a { width: fit-content; color: #475569; text-decoration: none; text-underline-offset: 3px; }
+.project-meta a:hover { color: var(--accent-dark); text-decoration: underline; }
+.project-meta a:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; border-radius: 2px; }
 @media (max-width: 1279px) { .layout { grid-template-columns: 230px minmax(600px, 1fr); } .inspector { position: fixed; z-index: 5; top: 56px; right: 0; width: 280px; height: calc(100vh - 56px); overflow: auto; box-shadow: -10px 0 28px rgb(15 23 42 / 14%); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
