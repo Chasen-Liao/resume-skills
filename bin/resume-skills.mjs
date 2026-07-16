@@ -41,7 +41,7 @@ function openBrowser(url) {
   child.unref();
 }
 
-function startEditor(sourcePath) {
+export function startEditor(sourcePath, { log = true, open = true } = {}) {
   if (extname(sourcePath).toLowerCase() !== ".html") {
     throw new Error("编辑器只接受 .html 文件。");
   }
@@ -52,6 +52,9 @@ function startEditor(sourcePath) {
   const server = createServer((request, response) => {
     if (request.method === "GET" && request.url === "/") {
       return send(response, 200, "text/html; charset=utf-8", readFileSync(join(publicRoot, "editor.html")));
+    }
+    if (request.method === "GET" && request.url === "/favicon.svg") {
+      return send(response, 200, "image/svg+xml", readFileSync(join(publicRoot, "favicon.svg")));
     }
     if (request.method === "GET" && request.url === "/app.js") {
       return send(response, 200, "text/javascript; charset=utf-8", readFileSync(join(publicRoot, "app.js")));
@@ -100,9 +103,10 @@ function startEditor(sourcePath) {
   server.listen(0, "127.0.0.1", () => {
     const { port } = server.address();
     const url = `http://127.0.0.1:${port}`;
-    console.log(`Resume editor is running at ${url}`);
-    openBrowser(url);
+    if (log) console.log(`Resume editor is running at ${url}`);
+    if (open) openBrowser(url);
   });
+  return server;
 }
 
 if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

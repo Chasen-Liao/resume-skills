@@ -1,16 +1,26 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const css = readFileSync(`${root}/public/app.css`, "utf8");
 const editorHtml = readFileSync(`${root}/public/editor.html`, "utf8");
+const faviconPath = `${root}/public/favicon.svg`;
 
 test("editor header includes a compact accessible SVG brand mark", () => {
   assert.match(editorHtml, /<svg class="brand-mark"[^>]*aria-hidden="true"/);
   assert.match(editorHtml, /<span class="brand-name">ResumeSkills Canvas<\/span>/);
   assert.match(css, /\.brand-mark \{[^}]*width: 24px/);
+});
+
+test("editor provides a simple SVG favicon for browser tabs", () => {
+  assert.match(editorHtml, /<link rel="icon" href="\/favicon\.svg" type="image\/svg\+xml">/);
+  assert.equal(existsSync(faviconPath), true);
+
+  const favicon = readFileSync(faviconPath, "utf8");
+  assert.match(favicon, /<svg[^>]+viewBox="0 0 32 32"/);
+  assert.doesNotMatch(favicon, /<text\b/);
 });
 
 test("editor guide credits the author and links to the project repository", () => {
