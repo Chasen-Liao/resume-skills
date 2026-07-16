@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-resume-editor-template="modern-minimal" data-resume-editor-version="1">
 <head>
   <meta charset="UTF-8">
   <title>简历 - 现代简约风格</title>
@@ -261,44 +261,6 @@
       color: var(--color-fg);
     }
 
-    /* === 功能性按钮 === */
-    .no-print-toolbar {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      background: white;
-      padding: 12px;
-      border-radius: 4px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      width: 180px;
-    }
-
-    .btn-export {
-      background-color: var(--color-primary);
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 12px;
-      text-align: center;
-      transition: background-color 0.2s;
-    }
-
-    .btn-export:hover {
-      background-color: var(--color-accent);
-    }
-
-    .toolbar-tip {
-      font-size: 9.5px;
-      color: #64748B;
-      line-height: 1.3;
-    }
-
     /* === 打印媒体查询 === */
     @page {
       size: A4;
@@ -316,9 +278,6 @@
         box-shadow: none;
         padding: var(--page-margin);
       }
-      .no-print-toolbar {
-        display: none !important;
-      }
       * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
@@ -328,30 +287,17 @@
 </head>
 <body>
 
-  <!-- 功能侧边工具栏 -->
-  <div class="no-print-toolbar">
-    <button class="btn-export" onclick="window.print()">导出 PDF</button>
-    <div class="toolbar-tip">
-      <strong>提示：</strong><br>
-      在打印设置中：<br>
-      1. 目标打印机：另存为 PDF<br>
-      2. 纸张大小：A4<br>
-      3. 边距：无/默认<br>
-      4. 勾选「背景图形」
-    </div>
-  </div>
-
   <div class="resume">
     <!-- 顶部 Header -->
     <header class="resume-header">
       <div class="header-left">
         <div class="header-info">
-          <h1>张小明</h1>
-          <div class="job-title">前端开发工程师 / Frontend Engineer</div>
+          <h1 data-resume-editor-id="profile-name">张小明</h1>
+          <div class="job-title" data-resume-editor-id="profile-title">前端开发工程师 / Frontend Engineer</div>
         </div>
         <div class="header-contacts">
-          <div>电话：139-0000-0000 | 邮箱：<a href="mailto:xiaoming.zhang@example.com">xiaoming.zhang@example.com</a></div>
-          <div>GitHub：<a href="https://github.com" target="_blank">github.com/xiaoming-dev</a> | Base：杭州</div>
+          <div data-resume-editor-id="profile-contact-primary">电话：139-0000-0000 | 邮箱：<a href="mailto:xiaoming.zhang@example.com">xiaoming.zhang@example.com</a></div>
+          <div data-resume-editor-id="profile-contact-secondary">GitHub：<a href="https://github.com" target="_blank">github.com/xiaoming-dev</a> | Base：杭州</div>
         </div>
       </div>
       <div class="header-right">
@@ -363,78 +309,78 @@
 
     <!-- 教育背景 -->
     <section class="section">
-      <h2 class="section-title">教育背景</h2>
+      <h2 class="section-title" data-resume-editor-id="education-heading">教育背景</h2>
       <div class="education-line">
-        <div>浙江大学 · 计算机科学与技术 · 工学学士</div>
-        <div class="education-meta">2022.09 - 2026.07</div>
+        <div data-resume-editor-id="education-1-title">浙江大学 · 计算机科学与技术 · 工学学士</div>
+        <div class="education-meta" data-resume-editor-id="education-1-date">2022.09 - 2026.07</div>
       </div>
     </section>
 
     <!-- 项目经验 -->
     <section class="section">
-      <h2 class="section-title">项目经验</h2>
+      <h2 class="section-title" data-resume-editor-id="projects-heading">项目经验</h2>
 
       <div class="item-block">
         <div class="item-header">
-          <div class="item-title">极简主义团队协作看板平台 · 个人独立开发</div>
-          <div class="item-meta">2024.10 - 2025.02</div>
+          <div class="item-title" data-resume-editor-id="project-1-title">极简主义团队协作看板平台 · 个人独立开发</div>
+          <div class="item-meta" data-resume-editor-id="project-1-date">2024.10 - 2025.02</div>
         </div>
         <ul class="item-details">
-          <li>独立设计并实现响应式 Kanban 协作平台，前端采用 React + TailwindCSS + DnD-Kit，后端运行 Node.js + Express。</li>
-          <li>应用 WebSocket 实现多端看板卡片实时拖拽同步，并在网络断开时通过 LocalStorage 实现数据高可靠秒级暂存。</li>
-          <li>优化列表渲染性能，通过 React.memo 与虚拟化长列表，确保 1000+ 卡片高密度渲染时滚动帧率稳定在 60 FPS。</li>
+          <li data-resume-editor-id="project-1-bullet-1">独立设计并实现响应式 Kanban 协作平台，前端采用 React + TailwindCSS + DnD-Kit，后端运行 Node.js + Express。</li>
+          <li data-resume-editor-id="project-1-bullet-2">应用 WebSocket 实现多端看板卡片实时拖拽同步，并在网络断开时通过 LocalStorage 实现数据高可靠秒级暂存。</li>
+          <li data-resume-editor-id="project-1-bullet-3">优化列表渲染性能，通过 React.memo 与虚拟化长列表，确保 1000+ 卡片高密度渲染时滚动帧率稳定在 60 FPS。</li>
         </ul>
       </div>
 
       <div class="item-block">
         <div class="item-header">
-          <div class="item-title">轻量级 Markdown 在线编辑预览器 · 独立作者</div>
-          <div class="item-meta">2024.04 - 2024.08</div>
+          <div class="item-title" data-resume-editor-id="project-2-title">轻量级 Markdown 在线编辑预览器 · 独立作者</div>
+          <div class="item-meta" data-resume-editor-id="project-2-date">2024.04 - 2024.08</div>
         </div>
         <ul class="item-details">
-          <li>基于 Web Components 和 Marked.js 开发免打包在线解析工具，提供即时打字同步渲染与目录自动生成。</li>
-          <li>通过 Web Workers 异步执行 Markdown 解析逻辑，规避大文本录入时的 UI 线程阻塞，打字输入响应延迟低至 12ms。</li>
+          <li data-resume-editor-id="project-2-bullet-1">基于 Web Components 和 Marked.js 开发免打包在线解析工具，提供即时打字同步渲染与目录自动生成。</li>
+          <li data-resume-editor-id="project-2-bullet-2">通过 Web Workers 异步执行 Markdown 解析逻辑，规避大文本录入时的 UI 线程阻塞，打字输入响应延迟低至 12ms。</li>
         </ul>
       </div>
     </section>
 
     <!-- 实习经历 -->
     <section class="section">
-      <h2 class="section-title">实习经历</h2>
+      <h2 class="section-title" data-resume-editor-id="experience-heading">实习经历</h2>
       
       <div class="item-block">
         <div class="item-header">
-          <div class="item-title">阿里巴巴集团 · 前端研发实习生（商能大前端）</div>
-          <div class="item-meta">2025.06 - 2025.12</div>
+          <div class="item-title" data-resume-editor-id="experience-1-title">阿里巴巴集团 · 前端研发实习生（商能大前端）</div>
+          <div class="item-meta" data-resume-editor-id="experience-1-date">2025.06 - 2025.12</div>
         </div>
         <ul class="item-details">
-          <li>参与核心商家管理后台重构，基于 React + TypeScript 完成 15+ 复杂数据表单组件开发，提升组件复用率 35%。</li>
-          <li>主导系统首屏加载速度优化，引入路由懒加载与 CDN 资源分流，首屏渲染时间（FCP）由 2.4s 缩短至 1.1s。</li>
-          <li>配合 UX 设计师落地新版 Design System，修复响应式布局缺陷 20+，保障移动端高保真还原率达 99.5%。</li>
+          <li data-resume-editor-id="experience-1-bullet-1">参与核心商家管理后台重构，基于 React + TypeScript 完成 15+ 复杂数据表单组件开发，提升组件复用率 35%。</li>
+          <li data-resume-editor-id="experience-1-bullet-2">主导系统首屏加载速度优化，引入路由懒加载与 CDN 资源分流，首屏渲染时间（FCP）由 2.4s 缩短至 1.1s。</li>
+          <li data-resume-editor-id="experience-1-bullet-3">配合 UX 设计师落地新版 Design System，修复响应式布局缺陷 20+，保障移动端高保真还原率达 99.5%。</li>
         </ul>
       </div>
     </section>
 
     <!-- 技能证书 -->
     <section class="section">
-      <h2 class="section-title">专业技能</h2>
+      <h2 class="section-title" data-resume-editor-id="skills-heading">专业技能</h2>
       <div class="skill-tags-container">
-        <span class="skill-badge">HTML5 / CSS3</span>
-        <span class="skill-badge">JavaScript (ES6+)</span>
-        <span class="skill-badge">TypeScript</span>
-        <span class="skill-badge">React / Redux</span>
-        <span class="skill-badge">Vue.js</span>
-        <span class="skill-badge">Node.js (Express)</span>
-        <span class="skill-badge">Webpack / Vite</span>
-        <span class="skill-badge">Git 版本管理</span>
-        <span class="skill-badge">英语六级 (CET-6)</span>
+        <span class="skill-badge" data-resume-editor-id="skill-1">HTML5 / CSS3</span>
+        <span class="skill-badge" data-resume-editor-id="skill-2">JavaScript (ES6+)</span>
+        <span class="skill-badge" data-resume-editor-id="skill-3">TypeScript</span>
+        <span class="skill-badge" data-resume-editor-id="skill-4">React / Redux</span>
+        <span class="skill-badge" data-resume-editor-id="skill-5">Vue.js</span>
+        <span class="skill-badge" data-resume-editor-id="skill-6">Node.js (Express)</span>
+        <span class="skill-badge" data-resume-editor-id="skill-7">Webpack / Vite</span>
+        <span class="skill-badge" data-resume-editor-id="skill-8">Git 版本管理</span>
+        <span class="skill-badge" data-resume-editor-id="skill-9">英语六级 (CET-6)</span>
       </div>
     </section>
 
     <!-- 自我评价 -->
     <section class="section">
-      <h2 class="section-title">自我评价</h2>
-      <div class="summary-block">
+      <h2 class="section-title" data-resume-editor-id="summary-heading">自我评价</h2>
+      <div class="summary-block" data-resume-editor-id="summary-content">
         计算机科学专业本科生，主攻前端研发方向。具备扎实的 JavaScript 基础、React 生态开发经验和良好的代码设计习惯。追求极致的页面性能与用户体验，期望在前端工程化领域持续深耕。
       </div>
     </section>

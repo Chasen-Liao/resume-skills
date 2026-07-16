@@ -1,0 +1,6 @@
+**/__pycache__/
+**/*.pyc
+**/tests/
+tests/
+.superpowers/
+RESEARCH-RESUME-SKILLS-AND-LOCAL-EDITOR.md

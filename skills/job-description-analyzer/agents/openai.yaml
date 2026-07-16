@@ -1,0 +1,7 @@
+interface:
+  display_name: "Job Description Analyzer"
+  short_description: "Map job requirements to verified resume evidence"
+  default_prompt: "Use $job-description-analyzer to assess how my verified resume matches this job description."
+
+policy:
+  allow_implicit_invocation: true

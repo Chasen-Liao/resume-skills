@@ -2,6 +2,8 @@
 
 一套基于 HTML 的简历生成与 JD 匹配工具集，兼容 Claude Code、Codex 以及其他 Agent Skills 规范的智能体。
 
+当前版本：**v0.4.0** · 包含 6 个简历工作流技能与本地 Canvas 编辑器。
+
 “这一套skills是我在制作简历中和投递简历中总结出来的，先用 resume-builder 生成一份通用的简历母版，之后只需要发送对应的 JD.md 给Agent，Agent就可以针对JD来生成对应的简历”
 
 > 帮你优化简历和针对JD来制作对应岗位的简历！
@@ -76,7 +78,16 @@
 | 关键词优化 | 术语对齐 + 自然融入 JD 关键词（目标覆盖率 ≥ 70%） |
 | 板块重排序 | 按 JD 关注度重新排列板块优先级 |
 | 定制版 vs 通用版对比 | 清楚说明改了哪些关键词、重排了哪些板块 |
-| 输出结构 | `tailored/<公司名>-<岗位>/resume.html` + `matching-analysis.md` |
+| 输出结构 | `tailored/<公司名>-<岗位>/resume-visual.html` 或 `resume-ats.html` + `matching-analysis.md` |
+
+### 3–6. 辅助技能
+
+| Skill | 何时使用 | 输出 |
+|------|----------|------|
+| `resume-bullet-writer` | 优化项目/实习描述、STAR 或 X-Y-Z 改写、补强量化表达 | 改写候选、依据与待确认问题 |
+| `job-description-analyzer` | 分析 JD、判断匹配度、识别真实缺口 | 要求地图、解释性匹配度与定制优先级 |
+| `resume-ats-optimizer` | 检查 ATS 可读性、关键词覆盖和章节结构 | 问题清单与不虚构的优化建议 |
+| `resume-version-manager` | 管理通用版、岗位定制版与投递版本 | 版本策略、命名与维护建议 |
 
 ## 推荐工作流
 
@@ -86,11 +97,38 @@ resume-builder → 生成通用版简历 → jd-tailorer → 针对不同 JD 生
 
 先建立一份内容扎实、排版美观的通版简历，再针对每个目标岗位做 JD 定制，比海投同一份简历的通过率高数倍。
 
+## 各 Skill 怎么用
+
+安装后，在 Codex、Claude Code 或其他兼容 Agent Skills 的智能体中直接用自然语言触发即可；也可以在支持显式调用的客户端输入 `$技能名`。
+
+| Skill | 直接这样说 | 你需要提供 | 会得到什么 |
+|------|------------|------------|------------|
+| `resume-builder` | “帮我做一份前端实习简历” | 按智能体的问题逐步提供个人信息、教育、经历与技能 | 完整采访后选择风格，生成 A4 HTML 简历并验证打印布局 |
+| `resume-bullet-writer` | “优化这三条项目描述，不要编数据” | 原 bullet、真实职责/成果；可附目标岗位 | 有依据的改写候选、问题诊断和待确认问题 |
+| `job-description-analyzer` | “分析这个 JD，我匹配吗？” | JD 文本/链接内容，以及已有简历或事实 | 要求地图、真实匹配证据、缺口和定制优先级 |
+| `jd-tailorer` | “针对这个 JD 改我的简历” | 基础简历 + JD 文本 | 定制 HTML、匹配分析和基于真实事实的关键词/排序调整 |
+| `resume-ats-optimizer` | “检查这份简历的 ATS 问题” | 简历 HTML、文本或粘贴内容；可附 JD | ATS 风险、关键词覆盖、结构与可读性建议 |
+| `resume-version-manager` | “帮我规划产品经理和运营岗位的简历版本” | 现有简历版本、目标岗位与投递记录（如有） | 版本命名、复用关系、维护与投递策略 |
+
+### 推荐的实际对话顺序
+
+```text
+1. “帮我做一份简历”                    → resume-builder
+2. “优化我的项目经历 bullet”              → resume-bullet-writer（按需）
+3. “分析这个 JD，我匹配吗？”              → job-description-analyzer
+4. “针对这个 JD 改我的简历”               → jd-tailorer
+5. “检查这份定制简历的 ATS 问题”          → resume-ats-optimizer（按需）
+6. “帮我管理这些投递版本”                  → resume-version-manager（按需）
+7. npx @chasen-liao/resume-skills editor ...   → 仅做最终文字/排版微调
+```
+
+重要边界：前 6 个 Skill 负责事实收集、内容优化和岗位匹配；Canvas 不承担这些工作，只编辑已生成简历的文字与版式。
+
 ## 安装与配置
 
 ### 一键安装 Claude Code + Codex（推荐）
 
-本仓库已经按 Agent Skills 通用规范组织。确保已安装 Node.js，然后从 GitHub 安装两个 skill：
+本仓库已经按 Agent Skills 通用规范组织。确保已安装 Node.js，然后从 GitHub 安装全部 6 个 skills：
 
 ```bash
 npx skills add Chasen-Liao/resume-skills --skill '*' --agent claude-code --agent codex --yes
@@ -114,7 +152,19 @@ npx skills add Chasen-Liao/resume-skills --skill jd-tailorer --agent claude-code
 - **测试 `resume-builder`**：输入「帮我做一份简历」
 - **测试 `jd-tailorer`**：输入「帮我针对这个 JD 改一下简历」
 
-如果技能没有自动触发，可以在支持显式 skill 调用的客户端中输入 `$resume-builder` 或 `$jd-tailorer`。
+如果技能没有自动触发，可以在支持显式 skill 调用的客户端中输入 `$resume-builder`、`$jd-tailorer` 或对应的辅助 skill 名称。
+
+### 本地 Canvas 排版编辑器
+
+Canvas 只用于技能生成后的 HTML 简历微调：可改文字、字号、字重、颜色、对齐、行高、段后距、页边距和主题色；不改写内容、不做 JD 匹配，也不允许自由拖拽或结构重排。
+
+在简历 HTML 所在目录运行：
+
+```bash
+npx @chasen-liao/resume-skills editor resume.html
+```
+
+编辑器会在本机启动并打开浏览器。草稿仅保存在当前浏览器；点击“导出 HTML”会写入与原文件同目录的 `resume-edited.html`，后续导出会覆盖该文件，原始 HTML 始终不被覆盖。点击“打印为 PDF”后，在浏览器打印面板另存为 PDF。
 
 ### Claude Code 插件安装
 
@@ -124,7 +174,7 @@ Claude Code 用户仍可通过 `/plugin` 添加本仓库地址：
 https://github.com/Chasen-Liao/resume-skills
 ```
 
-仓库中的 `.claude-plugin/` 和 `skills/` 会作为插件清单与技能目录使用；`.skill` 压缩包仍可作为离线备选。
+仓库中的 `.claude-plugin/` 和 `skills/` 会作为插件清单与技能目录使用。也可以先克隆仓库，再在 Claude Code 中选择从本地目录安装。
 
 ### 发布到 skills.sh / npx skills
 
@@ -146,14 +196,11 @@ https://github.com/Chasen-Liao/resume-skills
 npx skills add https://github.com/Chasen-Liao/resume-skills --skill '*' --agent claude-code --agent codex --yes
 ```
 
-### 单独安装与兼容性
+### 安装组合与依赖
 
-两个 skill 可以单独安装：
-
-- `resume-builder`：从零创建通用 HTML 简历。
-- `jd-tailorer`：基于已有简历和 JD 生成定制版简历。
-
-同时安装两个 skill 时，`jd-tailorer` 会复用 `resume-builder` 的写作规范和视觉参考；只安装 `jd-tailorer` 时，它仍可沿用用户提供的基础简历样式和内置硬约束完成工作。
+- `resume-builder` 可单独使用，从零创建通用 HTML 简历。
+- 其余 5 个 Skill 共享 `resume-builder` 的事实契约、写作规范或模板参考；请使用 `--skill '*'` 一起安装，避免在单独安装时缺少依赖参考文件。
+- `jd-tailorer` 还依赖基础简历和 JD；建议先完成 `resume-builder`，再开始岗位定制。
 
 ## 使用示例
 
@@ -161,22 +208,22 @@ npx skills add https://github.com/Chasen-Liao/resume-skills --skill '*' --agent 
 
 ```
 用户: 帮我做一份简历
-Claude: 好的，让我帮你构建一份精美的简历。首先，能告诉我你的姓名和求职意向吗？
+Agent: 好的，让我帮你构建一份精美的简历。首先，能告诉我你的姓名和求职意向吗？
 用户: 张小明，前端开发工程师，Base 杭州，浙大计算机 2026 届
-Claude: 明白了。接下来能告诉我你的教育背景吗？学校、专业、学历、时间...
+Agent: 明白了。接下来能告诉我你的教育背景吗？学校、专业、学历、时间...
 用户: [逐一回答]
-Claude: [展示 6 种设计风格供选择]
+Agent: [展示 6 种设计风格供选择]
 用户: 现代简约
-Claude: [生成 resume.html，导出 PDF，验证单页] ✅ 已生成你的简历，保存在 ./resume/resume.html
+Agent: [生成 resume.html，导出 PDF，验证单页] ✅ 已生成你的简历，保存在 ./resume/resume.html
 ```
 
 ### 针对 JD 定制简历
 
 ```
 用户: 帮我针对阿里的 JD 改一下简历
-Claude: 好的，请把阿里的 JD 内容粘贴给我
+Agent: 好的，请把阿里的 JD 内容粘贴给我
 用户: [粘贴 JD 文本]
-Claude:
+Agent:
   分析完这个 JD，核心要求：
   - React / TypeScript 前端框架
   - 组件库 / 设计系统经验
@@ -264,10 +311,11 @@ resume/
 ├── resume.html                       # 通用版简历
 └── tailored/
     ├── alibaba-前端开发/
-    │   ├── resume.html               # 针对阿里的定制版
+    │   ├── resume-visual.html        # 针对阿里的视觉定制版
+    │   ├── resume-ats.html           # 针对阿里的 ATS-safe 定制版
     │   └── matching-analysis.md      # 匹配分析报告
     └── tencent-后端开发/
-        ├── resume.html
+        ├── resume-visual.html
         └── matching-analysis.md
 ```
 

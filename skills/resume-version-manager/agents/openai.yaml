@@ -1,0 +1,7 @@
+interface:
+  display_name: "Resume Version Manager"
+  short_description: "Track master and job-specific resume versions"
+  default_prompt: "Use $resume-version-manager to organize my master resume and tailored application versions."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Resume ATS Optimizer"
+  short_description: "Audit parsing risks and verified keyword coverage"
+  default_prompt: "Use $resume-ats-optimizer to audit my resume for ATS parsing risks and job-description keyword coverage."
+
+policy:
+  allow_implicit_invocation: true

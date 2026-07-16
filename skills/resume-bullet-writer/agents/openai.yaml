@@ -1,0 +1,7 @@
+interface:
+  display_name: "Resume Bullet Writer"
+  short_description: "Rewrite evidence-backed resume bullets"
+  default_prompt: "Use $resume-bullet-writer to improve my resume bullets without inventing achievements."
+
+policy:
+  allow_implicit_invocation: true
