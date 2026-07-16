@@ -299,7 +299,7 @@ pending_claims: []</code></pre>
           <span class="chapter-number">07</span>
           <div><p class="kicker">最后一公里</p><h2>预览、微调与导出 PDF</h2></div>
         </div>
-        <p>视觉母版生成后，可以使用本地 Canvas 检查 A4 页面并做受限微调。Canvas 只负责已有文字和排版，不负责 AI 改写、JD 匹配或结构重排。</p>
+        <p><code>resume-builder</code>、<code>jd-tailorer</code> 或 <code>resume-workflow</code> 生成视觉母版或视觉定制版并完成 PDF 验证后，交付流程必须启动本地 Canvas，让用户先看到最终文件并检查 A4 页面。Canvas 只负责已有文字和排版，不负责 AI 改写、JD 匹配或结构重排；若当前环境不能执行 <code>npx</code>，Agent 必须明确说明未启动并给出带实际 HTML 路径的完整命令。</p>
 
         <div class="code-block">
           <div class="code-header"><span>在简历目录中运行</span><button type="button" data-copy-target="code-canvas">复制</button></div>

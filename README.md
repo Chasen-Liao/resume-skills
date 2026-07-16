@@ -167,7 +167,7 @@ resume-version-manager（记录确认后的版本与投递历史）
 </tr>
 </table>
 
-视觉版以 A4 单页为目标，完成 PDF 验证后会尝试启动 Canvas 预览。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。
+视觉版以 A4 单页为目标。`resume-builder`、`jd-tailorer` 或 `resume-workflow` 生成视觉母版或视觉定制版并完成 PDF 验证后，交付流程必须执行 `npx @chasen-liao/resume-skills editor <实际生成的_visual.html路径>`，启动本地 Canvas 预览；若当前环境不能执行 `npx`，Agent 必须明确说明未启动并给出完整手动命令。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。
 
 ### ATS-safe HTML/PDF
 

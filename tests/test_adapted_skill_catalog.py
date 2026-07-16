@@ -29,6 +29,19 @@ class AdaptedSkillCatalogTests(unittest.TestCase):
         self.assertIn("data-resume-editor-template", content)
         self.assertIn("data-resume-editor-id", content)
 
+    def test_visual_resume_entrypoints_launch_the_canvas_editor(self):
+        command_pattern = re.compile(
+            r'npx @chasen-liao/resume-skills editor "<[^"\n]*visual\.html路径>"'
+        )
+
+        for skill_name in ("resume-builder", "jd-tailorer", "resume-workflow"):
+            content = (SKILLS / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            command = command_pattern.search(content)
+            self.assertIsNotNone(command, skill_name)
+            self.assertLess(content.index("PDF 验证"), command.start(), skill_name)
+            self.assertIn("明确报告未启动", content, skill_name)
+            self.assertRegex(content, r"ATS-safe 模式不(?:使用|启动) Canvas", skill_name)
+
     def test_matching_report_uses_traceable_requirement_states(self):
         content = (SKILLS / "jd-tailorer" / "references" / "matching-analysis.md").read_text(encoding="utf-8")
         self.assertIn("要求 ID", content)
