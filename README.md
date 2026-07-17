@@ -1,14 +1,16 @@
 # Resume Skills
 
-面向 Codex、Claude Code 和其他兼容 Agent Skills 的简历工作流技能。
+> 详细教程参考我的 X 推文：https://x.com/chasen_liao/status/2077689805752942619?s=20
+
+![alt text](image.png)
+
+这是一个面向 Codex、Claude Code 和其他兼容 Agent Skills 的简历工作流技能。
 
 它把做简历拆成一条可复用的工作流：从已有简历解析并补充，或从真实经历采访开始，建立一份简历母版；再分析目标 JD、生成岗位定制版、检查 ATS 可读性，并维护不同投递版本。生成的简历是独立 HTML，可在浏览器中打印为 PDF；视觉版还可以用附带的本地 Canvas 做最后的文字和排版微调。
 
 > 这不是一个独立的在线简历网站，而是一组让你的 Agent 按稳定流程工作的 Skills。你仍然需要在 Codex、Claude Code 或其他兼容客户端中与 Agent 对话。
 
 完整的分章节安装与使用指南见：[Resume Skills GitHub Pages 教程](https://chasen-liao.github.io/resume-skills/)（[页面源码](docs/index.html)）。
-
-仓库维护者首次发布教程时，需要先在 GitHub 仓库的 **Settings → Pages** 中将 Source 设为 **GitHub Actions**，再手动运行或重新触发 `Deploy tutorial to GitHub Pages` 工作流。之后修改 `docs/` 并推送到 `main` 会自动部署。
 
 ![Resume Skills builder](builder.png)
 
@@ -26,19 +28,7 @@
 先确保本机已安装 Node.js 20 或更高版本，然后在终端执行：
 
 ```bash
-npx skills add Chasen-Liao/resume-skills --skill '*' --agent codex --yes
-```
-
-如果你使用 Claude Code，把目标 Agent 改为 `claude-code`：
-
-```bash
-npx skills add Chasen-Liao/resume-skills --skill '*' --agent claude-code --yes
-```
-
-默认安装到当前项目；如果希望在所有项目中使用，添加 `--global`：
-
-```bash
-npx skills add Chasen-Liao/resume-skills --skill '*' --agent codex --global --yes
+npx skills add Chasen-Liao/resume-skills
 ```
 
 也可以先查看仓库中的 Skill 列表，不立即安装：
@@ -75,7 +65,7 @@ resume-skills editor resume-visual.html
 
 #### 空的简历工作区：先建立母版
 
-没有 `resume-facts.yaml` 和母版时，调用 `resume-workflow`。它会导入已有简历或采访真实经历，确认事实后生成母版：
+没有 `resume-facts.yaml` 和母版时，调用 `resume-workflow`。可以导入已有简历或采访真实经历，确认事实后生成母版：
 
 ```text
 使用 `resume-workflow` 帮我创建或更新简历。我想申请前端开发实习，请先确认事实，不要编造任何经历或数据。
