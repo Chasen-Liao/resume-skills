@@ -280,40 +280,4 @@ ul.item-details li::before {
   text-align: justify;
 }
 
-/* 导出按钮工具栏（深色主题） */
-.no-print-toolbar {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: var(--color-card);
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  width: 180px;
-}
-
-.btn-export {
-  background-color: var(--color-accent);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  font-weight: 700;
-  cursor: pointer;
-  font-size: 12px;
-  text-align: center;
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.btn-export:hover {
-  background-color: #2563EB;
-}
-
-.toolbar-tip {
-  font-size: 9.5px;
-  color: var(--color-muted-fg);
-  line-height: 1.3;
-}
 ```

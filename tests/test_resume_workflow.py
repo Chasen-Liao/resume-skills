@@ -60,11 +60,11 @@ class ResumeWorkflowTests(unittest.TestCase):
 
     def test_readme_requires_canvas_preview_for_visual_deliverables(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        tutorial = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+        tutorial = (ROOT / "docs" / "tutorial.md").read_text(encoding="utf-8")
 
         self.assertIn("视觉母版或视觉定制版", readme)
         self.assertIn("npx @chasen-liao/resume-skills editor", readme)
-        self.assertIn("视觉母版或视觉定制版", tutorial)
+        self.assertIn("resume-facts.yaml", tutorial)
 
 
 if __name__ == "__main__":

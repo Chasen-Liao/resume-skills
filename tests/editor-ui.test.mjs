@@ -35,3 +35,19 @@ test("editor UI provides reduced-motion safe button feedback", () => {
   assert.match(css, /button:active[\s\S]*transform: translateY\(0\) scale\(0\.98\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 });
+
+test("resume templates do not include deprecated export toolbars", () => {
+  const templates = [
+    "classic-business.html",
+    "creative-bold.html",
+    "japanese-minimal.html",
+    "minimal-blue-business.html",
+    "modern-minimal.html",
+    "tech-dark.html",
+  ];
+
+  for (const template of templates) {
+    const html = readFileSync(`${root}/skills/resume-builder/references/examples/${template}`, "utf8");
+    assert.doesNotMatch(html, /no-print-toolbar|btn-export|toolbar-tip/);
+  }
+});

@@ -263,40 +263,4 @@ ul.item-details li::before {
   text-align: justify;
 }
 
-/* 导出按钮工具栏 */
-.no-print-toolbar {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: white;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  width: 180px;
-}
-
-.btn-export {
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  font-weight: 500;
-  cursor: pointer;
-  font-size: 12px;
-  text-align: center;
-  letter-spacing: 1px;
-}
-
-.btn-export:hover {
-  background-color: var(--color-accent);
-}
-
-.toolbar-tip {
-  font-size: 9.5px;
-  color: #64748B;
-  line-height: 1.3;
-}
 ```
