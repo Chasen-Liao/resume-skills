@@ -109,3 +109,16 @@ p, li {
   hyphens: auto;
 }
 ```
+
+## 页面密度验证
+
+生成后必须对实际导出的 PDF 运行：
+
+```bash
+python skills/resume-builder/scripts/validate_resume.py --html <resume.html> --pdf <resume.pdf> --check-layout --min-fill-ratio 0.78 --json
+```
+
+- 目标是 1 页、页面占用率至少 78%，并让顶部和底部留白接近；`page fill` 和 `vertical balance` 是版式警告，不是补写事实的理由。
+- 页面偏空时，使用已有内容均匀增加 `--gap-section`、`--gap-item`、行高或容器内边距；避免只把所有内容堆在顶部，也避免设置未经复验的固定最小高度。
+- 页面溢出时，先缩小页边距（不低于 8mm），再压缩间距和行高（不低于 1.25），最后才考虑正文缩小（不低于 9.5px）或精简低相关内容。每次调整后重新导出和验证。
+- `bottom safety` 失败或 PDF 页数大于 1 时，输出不可交付；必须修复后再进入 Canvas 预览或交付。

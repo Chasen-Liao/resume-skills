@@ -20,18 +20,61 @@ def run_validator(*args):
     )
 
 
-def write_mock_pdf(path: Path, text: str = "Chasen Zhang\nExperience\n"):
-    stream = f"BT /F1 12 Tf 72 720 Td ({text.replace(chr(10), ') Tj 0 -16 Td (')}) Tj ET"
+def write_mock_pdf(path: Path, text: str = "Chasen Zhang\nExperience\n", y: int = 720):
+    stream = f"BT /F1 12 Tf 72 {y} Td ({text.replace(chr(10), ') Tj 0 -16 Td (')}) Tj ET"
     content = (
         "%PDF-1.4\n"
         "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n"
         "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n"
-        "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+        "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.92 842.88] "
         "/Contents 4 0 R >> endobj\n"
         f"4 0 obj << /Length {len(stream.encode('latin-1'))} >> stream\n{stream}\nendstream endobj\n"
         "trailer << /Root 1 0 R >>\n%%EOF\n"
     )
     path.write_bytes(content.encode("latin-1"))
+
+
+def write_two_page_mock_pdf(path: Path):
+    page_stream = "BT /F1 12 Tf 72 720 Td (Chasen Zhang) Tj ET"
+    content_length = len(page_stream.encode("latin-1"))
+    content = (
+        "%PDF-1.4\n"
+        "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n"
+        "2 0 obj << /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >> endobj\n"
+        "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.92 842.88] "
+        "/Contents 4 0 R >> endobj\n"
+        f"4 0 obj << /Length {content_length} >> stream\n{page_stream}\nendstream endobj\n"
+        "5 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.92 842.88] "
+        "/Contents 6 0 R >> endobj\n"
+        f"6 0 obj << /Length {content_length} >> stream\n{page_stream}\nendstream endobj\n"
+        "trailer << /Root 1 0 R >>\n%%EOF\n"
+    )
+    path.write_bytes(content.encode("latin-1"))
+
+
+def write_layout_pdf(path: Path, y: int | list[int]):
+    from pypdf import PdfWriter
+    from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=595.92, height=842.88)
+    font = DictionaryObject(
+        {
+            NameObject("/Type"): NameObject("/Font"),
+            NameObject("/Subtype"): NameObject("/Type1"),
+            NameObject("/BaseFont"): NameObject("/Helvetica"),
+        }
+    )
+    page[NameObject("/Resources")] = DictionaryObject(
+        {NameObject("/Font"): DictionaryObject({NameObject("/F1"): writer._add_object(font)})}
+    )
+    stream = DecodedStreamObject()
+    positions = [y] if isinstance(y, int) else y
+    commands = " ".join(f"BT /F1 12 Tf 72 {position} Td (Chasen Zhang) Tj ET" for position in positions)
+    stream.set_data(commands.encode("latin-1"))
+    page[NameObject("/Contents")] = writer._add_object(stream)
+    with path.open("wb") as handle:
+        writer.write(handle)
 
 
 class ValidateResumeTests(unittest.TestCase):
@@ -103,6 +146,52 @@ class ValidateResumeTests(unittest.TestCase):
             result = run_validator("--pdf", pdf)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("text", result.stdout.lower())
+
+    def test_pdf_layout_warns_when_single_page_is_too_sparse(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pdf = Path(directory) / "sparse.pdf"
+            write_layout_pdf(pdf, y=500)
+            result = run_validator(
+                "--pdf", pdf, "--check-layout", "--min-fill-ratio", "0.78", "--json"
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            report = json.loads(result.stdout)
+            layout = [item for item in report["checks"] if item["name"] == "page fill"]
+            self.assertEqual(len(layout), 1)
+            self.assertEqual(layout[0]["status"], "warn")
+            self.assertIn("占用率", layout[0]["message"])
+
+    def test_pdf_layout_passes_when_content_nearly_fills_one_page(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pdf = Path(directory) / "full.pdf"
+            write_layout_pdf(pdf, y=100)
+            result = run_validator("--pdf", pdf, "--check-layout")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("[PASS] page fill", result.stdout)
+
+    def test_pdf_layout_rejects_more_than_one_page(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pdf = Path(directory) / "overflow.pdf"
+            write_two_page_mock_pdf(pdf)
+            result = run_validator("--pdf", pdf, "--check-layout")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("PDF page count", result.stdout)
+
+    def test_pdf_layout_rejects_content_past_printable_bottom(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pdf = Path(directory) / "clipped.pdf"
+            write_layout_pdf(pdf, y=20)
+            result = run_validator("--pdf", pdf, "--check-layout")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("bottom safety", result.stdout)
+
+    def test_pdf_layout_warns_when_top_and_bottom_whitespace_are_unbalanced(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pdf = Path(directory) / "unbalanced.pdf"
+            write_layout_pdf(pdf, y=[720, 300])
+            result = run_validator("--pdf", pdf, "--check-layout")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("[WARN] vertical balance", result.stdout)
 
     def test_render_wrapper_accepts_absolute_output_path(self):
         with tempfile.TemporaryDirectory() as directory:

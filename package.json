@@ -1,6 +1,6 @@
 {
   "name": "@chasen-liao/resume-skills",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Agent skills and a local canvas editor for generated HTML resumes",
   "type": "module",
   "bin": {

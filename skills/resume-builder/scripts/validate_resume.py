@@ -180,7 +180,44 @@ def pdf_literal_text(data: bytes) -> str:
     return "\n".join(pieces)
 
 
-def validate_pdf(path: Path, required: list[str], checks: list[Check]) -> None:
+def measure_pdf_text_bounds(page: Any) -> tuple[float, float] | None:
+    """Return the top and bottom text bounds in PDF coordinates."""
+    bounds: list[tuple[float, float]] = []
+
+    def visit_text(
+        text: str,
+        _cm: Any,
+        tm: Any,
+        _font_dict: Any,
+        font_size: Any,
+    ) -> None:
+        if not text.strip():
+            return
+        try:
+            y = float(tm[5])
+            size = float(font_size or 10)
+        except (TypeError, ValueError, IndexError):
+            return
+        bounds.append((y + size, y - (size * 0.25)))
+
+    try:
+        page.extract_text(visitor_text=visit_text)
+    except Exception:
+        return None
+    if not bounds:
+        return None
+    return max(item[0] for item in bounds), min(item[1] for item in bounds)
+
+
+def validate_pdf(
+    path: Path,
+    required: list[str],
+    checks: list[Check],
+    check_layout: bool = False,
+    min_fill_ratio: float = 0.78,
+    page_margin_pt: float = 28.35,
+    bottom_safe_pt: float = 12.0,
+) -> None:
     try:
         data = path.read_bytes()
     except OSError as exc:
@@ -189,6 +226,7 @@ def validate_pdf(path: Path, required: list[str], checks: list[Check]) -> None:
 
     text = ""
     page_count: int | None = None
+    reader: Any = None
     try:
         from pypdf import PdfReader  # Optional dependency; fallback below remains stdlib-only.
 
@@ -199,8 +237,10 @@ def validate_pdf(path: Path, required: list[str], checks: list[Check]) -> None:
         page_count = len(re.findall(rb"/Type\s*/Page(?:\s|/|>)", data))
         text = pdf_literal_text(data)
 
-    if page_count and page_count > 0:
-        add(checks, "PDF page count", "pass", f"{page_count} page(s)")
+    if page_count == 1:
+        add(checks, "PDF page count", "pass", "1 page")
+    elif page_count and page_count > 1:
+        add(checks, "PDF page count", "fail", f"expected 1 page, found {page_count}")
     else:
         add(checks, "PDF page count", "fail", "no PDF pages detected")
     if text.strip():
@@ -213,6 +253,65 @@ def validate_pdf(path: Path, required: list[str], checks: list[Check]) -> None:
         else:
             add(checks, f"required text: {value}", "fail", "required text is missing from PDF text")
 
+    if check_layout:
+        if page_count != 1:
+            add(checks, "page fill", "fail", "layout check requires exactly one readable PDF page")
+        elif reader is None:
+            add(checks, "page fill", "warn", "无法从当前 PDF 解析页面占用率，请人工检查截图")
+        else:
+            bounds = measure_pdf_text_bounds(reader.pages[0])
+            if bounds is None:
+                add(checks, "page fill", "warn", "无法从 PDF 文本测量页面占用率")
+            else:
+                top_y, bottom_y = bounds
+                page_height = float(reader.pages[0].mediabox.height)
+                printable_height = page_height - (2 * page_margin_pt)
+                occupied_height = (page_height - page_margin_pt) - bottom_y
+                fill_ratio = occupied_height / printable_height if printable_height > 0 else 0
+                top_space = max((page_height - page_margin_pt) - top_y, 0)
+                bottom_space = max(bottom_y - page_margin_pt, 0)
+                imbalance = abs(top_space - bottom_space)
+                if imbalance > 56.7:
+                    add(
+                        checks,
+                        "vertical balance",
+                        "warn",
+                        f"上下留白差 {imbalance:.1f}pt，建议让上下间距更接近",
+                    )
+                else:
+                    add(
+                        checks,
+                        "vertical balance",
+                        "pass",
+                        f"上下留白差 {imbalance:.1f}pt",
+                    )
+                if bottom_y < page_margin_pt:
+                    add(
+                        checks,
+                        "bottom safety",
+                        "fail",
+                        f"内容已超出可打印底部安全区（bottom={bottom_y:.1f}pt）",
+                    )
+                elif (bottom_y - page_margin_pt) < bottom_safe_pt:
+                    add(
+                        checks,
+                        "bottom safety",
+                        "warn",
+                        f"底部安全余量仅 {bottom_y - page_margin_pt:.1f}pt",
+                    )
+                else:
+                    add(
+                        checks,
+                        "bottom safety",
+                        "pass",
+                        f"底部安全余量 {bottom_y - page_margin_pt:.1f}pt",
+                    )
+                fill_message = f"页面占用率 {fill_ratio:.0%}（目标 ≥ {min_fill_ratio:.0%}）"
+                if fill_ratio < min_fill_ratio:
+                    add(checks, "page fill", "warn", f"{fill_message}，页面偏空")
+                else:
+                    add(checks, "page fill", "pass", fill_message)
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Validate HTML/PDF resume output")
@@ -222,6 +321,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--required-text", nargs="+", default=[], metavar="TEXT")
     parser.add_argument("--json", action="store_true", dest="as_json")
     parser.add_argument("--check-overflow", action="store_true")
+    parser.add_argument(
+        "--check-layout",
+        action="store_true",
+        help="check one-page layout, printable bottom safety, and text fill ratio",
+    )
+    parser.add_argument(
+        "--min-fill-ratio",
+        type=float,
+        default=0.78,
+        help="warn when measurable PDF text occupies less than this ratio of the printable height",
+    )
     return parser
 
 
@@ -237,7 +347,13 @@ def main(argv: list[str] | None = None) -> int:
             if args.check_overflow:
                 add(checks, "overflow measurement", "warn", "browser layout measurement not available in this script")
     if args.pdf:
-        validate_pdf(args.pdf, args.required_text, checks)
+        validate_pdf(
+            args.pdf,
+            args.required_text,
+            checks,
+            check_layout=args.check_layout,
+            min_fill_ratio=args.min_fill_ratio,
+        )
 
     ok = not any(check.status == "fail" for check in checks)
     report = {
