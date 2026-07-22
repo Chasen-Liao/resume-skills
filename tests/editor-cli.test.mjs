@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { once } from "node:events";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -42,4 +44,55 @@ test("editor server exposes the SVG favicon", async () => {
     server.close();
     await once(server, "close");
   }
+});
+
+async function withEditorFixture(run) {
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-editor-"));
+  const sourcePath = join(directory, "resume.html");
+  await writeFile(sourcePath, '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body><div class="resume"></div></body></html>');
+
+  try {
+    await run(directory, sourcePath);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
+
+test("editor serves a percent-encoded asset path from a Chinese directory", async () => {
+  await withEditorFixture(async (directory, sourcePath) => {
+    const assetDirectory = join(directory, "证件照");
+    const asset = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+    await mkdir(assetDirectory);
+    await writeFile(join(assetDirectory, "证件照-new.png"), asset);
+
+    const server = startEditor(sourcePath, { open: false, log: false });
+    await once(server, "listening");
+    try {
+      const { port } = server.address();
+      const response = await fetch(`http://127.0.0.1:${port}/${encodeURI("证件照/证件照-new.png")}`);
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(Buffer.from(await response.arrayBuffer()), asset);
+    } finally {
+      server.close();
+      await once(server, "close");
+    }
+  });
+});
+
+test("editor rejects encoded directory traversal in asset paths", async () => {
+  await withEditorFixture(async (directory, sourcePath) => {
+    await writeFile(join(directory, "..%2Fsecret.txt"), "decoy");
+    const server = startEditor(sourcePath, { open: false, log: false });
+    await once(server, "listening");
+    try {
+      const { port } = server.address();
+      const response = await fetch(`http://127.0.0.1:${port}/..%2Fsecret.txt`);
+
+      assert.equal(response.status, 403);
+    } finally {
+      server.close();
+      await once(server, "close");
+    }
+  });
 });

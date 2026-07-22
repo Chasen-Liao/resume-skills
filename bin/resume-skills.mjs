@@ -89,7 +89,8 @@ export function startEditor(sourcePath, { log = true, open = true } = {}) {
     }
     if (request.method === "GET") {
       try {
-        const assetPath = resolveSourceAsset(sourcePath, new URL(request.url, "http://127.0.0.1").pathname);
+        const requestPath = decodeURIComponent(new URL(request.url, "http://127.0.0.1").pathname);
+        const assetPath = resolveSourceAsset(sourcePath, requestPath);
         if (existsSync(assetPath) && statSync(assetPath).isFile()) {
           return send(response, 200, assetContentType(assetPath), readFileSync(assetPath));
         }
