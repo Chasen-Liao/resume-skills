@@ -33,13 +33,14 @@ lib/                            HTML 协议、资源路径、控件规则
 public/                         Canvas 前端（editor.html、app.js、app.css）
 tests/                          Node 回归测试
 skills/resume-builder/tests/    模板与简历输出验证测试
+docs/                           GitHub Pages 教程；`docs/**` 推送到 main 后触发部署
 ```
 
 ## 开发约定
 
 1. 改动技能工作流时，先读取对应 `SKILL.md` 和相关事实契约；保持中文、可执行、可追溯的说明。
 2. 新增或修改内置模板时，保留 A4 打印布局，不能带模板自己的导出控件；为 `<html>` 添加编辑协议属性。
-3. 修改编辑器行为时，先写能复现需求的 Node 测试，再改实现。不要用正则解析或重写整个 HTML 文档。
+3. 修改编辑器行为时，先写能复现需求的 Node 测试，再改实现。资源请求从 URL 映射到文件路径时，先解码 pathname、再执行目录边界检查；覆盖中文等编码路径与编码穿越路径。不要用正则解析或重写整个 HTML 文档。
 4. UI 以原生 HTML/CSS/JS 为准，无构建步骤；交互须有键盘焦点、清晰状态和 `prefers-reduced-motion` 兼容。
 5. 不顺手重构无关文件；保留用户已有的未提交改动。
 
