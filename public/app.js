@@ -48,10 +48,14 @@ function saveDraft() {
   updateOverflow();
 }
 function select(element) {
-  if (selected) selected.removeAttribute("data-editor-selected");
+  if (selected) selected.removeAttribute("data-resume-editor-selected");
   selected = element;
-  selected.setAttribute("data-editor-selected", "true");
+  selected.setAttribute("data-resume-editor-selected", "true");
   selectionName.textContent = selected.textContent.trim().slice(0, 42) || "已选择空文本";
+  // CSS spring feedback
+  selectionName.classList.remove("animate-pop");
+  void selectionName.offsetWidth;
+  selectionName.classList.add("animate-pop");
 }
 function assignFallbackEditorIds(doc) {
   const selector = [
@@ -101,10 +105,25 @@ function bindControl(control, handler) {
 Object.entries({ "font-size": (v) => setRule(selected, "font-size", `${v}px`), "font-weight": (v) => v && setRule(selected, "font-weight", v), "font-color": (v) => setRule(selected, "color", v), "text-align": (v) => v && setRule(selected, "text-align", v), "line-height": (v) => setRule(selected, "line-height", v), "margin-bottom": (v) => setRule(selected, "margin-bottom", `${v}px`) }).forEach(([id, action]) => bindControl(controls[id], () => { if (selected) action(controls[id].value); }));
 bindControl(controls["page-margin"], () => setRootToken("--page-margin", `${controls["page-margin"].value}mm`));
 bindControl(controls["accent-color"], () => setRootToken("--color-accent", controls["accent-color"].value));
-document.querySelector("#export-html").addEventListener("click", async () => {
-  const response = await fetch("/api/export", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ html: cleanForExport() }) });
+
+// Sync ranges with number inputs
+document.querySelectorAll(".sync-slider").forEach(slider => {
+  const targetId = slider.dataset.target;
+  const numInput = controls[targetId] || document.getElementById(targetId);
+  if (numInput) {
+    slider.addEventListener("input", (e) => {
+      numInput.value = e.target.value;
+      numInput.dispatchEvent(new Event("input"));
+    });
+    numInput.addEventListener("input", (e) => {
+      slider.value = e.target.value;
+    });
+  }
+});
+document.querySelector("#save-html").addEventListener("click", async () => {
+  const response = await fetch("/api/save", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ html: cleanForExport() }) });
   const result = await response.json();
-  status.textContent = response.ok ? `已导出 ${result.outputName}` : `导出失败：${result.error}`;
+  status.textContent = response.ok ? `已成功保存 ${result.outputName}` : `保存失败：${result.error}`;
 });
 document.querySelector("#print-pdf").addEventListener("click", () => frame.contentWindow.print());
 window.addEventListener("beforeunload", (event) => { if (localStorage.getItem(draftKey())) { event.preventDefault(); event.returnValue = ""; } });

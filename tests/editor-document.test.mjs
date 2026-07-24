@@ -12,6 +12,12 @@ test("prepares a supported modern resume without adding editing chrome", () => {
   assert.doesNotMatch(prepared, /resume-editor-app/);
 });
 
+test("removes the Canvas selection marker before serving or saving a resume", () => {
+  const prepared = prepareEditorDocument(modernResume.replace('data-resume-editor-id="profile-name"', 'data-resume-editor-id="profile-name" data-editor-selected="true"'));
+
+  assert.doesNotMatch(prepared, /data-editor-selected/);
+});
+
 test("accepts a supported template before the canvas assigns editable text ids", () => {
   const html = '<html data-resume-editor-template="classic-business" data-resume-editor-version="1"><body><h1>个人简历</h1></body></html>';
 

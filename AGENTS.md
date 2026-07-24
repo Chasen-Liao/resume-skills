@@ -8,7 +8,7 @@
 
 - 技能负责采访、事实核验、内容写作、JD 匹配、ATS 优化和版本管理。
 - `resume-skills editor <resume.html>` 只负责受限的文字与排版微调，不生成或改写简历内容。
-- 简历以独立 HTML 为主输出，浏览器打印为 PDF；编辑器导出固定覆盖 `<原文件名>-edited.html`，绝不覆盖原文件。
+- 简历以独立 HTML 为主输出，浏览器打印为 PDF；为确保工作流中具有单一的事实来源 (Source of Truth)，Canvas 编辑器保存时将直接覆盖并固化原始 HTML 文件。
 
 ## 关键边界
 
@@ -53,7 +53,7 @@ python skills\resume-builder\tests\test_validate_resume.py
 node bin\resume-skills.mjs editor skills\resume-builder\references\examples\modern-minimal.html
 ```
 
-最后一条会启动本地编辑器。验证导出时确认：原 HTML 不变、导出文件固定为 `*-edited.html`、浏览器可打印为 PDF。
+最后一条会启动本地编辑器。验证保存时确认：原 HTML 会被直接覆盖以保证基准状态最新、浏览器可打印为 PDF。
 
 ## 发布检查
 

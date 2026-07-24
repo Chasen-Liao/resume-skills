@@ -99,12 +99,12 @@ npx @chasen-liao/resume-skills editor "<生成的_visual.html路径>"
 ```
 
 高级 CLI 参数说明（适用于 Agent 自动化或无 GUI 容器环境）：
-- `--json`：以 JSON 格式输出服务启动信息（如 URL、端口和导出路径）。
+- `--json`：以 JSON 格式输出一次服务启动信息（如 URL、端口和源 HTML 路径）；服务会继续运行，供 Agent 连接该地址。
 - `--no-open`：禁用自动打开系统浏览器（适合控制台或集成环境）。
 - `--port <number>`：指定监听端口。
 - **Live Preview**：编辑器建立连接后支持 SSE 热刷新。当 Agent 重新写入或修改该 HTML 时，页面将自动重载展示最新效果。
 
-命令会在本机启动服务并打开浏览器。告知用户原始 HTML、PDF 和 Canvas 导出的固定覆盖文件 `<原文件名>-edited.html` 的位置；Canvas 只允许修改已有文字和受限排版，不能改写内容、做 JD 匹配或调整结构。如当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已启动。
+命令会在本机启动服务并打开浏览器。告知用户原始 HTML 和 PDF 的位置；Canvas 保存时会直接覆盖该 HTML，使其成为最新版本。Canvas 只允许修改已有文字和受限排版，不能改写内容、做 JD 匹配或调整结构。如当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已启动。
 
 ATS-safe 模式不使用 Canvas（其单栏 HTML 不属于 Canvas 支持的视觉模板）；告知文件位置与浏览器打印 PDF 方法。两种模式都可在后续使用 `jd-tailorer` 针对 JD 定制。
 

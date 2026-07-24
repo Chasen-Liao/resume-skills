@@ -31,8 +31,7 @@ test("editor guide credits the author and links to the project repository", () =
 });
 
 test("editor UI provides reduced-motion safe button feedback", () => {
-  assert.match(css, /button:hover[\s\S]*transform: translateY\(-1px\)/);
-  assert.match(css, /button:active[\s\S]*transform: translateY\(0\) scale\(0\.98\)/);
+  assert.match(css, /button:active[\s\S]*transform: scale\(0\.97\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 });
 

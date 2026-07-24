@@ -9,11 +9,101 @@
 </head>
 <body>
   <a class="skip-link" href="#canvas">跳到简历画布</a>
-  <header class="app-header"><strong class="brand"><svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6.5 3.5h7l4 4v13h-11z"/><path d="M13.5 3.5v4h4M9 12h6M9 15.5h6"/></svg><span class="brand-name">ResumeSkills Canvas</span></strong><span id="source-name"></span><span id="save-status" aria-live="polite">正在加载…</span></header>
+  <header class="app-header">
+    <strong class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6.5 3.5h7l4 4v13h-11z"/><path d="M13.5 3.5v4h4M9 12h6M9 15.5h6"/></svg>
+      <span class="brand-name">ResumeSkills Canvas</span>
+    </strong>
+    <span id="source-name"></span>
+    <span id="save-status" aria-live="polite">正在加载…</span>
+  </header>
   <main class="layout">
-    <aside class="guide"><h1>文字与排版微调</h1><p>单击选择文字，双击直接编辑。仅能调整允许的排版项。</p><p>原始 HTML 不会被覆盖。</p><button id="export-html">导出 HTML</button><button id="print-pdf" class="secondary">打印为 PDF</button><p id="overflow-status" class="status"></p><footer class="project-meta"><span>Created by Chasen-Liao</span><a href="https://github.com/Chasen-Liao" target="_blank" rel="noreferrer">GitHub</a><a href="https://github.com/Chasen-Liao/resume-skills" target="_blank" rel="noreferrer">Repository</a></footer></aside>
-    <section id="canvas" class="canvas" aria-label="A4 简历画布"><iframe id="resume-frame" title="可编辑简历预览"></iframe></section>
-    <aside class="inspector"><h2>排版</h2><p id="selection-name">请选择一段文字</p><label>字号 (px) <input id="font-size" type="number" min="8" max="30" step="0.5" value="10"></label><label>字重 <select id="font-weight"><option value="">模板默认</option><option value="400">常规</option><option value="500">中等</option><option value="600">半粗</option><option value="700">加粗</option></select></label><label>颜色 <input id="font-color" type="color" value="#09090b"></label><label>对齐 <select id="text-align"><option value="">模板默认</option><option value="left">左对齐</option><option value="center">居中</option><option value="right">右对齐</option></select></label><label>行高 <input id="line-height" type="number" min="1" max="2" step="0.05" value="1.35"></label><label>段后间距 (px) <input id="margin-bottom" type="number" min="0" max="48" step="1" value="0"></label><hr><label>页边距 (mm) <input id="page-margin" type="number" min="8" max="20" step="0.5" value="10"></label><label>主题色 <input id="accent-color" type="color" value="#2563eb"></label></aside>
+    <aside class="guide">
+      <h1>排版微调</h1>
+      <p>单击选择文字，双击直接编辑。仅能调整允许的排版项。</p>
+      <p>修改后直接覆盖保存，维持单一版本。</p>
+      <button id="save-html">保存修改</button>
+      <button id="print-pdf" class="secondary">打印为 PDF</button>
+      <p id="overflow-status" class="status"></p>
+      <footer class="project-meta">
+        <span>Created by Chasen-Liao</span>
+        <a href="https://github.com/Chasen-Liao" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="https://github.com/Chasen-Liao/resume-skills" target="_blank" rel="noreferrer">Repository</a>
+      </footer>
+    </aside>
+    <section id="canvas" class="canvas" aria-label="A4 简历画布">
+      <iframe id="resume-frame" title="可编辑简历预览"></iframe>
+    </section>
+    <aside class="inspector">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+        排版细节
+      </h2>
+      <p id="selection-name">请选择一段文字</p>
+
+      <label>
+        <div class="label-header"><span>字号 (px)</span></div>
+        <div class="slider-group">
+          <input type="range" class="sync-slider" data-target="font-size" min="8" max="30" step="0.5" value="10">
+          <input id="font-size" type="number" min="8" max="30" step="0.5" value="10">
+        </div>
+      </label>
+
+      <label>
+        <div class="label-header"><span>字重</span></div>
+        <select id="font-weight">
+          <option value="">模板默认</option>
+          <option value="400">常规</option>
+          <option value="500">中等</option>
+          <option value="600">半粗</option>
+          <option value="700">加粗</option>
+        </select>
+      </label>
+
+      <label>
+        <div class="label-header"><span>颜色</span><input id="font-color" type="color" value="#09090b"></div>
+      </label>
+
+      <label>
+        <div class="label-header"><span>对齐</span></div>
+        <select id="text-align">
+          <option value="">模板默认</option>
+          <option value="left">左对齐</option>
+          <option value="center">居中</option>
+          <option value="right">右对齐</option>
+        </select>
+      </label>
+
+      <label>
+        <div class="label-header"><span>行高</span></div>
+        <div class="slider-group">
+          <input type="range" class="sync-slider" data-target="line-height" min="1" max="2" step="0.05" value="1.35">
+          <input id="line-height" type="number" min="1" max="2" step="0.05" value="1.35">
+        </div>
+      </label>
+
+      <label>
+        <div class="label-header"><span>段后间距 (px)</span></div>
+        <div class="slider-group">
+          <input type="range" class="sync-slider" data-target="margin-bottom" min="0" max="48" step="1" value="0">
+          <input id="margin-bottom" type="number" min="0" max="48" step="1" value="0">
+        </div>
+      </label>
+
+      <hr>
+
+      <label>
+        <div class="label-header"><span>页边距 (mm)</span></div>
+        <div class="slider-group">
+          <input type="range" class="sync-slider" data-target="page-margin" min="8" max="20" step="0.5" value="10">
+          <input id="page-margin" type="number" min="8" max="20" step="0.5" value="10">
+        </div>
+      </label>
+
+      <label>
+        <div class="label-header"><span>主题色</span><input id="accent-color" type="color" value="#2563eb"></div>
+      </label>
+    </aside>
   </main>
   <script type="module" src="/app.js"></script>
 </body>

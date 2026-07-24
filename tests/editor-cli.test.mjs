@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { once } from "node:events";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { nextExportPath, startEditor } from "../bin/resume-skills.mjs";
+import { startEditor } from "../bin/resume-skills.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const cli = fileURLToPath(new URL("../bin/resume-skills.mjs", import.meta.url));
@@ -23,32 +23,38 @@ test("editor help documents an HTML input path and options", () => {
   assert.match(output, /--port/);
 });
 
-test("editor cli outputs JSON status when --json flag is passed", () => {
-  const output = execFileSync(process.execPath, [cli, "editor", exampleResume, "--no-open", "--json"], {
-    cwd: root,
-    encoding: "utf8",
-  });
-
+test("editor CLI exposes a reachable server after JSON startup", async () => {
+  const child = spawn(process.execPath, [cli, "editor", exampleResume, "--no-open", "--json"], { cwd: root });
+  child.stdout.setEncoding("utf8");
+  const [output] = await once(child.stdout, "data");
   const parsed = JSON.parse(output.trim());
-  assert.equal(parsed.event, "server_started");
-  assert.equal(typeof parsed.port, "number");
-  assert.match(parsed.url, /^http:\/\/127\.0\.0\.1:\d+/);
-  assert.match(parsed.sourcePath, /modern-minimal\.html$/);
-  assert.match(parsed.exportPath, /modern-minimal-edited\.html$/);
+
+  try {
+    assert.equal(parsed.event, "server_started");
+    assert.equal(typeof parsed.port, "number");
+    assert.match(parsed.url, /^http:\/\/127\.0\.0\.1:\d+/);
+    assert.match(parsed.sourcePath, /modern-minimal\.html$/);
+    assert.equal(parsed.exportPath, parsed.sourcePath);
+    assert.equal((await fetch(`${parsed.url}/api/document`)).status, 200);
+  } finally {
+    child.kill();
+    await once(child, "exit");
+  }
 });
 
-test("startEditor options support port binding and json logging", async () => {
+test("startEditor keeps the JSON-reported server available", async () => {
   const logs = [];
   const logFn = (msg) => logs.push(msg);
   const server = startEditor(exampleResume, { open: false, port: 0, json: true, logFn });
   await once(server, "listening");
 
   try {
-    const { port } = server.address();
     assert.equal(logs.length, 1);
     const parsed = JSON.parse(logs[0]);
     assert.equal(parsed.event, "server_started");
-    assert.equal(parsed.port, port);
+    assert.equal(typeof parsed.port, "number");
+    const response = await fetch(`${parsed.url}/api/document`);
+    assert.equal(response.status, 200);
   } finally {
     server.close();
     await once(server, "close");
@@ -73,12 +79,7 @@ test("editor serves /api/events endpoint for live reload SSE", async () => {
   });
 });
 
-test("editor export always targets one replaceable edited file", () => {
-  assert.equal(
-    nextExportPath("C:/resumes/modern-minimal.html"),
-    join("C:/resumes", "modern-minimal-edited.html"),
-  );
-});
+
 
 test("editor server exposes the SVG favicon", async () => {
   const server = startEditor(exampleResume, { open: false, log: false });

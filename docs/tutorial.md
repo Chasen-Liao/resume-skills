@@ -137,11 +137,11 @@ skills 会在你的工作区下生成一个 resume-facts.yaml 文件，用来作
 
 用npx [@chasen](https://x.com/@chasen)\-liao/resume-skills editor "<生成的\_visual.html路径>" 打开本地的预览。
 
-你就能在 web 端看到生成的简历，并且在网页端去微调成自己满意的样子并且保存和导出；
+你就能在 web 端看到生成的简历，并且在网页端微调成自己满意的样子后保存；保存会直接覆盖这份 HTML，让它始终保持最新版本。
 
 ![图像](https://pbs.twimg.com/media/HNVfWD1awAAX0Jv?format=jpg&name=large)
 
-双击要修改的行，就可以进行修改。非常的便捷，觉得没问题就可以点击左边直接导出。
+双击要修改的行，就可以进行修改。觉得没问题后，点击左侧“保存修改”即可。
 
 如果没有或者对以前的简历不满意，那可以直接使用这个skills去创建一份新的简历，这个skills内置了 6 种风格示例，可以产出一模一样的 HTML 文件，后续也可以修改样式
 

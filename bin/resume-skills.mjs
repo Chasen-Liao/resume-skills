@@ -23,13 +23,6 @@ function printHelp() {
   console.log("  -h, --help            Show this help message");
 }
 
-export function nextExportPath(sourcePath) {
-  const folder = dirname(sourcePath);
-  const extension = extname(sourcePath) || ".html";
-  const stem = basename(sourcePath, extension);
-  return join(folder, `${stem}-edited${extension}`);
-}
-
 function send(response, status, contentType, body) {
   response.writeHead(status, { "content-type": contentType, "cache-control": "no-store" });
   response.end(body);
@@ -115,16 +108,17 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
       request.on("error", cleanup);
       return;
     }
-    if (request.method === "POST" && request.url === "/api/export") {
+    if (request.method === "POST" && request.url === "/api/save") {
       let body = "";
       request.on("data", (chunk) => { body += chunk; });
       request.on("end", () => {
         try {
           const { html } = JSON.parse(body);
           const exportHtml = prepareEditorDocument(html);
-          const outputPath = nextExportPath(sourcePath);
-          writeFileSync(outputPath, exportHtml, "utf8");
-          send(response, 200, "application/json; charset=utf-8", JSON.stringify({ outputName: basename(outputPath) }));
+          writeFileSync(sourcePath, exportHtml, "utf8");
+          // NOTE: Saving to sourcePath triggers the file watcher, which triggers hot reload.
+          // The browser will automatically clear the draft and reload.
+          send(response, 200, "application/json; charset=utf-8", JSON.stringify({ outputName: basename(sourcePath) }));
         } catch (error) {
           send(response, 400, "application/json; charset=utf-8", JSON.stringify({ error: error.message }));
         }
@@ -153,7 +147,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
     const address = server.address();
     const actualPort = typeof address === "object" && address !== null ? address.port : port;
     const url = `http://${host}:${actualPort}`;
-    const exportPath = nextExportPath(sourcePath);
+    const exportPath = sourcePath;
 
     if (json) {
       logFn(JSON.stringify({
