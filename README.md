@@ -41,7 +41,7 @@ npx skills add Chasen-Liao/resume-skills --list
 
 ### npm 包：本地 Canvas 编辑器
 
-本仓库同时发布了 npm 包 [`@chasen-liao/resume-skills`](https://www.npmjs.com/package/@chasen-liao/resume-skills)，当前版本为 `0.4.4`。
+本仓库同时发布了 npm 包 [`@chasen-liao/resume-skills`](https://www.npmjs.com/package/@chasen-liao/resume-skills)，当前版本为 `0.4.5`。
 
 - GitHub 仓库中的 `SKILL.md`：提供简历采访、JD 定制、ATS 检查和版本管理流程
 - npm 包：提供 `resume-skills` CLI 和本地 Canvas 编辑器
