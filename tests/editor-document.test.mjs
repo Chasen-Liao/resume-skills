@@ -18,10 +18,20 @@ test("accepts a supported template before the canvas assigns editable text ids",
   assert.equal(prepareEditorDocument(html), html);
 });
 
-test("rejects HTML that does not opt into the editor protocol", () => {
+test("rejects HTML that does not opt into the editor protocol with detailed diagnostics", () => {
   assert.throws(
     () => prepareEditorDocument("<html><body><h1>普通网页</h1></body></html>"),
-    /编辑协议/,
+    /缺失 data-resume-editor-template 属性/,
+  );
+
+  assert.throws(
+    () => prepareEditorDocument('<html data-resume-editor-template="unknown-template" data-resume-editor-version="1"><body></body></html>'),
+    /不支持的模板类别 "unknown-template"/,
+  );
+
+  assert.throws(
+    () => prepareEditorDocument('<html data-resume-editor-template="modern-minimal"><body></body></html>'),
+    /缺失 data-resume-editor-version="1" 属性/,
   );
 });
 

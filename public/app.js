@@ -108,8 +108,26 @@ document.querySelector("#export-html").addEventListener("click", async () => {
 });
 document.querySelector("#print-pdf").addEventListener("click", () => frame.contentWindow.print());
 window.addEventListener("beforeunload", (event) => { if (localStorage.getItem(draftKey())) { event.preventDefault(); event.returnValue = ""; } });
-const response = await fetch("/api/document");
-const { html, documentId: id, sourceName: name } = await response.json();
-documentId = id; sourceName = name; document.querySelector("#source-name").textContent = sourceName;
+async function reloadDocument({ isHotReload = false } = {}) {
+  const response = await fetch("/api/document");
+  const { html, documentId: id, sourceName: name } = await response.json();
+  documentId = id;
+  sourceName = name;
+  document.querySelector("#source-name").textContent = sourceName;
+  if (isHotReload) {
+    localStorage.removeItem(draftKey());
+  }
+  frame.srcdoc = stripLegacyToolbar(localStorage.getItem(draftKey()) || html);
+}
+
 frame.addEventListener("load", () => { bindCanvas(); status.textContent = "已加载"; updateOverflow(); });
-frame.srcdoc = stripLegacyToolbar(localStorage.getItem(draftKey()) || html);
+await reloadDocument();
+
+if (typeof EventSource !== "undefined") {
+  const events = new EventSource("/api/events");
+  events.onmessage = (event) => {
+    if (event.data === "reload") {
+      reloadDocument({ isHotReload: true });
+    }
+  };
+}

@@ -12,13 +12,65 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const cli = fileURLToPath(new URL("../bin/resume-skills.mjs", import.meta.url));
 const exampleResume = fileURLToPath(new URL("../skills/resume-builder/references/examples/modern-minimal.html", import.meta.url));
 
-test("editor help documents an HTML input path", () => {
+test("editor help documents an HTML input path and options", () => {
   const output = execFileSync(process.execPath, [cli, "editor", "--help"], {
     cwd: root,
     encoding: "utf8",
   });
 
   assert.match(output, /resume-skills editor <resume\.html>/);
+  assert.match(output, /--json/);
+  assert.match(output, /--port/);
+});
+
+test("editor cli outputs JSON status when --json flag is passed", () => {
+  const output = execFileSync(process.execPath, [cli, "editor", exampleResume, "--no-open", "--json"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+
+  const parsed = JSON.parse(output.trim());
+  assert.equal(parsed.event, "server_started");
+  assert.equal(typeof parsed.port, "number");
+  assert.match(parsed.url, /^http:\/\/127\.0\.0\.1:\d+/);
+  assert.match(parsed.sourcePath, /modern-minimal\.html$/);
+  assert.match(parsed.exportPath, /modern-minimal-edited\.html$/);
+});
+
+test("startEditor options support port binding and json logging", async () => {
+  const logs = [];
+  const logFn = (msg) => logs.push(msg);
+  const server = startEditor(exampleResume, { open: false, port: 0, json: true, logFn });
+  await once(server, "listening");
+
+  try {
+    const { port } = server.address();
+    assert.equal(logs.length, 1);
+    const parsed = JSON.parse(logs[0]);
+    assert.equal(parsed.event, "server_started");
+    assert.equal(parsed.port, port);
+  } finally {
+    server.close();
+    await once(server, "close");
+  }
+});
+
+test("editor serves /api/events endpoint for live reload SSE", async () => {
+  await withEditorFixture(async (directory, sourcePath) => {
+    const server = startEditor(sourcePath, { open: false, log: false });
+    await once(server, "listening");
+
+    try {
+      const { port } = server.address();
+      const response = await fetch(`http://127.0.0.1:${port}/api/events`);
+      assert.equal(response.status, 200);
+      assert.match(response.headers.get("content-type"), /^text\/event-stream/);
+      response.body.cancel();
+    } finally {
+      server.close();
+      await once(server, "close");
+    }
+  });
 });
 
 test("editor export always targets one replaceable edited file", () => {
