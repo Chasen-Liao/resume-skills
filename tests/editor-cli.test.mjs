@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { once } from "node:events";
 import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -93,6 +94,21 @@ test("editor server exposes the SVG favicon", async () => {
     assert.equal(response.status, 200);
     assert.match(response.headers.get("content-type"), /^image\/svg\+xml/);
     assert.match(body, /<svg[^>]+viewBox="0 0 32 32"/);
+  } finally {
+    server.close();
+    await once(server, "close");
+  }
+});
+
+test("editor server exposes a browser-safe toolbar helper module", async () => {
+  const server = startEditor(exampleResume, { open: false, log: false });
+  await once(server, "listening");
+
+  try {
+    const { port } = server.address();
+    const response = await fetch(`http://127.0.0.1:${port}/editor-toolbar.js`);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type"), /^text\/javascript/);
   } finally {
     server.close();
     await once(server, "close");
@@ -258,6 +274,76 @@ test("editor limits the size of save requests", async () => {
       await once(server, "close");
     }
   });
+});
+
+test("editor immediately rejects an oversized chunked save before the client ends it", async () => {
+  await withEditorFixture(async (directory, sourcePath) => {
+    const server = startEditor(sourcePath, { open: false, log: false });
+    await once(server, "listening");
+
+    try {
+      const { port } = server.address();
+      const socket = createConnection({ host: "127.0.0.1", port });
+      await once(socket, "connect");
+      const response = new Promise((resolve) => socket.once("data", (chunk) => resolve(chunk.toString("utf8"))));
+      const timeout = new Promise((resolve) => setTimeout(() => resolve(""), 500));
+      const chunk = "x".repeat(1024 * 1024 + 1);
+
+      socket.write("POST /api/save HTTP/1.1\r\nHost: 127.0.0.1\r\nTransfer-Encoding: chunked\r\nContent-Type: application/json\r\n\r\n");
+      socket.write(`${chunk.length.toString(16)}\r\n${chunk}\r\n`);
+
+      let responseText;
+      try {
+        responseText = await Promise.race([response, timeout]);
+      } finally {
+        socket.destroy();
+      }
+      assert.match(responseText, /^HTTP\/1\.1 413 /);
+    } finally {
+      server.close();
+      await once(server, "close");
+    }
+  });
+});
+
+test("editor CLI exits with an error for a non-loopback host", () => {
+  assert.throws(
+    () => execFileSync(process.execPath, [cli, "editor", exampleResume, "--host", "0.0.0.0", "--no-open"], { cwd: root, encoding: "utf8", stdio: "pipe" }),
+    (error) => error.status === 1 && /loopback/i.test(error.stderr.toString()),
+  );
+});
+
+test("editor reports a bracketed reachable URL when IPv6 loopback is available", async (context) => {
+  const logs = [];
+  const server = startEditor(exampleResume, { open: false, port: 0, host: "::1", json: true, logFn: (message) => logs.push(message) });
+  try {
+    const listening = once(server, "listening");
+    const failed = once(server, "error").then(([error]) => { throw error; });
+    await Promise.race([listening, failed]);
+  } catch (error) {
+    if (["EADDRNOTAVAIL", "EAFNOSUPPORT"].includes(error.code)) {
+      context.skip(`IPv6 loopback is unavailable: ${error.code}`);
+      return;
+    }
+    throw error;
+  }
+
+  try {
+    const { url } = JSON.parse(logs[0]);
+    assert.match(url, /^http:\/\/\[::1\]:\d+$/);
+    try {
+      assert.equal((await fetch(`${url}/api/document`)).status, 200);
+    } catch (error) {
+      if (["EACCES", "EADDRNOTAVAIL", "EAFNOSUPPORT"].includes(error.cause?.code)) {
+        context.skip(`IPv6 loopback requests are unavailable: ${error.cause.code}`);
+        return;
+      }
+      throw error;
+    }
+  } finally {
+    server.close();
+    await once(server, "close");
+  }
 });
 
 test("editor does not serve assets through a junction outside the resume directory", async () => {

@@ -62,6 +62,32 @@ test("requires editor protocol attributes on the html start tag", () => {
   );
 });
 
+test("rejects dangerous markup hidden after malformed unquoted attributes", () => {
+  const unsafeDocuments = [
+    modernResume.replace("</body>", '<div x=\\"><script>alert(1)</script></div></body>'),
+    modernResume.replace("</body>", '<div x=\\"><img src="avatar.png" onerror="alert(1)"></div></body>'),
+  ];
+
+  for (const html of unsafeDocuments) {
+    assert.throws(() => prepareEditorDocument(html), /不安全的 HTML/);
+  }
+});
+
+test("does not treat html-like text in a textarea as the editor protocol root", () => {
+  const htmlLikeText = '<!doctype html><textarea><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"></textarea>';
+
+  assert.throws(
+    () => prepareEditorDocument(htmlLikeText),
+    /<html> 开始标签.*data-resume-editor-template/,
+  );
+});
+
+test("rejects JavaScript URLs encoded as HTML character references", () => {
+  const encodedJavaScriptUrl = modernResume.replace("</body>", '<a href="java&#x73;cript:alert(1)">查看</a></body>');
+
+  assert.throws(() => prepareEditorDocument(encodedJavaScriptUrl), /不安全的 HTML/);
+});
+
 test("removes a legacy template export toolbar before opening the canvas", () => {
   const legacy = modernResume.replace(
     "<body>",

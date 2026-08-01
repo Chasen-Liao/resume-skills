@@ -91,8 +91,8 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
     if (request.method === "GET" && request.url === "/app.css") {
       return send(response, 200, "text/css; charset=utf-8", readFileSync(join(publicRoot, "app.css")));
     }
-    if (request.method === "GET" && request.url === "/editor-document.js") {
-      return send(response, 200, "text/javascript; charset=utf-8", readFileSync(join(packageRoot, "lib", "editor-document.mjs")));
+    if (request.method === "GET" && (request.url === "/editor-document.js" || request.url === "/editor-toolbar.js")) {
+      return send(response, 200, "text/javascript; charset=utf-8", readFileSync(join(packageRoot, "lib", "editor-toolbar.mjs")));
     }
     if (request.method === "GET" && request.url === "/editor-controls.js") {
       return send(response, 200, "text/javascript; charset=utf-8", readFileSync(join(packageRoot, "lib", "editor-controls.mjs")));
@@ -114,22 +114,26 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
       return;
     }
     if (request.method === "POST" && request.url === "/api/save") {
+      const rejectOversizedSave = ({ destroy = false } = {}) => {
+        if (response.writableEnded) return;
+        send(response, 413, "application/json; charset=utf-8", JSON.stringify({ error: "保存内容超过大小限制。" }));
+        if (destroy) request.destroy();
+      };
       const contentLength = Number(request.headers["content-length"]);
       if (Number.isFinite(contentLength) && contentLength > maxSaveBodyBytes) {
         request.resume();
-        return send(response, 413, "application/json; charset=utf-8", JSON.stringify({ error: "保存内容超过大小限制。" }));
+        return rejectOversizedSave();
       }
 
       let body = "";
       let bodySize = 0;
       request.on("data", (chunk) => {
         bodySize += chunk.length;
-        if (bodySize <= maxSaveBodyBytes) body += chunk;
+        if (bodySize > maxSaveBodyBytes) return rejectOversizedSave({ destroy: true });
+        body += chunk;
       });
       request.on("end", () => {
-        if (bodySize > maxSaveBodyBytes) {
-          return send(response, 413, "application/json; charset=utf-8", JSON.stringify({ error: "保存内容超过大小限制。" }));
-        }
+        if (response.writableEnded) return;
         try {
           const { html } = JSON.parse(body);
           const exportHtml = prepareEditorDocument(html);

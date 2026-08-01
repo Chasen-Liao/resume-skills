@@ -1,4 +1,4 @@
-import { stripLegacyToolbar } from "/editor-document.js";
+import { stripLegacyToolbar } from "/editor-toolbar.js";
 import { appendOverrideRule, controlEventTypes } from "/editor-controls.js";
 
 const frame = document.querySelector("#resume-frame");
