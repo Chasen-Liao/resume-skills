@@ -88,6 +88,24 @@ test("rejects JavaScript URLs encoded as HTML character references", () => {
   assert.throws(() => prepareEditorDocument(encodedJavaScriptUrl), /不安全的 HTML/);
 });
 
+test("rejects scripts inside template content", () => {
+  const templateScript = modernResume.replace("</body>", "<template><script>alert(1)</script></template></body>");
+
+  assert.throws(() => prepareEditorDocument(templateScript), /不安全的 HTML/);
+});
+
+test("rejects event attributes inside template content", () => {
+  const templateEvent = modernResume.replace("</body>", '<template><img src="avatar.png" onerror="alert(1)"></template></body>');
+
+  assert.throws(() => prepareEditorDocument(templateEvent), /不安全的 HTML/);
+});
+
+test("rejects JavaScript URLs inside template content", () => {
+  const templateUrl = modernResume.replace("</body>", '<template><a href="java&#x73;cript:alert(1)">查看</a></template></body>');
+
+  assert.throws(() => prepareEditorDocument(templateUrl), /不安全的 HTML/);
+});
+
 test("removes a legacy template export toolbar before opening the canvas", () => {
   const legacy = modernResume.replace(
     "<body>",
