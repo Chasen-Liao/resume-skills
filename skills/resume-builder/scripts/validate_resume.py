@@ -91,6 +91,81 @@ def parse_renderer(value: str) -> dict[str, str]:
     return {"name": name, "version": version}
 
 
+def verify_manifest_record(
+    manifest: dict[str, Any], html_path: Path | None, pdf_path: Path | None, renderer_value: str | None,
+    checks: list[Check],
+) -> None:
+    if manifest.get("schemaVersion") != 1:
+        add(checks, "manifest schema", "fail", "schemaVersion must be 1")
+    renderer = manifest.get("renderer")
+    if not isinstance(renderer, dict) or not all(
+        isinstance(renderer.get(key), str) and renderer[key] and renderer[key] != "unknown"
+        for key in ("name", "version")
+    ):
+        add(checks, "manifest renderer", "fail", "renderer must contain non-empty name and version")
+    elif renderer_value:
+        try:
+            expected_renderer = parse_renderer(renderer_value)
+        except ValueError as exc:
+            add(checks, "manifest renderer", "fail", str(exc))
+        else:
+            add(
+                checks,
+                "manifest renderer",
+                "pass" if renderer == expected_renderer else "fail",
+                "renderer matches" if renderer == expected_renderer else "renderer does not match",
+            )
+
+    validation = manifest.get("validation")
+    stored_checks = validation.get("checks") if isinstance(validation, dict) else None
+    validation_is_deliverable = False
+    valid_statuses = {"pass", "warn", "fail", "degraded"}
+    checks_are_valid = isinstance(stored_checks, list) and all(
+        isinstance(item, dict) and item.get("status") in valid_statuses for item in stored_checks
+    )
+    if not checks_are_valid:
+        add(checks, "manifest validation", "fail", "validation.checks must be a list of checks with valid statuses")
+    else:
+        expected_deliverable = not any(item["status"] in {"fail", "degraded"} for item in stored_checks)
+        consistent = (
+            isinstance(validation.get("ok"), bool)
+            and isinstance(validation.get("deliverable"), bool)
+            and validation["ok"] == validation["deliverable"] == expected_deliverable
+        )
+        validation_is_deliverable = consistent and expected_deliverable
+        add(
+            checks,
+            "manifest validation",
+            "pass" if consistent else "fail",
+            "validation result matches recorded checks" if consistent else "validation.ok/deliverable contradict recorded checks",
+        )
+
+    if manifest.get("status") != "valid" or not validation_is_deliverable:
+        add(checks, "manifest status", "fail", "manifest is not a valid deliverable")
+    html_record = manifest.get("html") if isinstance(manifest.get("html"), dict) else {}
+    html_matches = bool(
+        html_path
+        and html_record.get("path")
+        and Path(html_record["path"]).resolve() == html_path.resolve()
+        and html_record.get("sha256") == file_hash(html_path)
+    )
+    add(
+        checks, "manifest HTML hash", "pass" if html_matches else "fail",
+        "HTML path and hash match the validated manifest" if html_matches else "HTML path or hash does not match the validated manifest",
+    )
+    pdf_record = manifest.get("pdf") if isinstance(manifest.get("pdf"), dict) else {}
+    pdf_matches = bool(
+        pdf_path
+        and pdf_record.get("path")
+        and Path(pdf_record["path"]).resolve() == pdf_path.resolve()
+        and pdf_record.get("sha256") == file_hash(pdf_path)
+    )
+    add(
+        checks, "manifest PDF hash", "pass" if pdf_matches else "fail",
+        "PDF path and hash match the validated manifest" if pdf_matches else "PDF path or hash does not match the validated manifest",
+    )
+
+
 def check_html_overflow(path: Path, layout_script: Path, checks: list[Check]) -> None:
     try:
         result = subprocess.run(
@@ -219,7 +294,7 @@ def measure_pdf_text_bounds(page: Any) -> tuple[float, float] | None:
 
     def visit_text(
         text: str,
-        _cm: Any,
+        cm: Any,
         tm: Any,
         _font_dict: Any,
         font_size: Any,
@@ -227,7 +302,7 @@ def measure_pdf_text_bounds(page: Any) -> tuple[float, float] | None:
         if not text.strip():
             return
         try:
-            y = float(tm[5])
+            y = (float(tm[4]) * float(cm[1])) + (float(tm[5]) * float(cm[3])) + float(cm[5])
             size = float(font_size or 10)
         except (TypeError, ValueError, IndexError):
             return
@@ -413,16 +488,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.verify_manifest:
         try:
             manifest = json.loads(args.verify_manifest.read_text(encoding="utf-8"))
-            if manifest.get("status") != "valid":
-                add(checks, "manifest status", "fail", "manifest is not valid")
-            if not args.html or manifest.get("html", {}).get("sha256") != file_hash(args.html):
-                add(checks, "manifest HTML hash", "fail", "HTML hash does not match the validated manifest")
-            else:
-                add(checks, "manifest HTML hash", "pass", "HTML hash matches the validated manifest")
-            if not args.pdf or manifest.get("pdf", {}).get("sha256") != file_hash(args.pdf):
-                add(checks, "manifest PDF hash", "fail", "PDF hash does not match the validated manifest")
-            else:
-                add(checks, "manifest PDF hash", "pass", "PDF hash matches the validated manifest")
+            if not isinstance(manifest, dict):
+                raise ValueError("manifest root must be an object")
+            verify_manifest_record(manifest, args.html, args.pdf, args.renderer, checks)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             add(checks, "manifest", "fail", f"cannot verify manifest: {exc}")
 

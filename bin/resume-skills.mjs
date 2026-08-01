@@ -32,6 +32,7 @@ function printHelp() {
   console.log("  -p, --port <number>   Specify server port (default: 0 for random available port)");
   console.log("  --host <host>         Loopback host only: 127.0.0.1 or ::1 (default: 127.0.0.1)");
   console.log("  --json                Output status in JSON format");
+  console.log("  --manifest <path>     Delivery manifest explicitly associated with this HTML");
   console.log("  --no-open             Do not automatically open the browser");
   console.log("  -h, --help            Show this help message");
 }
@@ -75,7 +76,7 @@ export function atomicSave(sourcePath, contents, { fileOps = atomicFileOps } = {
   }
 }
 
-export function startEditor(sourcePath, { log = true, open = true, port = 0, host = "127.0.0.1", json = false, logFn = console.log, writeAtomically = atomicSave } = {}) {
+export function startEditor(sourcePath, { log = true, open = true, port = 0, host = "127.0.0.1", json = false, manifestPath, logFn = console.log, writeAtomically = atomicSave, invalidateManifest = invalidateArtifactManifest } = {}) {
   if (!loopbackHosts.has(host)) {
     throw new Error("编辑器仅支持 loopback host（127.0.0.1 或 ::1）。");
   }
@@ -191,8 +192,8 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
           return send(response, 400, "application/json; charset=utf-8", JSON.stringify({ error: error.message }));
         }
         try {
+          invalidateManifest(sourcePath, manifestPath);
           writeAtomically(sourcePath, exportHtml);
-          invalidateArtifactManifest(sourcePath);
           original = exportHtml;
           documentId = documentVersion(sourcePath, original);
           send(response, 200, "application/json; charset=utf-8", JSON.stringify({ outputName: basename(sourcePath), documentId }));
@@ -254,6 +255,7 @@ if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
         port: { type: "string", short: "p" },
         host: { type: "string", default: "127.0.0.1" },
         json: { type: "boolean", default: false },
+        manifest: { type: "string" },
         open: { type: "boolean", default: true },
         "no-open": { type: "boolean", default: false },
       },
@@ -272,6 +274,7 @@ if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
         port: portNumber,
         host: values.host,
         json: values.json,
+        manifestPath: values.manifest ? resolve(values.manifest) : undefined,
       });
     } else {
       printHelp();

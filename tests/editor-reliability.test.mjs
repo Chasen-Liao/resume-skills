@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { closeSync, copyFileSync, existsSync, fsyncSync, openSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { once } from "node:events";
 import { dirname, join } from "node:path";
@@ -106,17 +106,27 @@ test("save atomically replaces the resume, keeps one backup, and returns a new d
   });
 });
 
-test("save invalidates the PDF manifest associated with the edited HTML", async () => {
-  await withEditor(async (sourcePath, url) => {
-    const manifestPath = sourcePath.replace(/\.html$/i, ".resume-manifest.json");
-    await writeFile(manifestPath, JSON.stringify({
-      schemaVersion: 1,
-      status: "valid",
-      html: { path: sourcePath, sha256: "old-html-hash" },
-      pdf: { path: sourcePath.replace(/\.html$/i, ".pdf"), sha256: "old-pdf-hash" },
-      renderer: { name: "playwright", version: "1.62.1" },
-      validation: { ok: true, checks: [], summary: { pass: 1, warn: 0, fail: 0 } },
-    }));
+test("save invalidates an explicitly associated manifest in another directory with another stem", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-manifest-"));
+  const sourcePath = join(directory, "input", "resume.html");
+  const manifestPath = join(directory, "artifacts", "release-candidate.resume-manifest.json");
+  await mkdir(dirname(sourcePath), { recursive: true });
+  await mkdir(dirname(manifestPath), { recursive: true });
+  await writeFile(sourcePath, sourceHtml);
+  await writeFile(manifestPath, JSON.stringify({
+    schemaVersion: 1,
+    status: "valid",
+    html: { path: sourcePath, sha256: "old-html-hash" },
+    pdf: { path: join(directory, "artifacts", "release-candidate.pdf"), sha256: "old-pdf-hash" },
+    renderer: { name: "playwright", version: "1.62.1" },
+    validation: { ok: true, deliverable: true, checks: [], summary: { pass: 1, warn: 0, fail: 0, degraded: 0 } },
+  }));
+  const server = startEditor(sourcePath, { open: false, log: false, manifestPath });
+  await once(server, "listening");
+  const { port } = server.address();
+
+  try {
+    const url = `http://127.0.0.1:${port}`;
     const before = await (await fetch(`${url}/api/document`)).json();
 
     const response = await fetch(`${url}/api/save`, {
@@ -130,7 +140,52 @@ test("save invalidates the PDF manifest associated with the edited HTML", async 
     assert.equal(manifest.status, "invalid");
     assert.equal(manifest.validation.ok, false);
     assert.match(manifest.invalidated.reason, /Canvas|HTML/i);
+  } finally {
+    server.close();
+    await once(server, "close");
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("save preserves the HTML when its associated manifest cannot be invalidated", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-manifest-failure-"));
+  const sourcePath = join(directory, "resume.html");
+  const manifestPath = join(directory, "delivery.resume-manifest.json");
+  await writeFile(sourcePath, sourceHtml);
+  await writeFile(manifestPath, JSON.stringify({
+    schemaVersion: 1,
+    status: "valid",
+    html: { path: sourcePath, sha256: "old-html-hash" },
+    pdf: { path: join(directory, "delivery.pdf"), sha256: "old-pdf-hash" },
+    renderer: { name: "playwright", version: "1.62.1" },
+    validation: { ok: true, deliverable: true, checks: [] },
+  }));
+  const server = startEditor(sourcePath, {
+    open: false,
+    log: false,
+    manifestPath,
+    invalidateManifest() { throw new Error("manifest write failed"); },
   });
+  await once(server, "listening");
+  const { port } = server.address();
+
+  try {
+    const url = `http://127.0.0.1:${port}`;
+    const before = await (await fetch(`${url}/api/document`)).json();
+    const response = await fetch(`${url}/api/save`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ documentId: before.documentId, html: withFontSize(sourceHtml, "12") }),
+    });
+
+    assert.equal(response.status, 500);
+    assert.equal(await readFile(sourcePath, "utf8"), sourceHtml);
+    assert.equal(JSON.parse(await readFile(manifestPath, "utf8")).status, "valid");
+  } finally {
+    server.close();
+    await once(server, "close");
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test("directory watch keeps sending reloads after the resume is replaced by rename", async () => {

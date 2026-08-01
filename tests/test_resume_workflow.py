@@ -66,6 +66,15 @@ class ResumeWorkflowTests(unittest.TestCase):
         self.assertIn("npx @chasen-liao/resume-skills editor", readme)
         self.assertIn("resume-facts.yaml", tutorial)
 
+    def test_visual_delivery_command_renders_and_writes_a_reproducible_manifest(self):
+        skill = (SKILLS / "resume-workflow" / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("render_resume.ps1", skill)
+        self.assertIn("--check-overflow", skill)
+        self.assertIn("--manifest", skill)
+        self.assertIn("--renderer", skill)
+        self.assertIn("--check-layout", skill)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -12,6 +12,7 @@
     "public",
     "CHANGELOG.md",
     "README.md",
+    "requirements-test.txt",
     "AGENTS.md",
     "assets",
     "image.png",
@@ -19,7 +20,9 @@
     "skills/*/SKILL.md",
     "skills/*/agents/*.yaml",
     "skills/*/references/**/*",
-    "skills/resume-builder/scripts/**/*"
+    "skills/resume-builder/scripts/*.mjs",
+    "skills/resume-builder/scripts/*.ps1",
+    "skills/resume-builder/scripts/*.py"
   ],
   "scripts": {
     "test": "npm run test:node && npm run test:python",

@@ -29,13 +29,15 @@ class RenderIntegrationTests(unittest.TestCase):
             output_dir = Path(directory)
             for html in EXAMPLES.glob("*.html"):
                 with self.subTest(template=html.name):
-                    pdf = output_dir / f"{html.stem}.pdf"
+                    pdf = output_dir / f"delivery-{html.stem}.pdf"
                     result = render(html, pdf)
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-                    manifest = output_dir / f"{html.stem}.resume-manifest.json"
+                    manifest = output_dir / f"delivery-{html.stem}.resume-manifest.json"
                     record = json.loads(manifest.read_text(encoding="utf-8"))
                     self.assertEqual(record["status"], "valid")
                     self.assertTrue(record["validation"]["deliverable"])
+                    self.assertEqual(Path(record["html"]["path"]), html.resolve())
+                    self.assertEqual(Path(record["pdf"]["path"]), pdf.resolve())
 
     def test_deliberately_overflowing_visual_resume_is_not_deliverable(self):
         with tempfile.TemporaryDirectory() as directory:

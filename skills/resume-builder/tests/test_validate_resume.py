@@ -1,4 +1,5 @@
 import json
+import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -9,6 +10,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 SCRIPT = ROOT / "skills" / "resume-builder" / "scripts" / "validate_resume.py"
 FIXTURES = Path(__file__).parent / "fixtures"
+
+VALIDATOR_SPEC = importlib.util.spec_from_file_location("validate_resume", SCRIPT)
+VALIDATOR = importlib.util.module_from_spec(VALIDATOR_SPEC)
+VALIDATOR_SPEC.loader.exec_module(VALIDATOR)
 
 
 def run_validator(*args):
@@ -78,6 +83,19 @@ def write_layout_pdf(path: Path, y: int | list[int]):
 
 
 class ValidateResumeTests(unittest.TestCase):
+    def test_pdf_text_bounds_compose_current_and_text_matrices(self):
+        class TransformedPage:
+            def extract_text(self, visitor_text):
+                visitor_text(
+                    "Transformed text",
+                    [1, 0, 0, 1, 0, 100],
+                    [1, 0, 0, 1, 0, 20],
+                    None,
+                    12,
+                )
+
+        self.assertEqual(VALIDATOR.measure_pdf_text_bounds(TransformedPage()), (132.0, 117.0))
+
     def test_valid_ats_html_passes(self):
         result = run_validator(
             "--html", FIXTURES / "good_ats.html", "--mode", "ats",
@@ -174,6 +192,84 @@ class ValidateResumeTests(unittest.TestCase):
             )
             self.assertNotEqual(verified.returncode, 0)
             self.assertIn("HTML hash", verified.stdout)
+
+    def test_verify_manifest_rejects_missing_schema_and_renderer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory) / "resume.html"
+            pdf = Path(directory) / "resume.pdf"
+            manifest = Path(directory) / "resume.resume-manifest.json"
+            html.write_text((FIXTURES / "good_ats.html").read_text(encoding="utf-8"), encoding="utf-8")
+            write_mock_pdf(pdf)
+            generated = run_validator(
+                "--html", html, "--pdf", pdf, "--mode", "ats",
+                "--manifest", manifest, "--renderer", "playwright@1.62.1", "--json",
+            )
+            self.assertEqual(generated.returncode, 0, generated.stdout + generated.stderr)
+            record = json.loads(manifest.read_text(encoding="utf-8"))
+            record.pop("schemaVersion")
+            record.pop("renderer")
+            manifest.write_text(json.dumps(record), encoding="utf-8")
+
+            verified = run_validator(
+                "--html", html, "--pdf", pdf, "--verify-manifest", manifest, "--json"
+            )
+
+            self.assertNotEqual(verified.returncode, 0, verified.stdout + verified.stderr)
+            self.assertIn("schema", verified.stdout.lower())
+            self.assertIn("renderer", verified.stdout.lower())
+
+    def test_verify_manifest_rejects_contradictory_validation_result(self):
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory) / "resume.html"
+            pdf = Path(directory) / "resume.pdf"
+            manifest = Path(directory) / "resume.resume-manifest.json"
+            html.write_text((FIXTURES / "good_ats.html").read_text(encoding="utf-8"), encoding="utf-8")
+            write_mock_pdf(pdf)
+            generated = run_validator(
+                "--html", html, "--pdf", pdf, "--mode", "ats",
+                "--manifest", manifest, "--renderer", "playwright@1.62.1", "--json",
+            )
+            self.assertEqual(generated.returncode, 0, generated.stdout + generated.stderr)
+            record = json.loads(manifest.read_text(encoding="utf-8"))
+            record["validation"]["deliverable"] = False
+            record["validation"]["checks"].append(
+                {"name": "simulated dependency", "status": "degraded", "message": "unavailable"}
+            )
+            manifest.write_text(json.dumps(record), encoding="utf-8")
+
+            verified = run_validator(
+                "--html", html, "--pdf", pdf, "--verify-manifest", manifest, "--json"
+            )
+
+            self.assertNotEqual(verified.returncode, 0, verified.stdout + verified.stderr)
+            self.assertIn("validation", verified.stdout.lower())
+
+    def test_verify_manifest_rejects_valid_status_for_undeliverable_checks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            html = Path(directory) / "resume.html"
+            pdf = Path(directory) / "resume.pdf"
+            manifest = Path(directory) / "resume.resume-manifest.json"
+            html.write_text((FIXTURES / "good_ats.html").read_text(encoding="utf-8"), encoding="utf-8")
+            write_mock_pdf(pdf)
+            generated = run_validator(
+                "--html", html, "--pdf", pdf, "--mode", "ats",
+                "--manifest", manifest, "--renderer", "playwright@1.62.1", "--json",
+            )
+            self.assertEqual(generated.returncode, 0, generated.stdout + generated.stderr)
+            record = json.loads(manifest.read_text(encoding="utf-8"))
+            record["validation"]["ok"] = False
+            record["validation"]["deliverable"] = False
+            record["validation"]["checks"].append(
+                {"name": "simulated failure", "status": "fail", "message": "failed"}
+            )
+            manifest.write_text(json.dumps(record), encoding="utf-8")
+
+            verified = run_validator(
+                "--html", html, "--pdf", pdf, "--verify-manifest", manifest, "--json"
+            )
+
+            self.assertNotEqual(verified.returncode, 0, verified.stdout + verified.stderr)
+            self.assertIn("status", verified.stdout.lower())
 
     def test_pdf_requires_extractable_text_and_required_text(self):
         with tempfile.TemporaryDirectory() as directory:

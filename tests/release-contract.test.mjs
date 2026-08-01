@@ -23,8 +23,10 @@ test("npm dry-run package contains the README hero and delivery runtime", () => 
   const pack = Array.isArray(report) ? report[0] : Object.values(report)[0];
   const files = pack.files.map(({ path }) => path);
   assert.ok(files.includes("image.png"));
+  assert.ok(files.includes("requirements-test.txt"));
   assert.ok(files.includes("lib/artifact-manifest.mjs"));
   assert.ok(files.includes("skills/resume-builder/scripts/measure_resume_layout.mjs"));
+  assert.equal(files.some((path) => /(?:^|\/)__pycache__(?:\/|$)|\.pyc$/i.test(path)), false);
 });
 
 test("built-in examples are visibly marked as fictional demos", () => {
