@@ -56,23 +56,23 @@ description: 根据职位描述(JD)定制简历的技能。当用户提到「JD�
 ### 第五步：生成定制文件
 
 先让用户在视觉 HTML/PDF 与 ATS-safe HTML/PDF 中选择模式，再输出到 `tailored/<公司名>-<岗位>/`：
-- 视觉模式：`resume-visual.html` 与 `resume-visual.pdf`，沿用基础简历 CSS 风格并进行视觉打印验证
-- ATS-safe 模式：`resume-ats.html` 与 `resume-ats.pdf`，使用单栏和标准文本结构并进行 ATS-safe 解析验证
+- 视觉模式：`resume_visual.html` 与 `resume_visual.pdf`，沿用基础简历 CSS 风格并进行视觉打印验证
+- ATS-safe 模式：`resume_ats.html` 与 `resume_ats.pdf`，使用单栏和标准文本结构并进行 ATS-safe 解析验证
 - `matching-analysis.md` — 匹配分析报告（模板见 `references/matching-analysis.md`）
 - `matching-analysis.md` 可包含匹配缺口、关键词来源和待确认字段；待确认字段不得复制到上述最终 HTML/PDF。
 - 仓库当前只生成 HTML 与浏览器打印 PDF，没有 DOCX 生成能力，不承诺 DOCX 产物。
-- 若沿用任一内置视觉样式，保留或生成对应的 `data-resume-editor-template`、`data-resume-editor-version="1"` 和已有的稳定 `data-resume-editor-id` 文字标记；Canvas 也会为未标记的内置模板文字补齐可编辑标记，使用户可在不改变定制工作流的前提下做后续文字/排版微调。
+- 若沿用任一内置视觉样式，保留或生成对应的 `data-resume-editor-template`、`data-resume-editor-version="1"` 和稳定、唯一、语义化的 `data-resume-editor-id` 文字标记；不要依赖 Canvas 运行时补齐标记。
 
 ### PDF 验证
 
-视觉模式：导出 PDF 后运行 `python skills/resume-builder/scripts/validate_resume.py --html <resume-visual.html> --pdf <resume-visual.pdf> --mode visual --check-layout --min-fill-ratio 0.78 --json`。PDF 必须恰好 1 页；`page fill` 低于 78% 或 `vertical balance` 有警告时，优先均匀调整已确认内容的板块间距、条目间距、行高和容器内边距；`bottom safety` 失败或页数大于 1 时必须回退排版。任何警告都要重新导出并复验，不能编造内容或用不可读字号填充。然后在浏览器或渲染截图中人工检查可见裁切、字体回退和链接；ATS-safe 模式仍检查 HTML 单栏、标准标题、正文阅读顺序和纯文本可解析性，并验证 PDF 文本提取结果。
+视觉模式使用 `render_resume.ps1` 渲染并生成同名前缀 `*.resume-manifest.json`。PDF 必须恰好 1 页，HTML 溢出直接失败；缺少 Playwright/Chromium 或 `pypdf` 时为不可交付的 `degraded`。`page fill` 低于 78% 或 `vertical balance` 有警告时，优先均匀调整已确认内容的板块间距、条目间距、行高和容器内边距；`bottom safety` 失败或页数大于 1 时必须回退排版。任何警告都要重新导出并复验，不能编造内容或用不可读字号填充。Canvas 保存后 manifest 会失效，必须重新 render + validate；ATS-safe 模式仍检查 HTML 单栏、标准标题、正文阅读顺序和纯文本可解析性，并验证 PDF 文本提取结果。
 
 ### 交付与 Canvas 预览
 
 视觉模式完成 PDF 验证和必要修正后，必须启动定制版的本地 Canvas 预览：
 
 ```bash
-npx @chasen-liao/resume-skills editor "<tailored目录中的resume-visual.html路径>"
+npx @chasen-liao/resume-skills editor "<tailored目录中的resume_visual.html路径>"
 ```
 
 高级 CLI 参数说明（适用于 Agent 自动化或无 GUI 容器环境）：
@@ -81,7 +81,7 @@ npx @chasen-liao/resume-skills editor "<tailored目录中的resume-visual.html�
 - `--port <number>`：指定监听端口。
 - **Live Preview**：编辑器建立连接后支持 SSE 热刷新。当 Agent 重新写入或修改该 HTML 时，页面将自动重载展示最新效果。
 
-命令会启动本地服务并尝试打开浏览器。告知用户定制版 HTML/PDF 与匹配报告的位置；Canvas 保存时会直接覆盖定制版 HTML，使其成为最新版本。若当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
+命令会启动本地服务并尝试打开浏览器。告知用户定制版 HTML/PDF 与匹配报告的位置；Canvas 保存时会直接覆盖定制版 HTML 的排版覆盖，使其成为最新排版版本。Canvas 不保存文字事实；任何内容变更必须回到 Agent 工作流确认后重新生成 HTML。若当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
 
 ## 硬约束
 

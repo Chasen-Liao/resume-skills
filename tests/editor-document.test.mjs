@@ -41,6 +41,71 @@ test("rejects HTML that does not opt into the editor protocol with detailed diag
   );
 });
 
+test("rejects executable and embedded markup before it reaches the canvas", () => {
+  const unsafeDocuments = [
+    modernResume.replace("</body>", "<script>alert(1)</script></body>"),
+    modernResume.replace("<body>", '<body onload="alert(1)">'),
+    modernResume.replace("</body>", '<iframe src="https://attacker.example"></iframe></body>'),
+  ];
+
+  for (const html of unsafeDocuments) {
+    assert.throws(() => prepareEditorDocument(html), /不安全的 HTML/);
+  }
+});
+
+test("requires editor protocol attributes on the html start tag", () => {
+  const misplacedProtocol = '<html><body data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><h1>个人简历</h1></body></html>';
+
+  assert.throws(
+    () => prepareEditorDocument(misplacedProtocol),
+    /<html> 开始标签.*data-resume-editor-template/,
+  );
+});
+
+test("rejects dangerous markup hidden after malformed unquoted attributes", () => {
+  const unsafeDocuments = [
+    modernResume.replace("</body>", '<div x=\\"><script>alert(1)</script></div></body>'),
+    modernResume.replace("</body>", '<div x=\\"><img src="avatar.png" onerror="alert(1)"></div></body>'),
+  ];
+
+  for (const html of unsafeDocuments) {
+    assert.throws(() => prepareEditorDocument(html), /不安全的 HTML/);
+  }
+});
+
+test("does not treat html-like text in a textarea as the editor protocol root", () => {
+  const htmlLikeText = '<!doctype html><textarea><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"></textarea>';
+
+  assert.throws(
+    () => prepareEditorDocument(htmlLikeText),
+    /<html> 开始标签.*data-resume-editor-template/,
+  );
+});
+
+test("rejects JavaScript URLs encoded as HTML character references", () => {
+  const encodedJavaScriptUrl = modernResume.replace("</body>", '<a href="java&#x73;cript:alert(1)">查看</a></body>');
+
+  assert.throws(() => prepareEditorDocument(encodedJavaScriptUrl), /不安全的 HTML/);
+});
+
+test("rejects scripts inside template content", () => {
+  const templateScript = modernResume.replace("</body>", "<template><script>alert(1)</script></template></body>");
+
+  assert.throws(() => prepareEditorDocument(templateScript), /不安全的 HTML/);
+});
+
+test("rejects event attributes inside template content", () => {
+  const templateEvent = modernResume.replace("</body>", '<template><img src="avatar.png" onerror="alert(1)"></template></body>');
+
+  assert.throws(() => prepareEditorDocument(templateEvent), /不安全的 HTML/);
+});
+
+test("rejects JavaScript URLs inside template content", () => {
+  const templateUrl = modernResume.replace("</body>", '<template><a href="java&#x73;cript:alert(1)">查看</a></template></body>');
+
+  assert.throws(() => prepareEditorDocument(templateUrl), /不安全的 HTML/);
+});
+
 test("removes a legacy template export toolbar before opening the canvas", () => {
   const legacy = modernResume.replace(
     "<body>",

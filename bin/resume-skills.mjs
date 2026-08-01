@@ -1,24 +1,38 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, statSync, watch, writeFileSync } from "node:fs";
+import { closeSync, copyFileSync, existsSync, fsyncSync, openSync, readFileSync, renameSync, statSync, unlinkSync, watch, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { prepareEditorDocument } from "../lib/editor-document.mjs";
+import { prepareEditorDocument, validateEditorSave } from "../lib/editor-document.mjs";
+import { invalidateArtifactManifest } from "../lib/artifact-manifest.mjs";
 import { resolveSourceAsset } from "../lib/source-asset.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const publicRoot = join(packageRoot, "public");
+const maxSaveBodyBytes = 1024 * 1024;
+const loopbackHosts = new Set(["127.0.0.1", "::1"]);
+const atomicFileOps = {
+  open: openSync,
+  write: writeFileSync,
+  fsync: fsyncSync,
+  close: closeSync,
+  copy: copyFileSync,
+  rename: renameSync,
+  exists: existsSync,
+  unlink: unlinkSync,
+};
 
 function printHelp() {
   console.log("Usage: resume-skills editor <resume.html> [options]");
   console.log("\nOpen a generated ResumeSkills template in the local canvas editor.");
   console.log("\nOptions:");
   console.log("  -p, --port <number>   Specify server port (default: 0 for random available port)");
-  console.log("  --host <host>         Specify host to bind (default: 127.0.0.1)");
+  console.log("  --host <host>         Loopback host only: 127.0.0.1 or ::1 (default: 127.0.0.1)");
   console.log("  --json                Output status in JSON format");
+  console.log("  --manifest <path>     Delivery manifest explicitly associated with this HTML");
   console.log("  --no-open             Do not automatically open the browser");
   console.log("  -h, --help            Show this help message");
 }
@@ -41,37 +55,69 @@ function openBrowser(url) {
   child.unref();
 }
 
-export function startEditor(sourcePath, { log = true, open = true, port = 0, host = "127.0.0.1", json = false, logFn = console.log } = {}) {
+function documentVersion(sourcePath, html) {
+  return createHash("sha256").update(sourcePath).update(html).digest("hex");
+}
+
+export function atomicSave(sourcePath, contents, { fileOps = atomicFileOps } = {}) {
+  const temporaryPath = join(dirname(sourcePath), `.${basename(sourcePath)}.resume-skills-${process.pid}-${Date.now()}.tmp`);
+  let fileDescriptor;
+  try {
+    fileDescriptor = fileOps.open(temporaryPath, "wx");
+    fileOps.write(fileDescriptor, contents, "utf8");
+    fileOps.fsync(fileDescriptor);
+    fileOps.close(fileDescriptor);
+    fileDescriptor = undefined;
+    fileOps.copy(sourcePath, `${sourcePath}.bak`);
+    fileOps.rename(temporaryPath, sourcePath);
+  } finally {
+    if (fileDescriptor !== undefined) fileOps.close(fileDescriptor);
+    if (fileOps.exists(temporaryPath)) fileOps.unlink(temporaryPath);
+  }
+}
+
+export function startEditor(sourcePath, { log = true, open = true, port = 0, host = "127.0.0.1", json = false, manifestPath, logFn = console.log, writeAtomically = atomicSave, invalidateManifest = invalidateArtifactManifest } = {}) {
+  if (!loopbackHosts.has(host)) {
+    throw new Error("编辑器仅支持 loopback host（127.0.0.1 或 ::1）。");
+  }
   if (extname(sourcePath).toLowerCase() !== ".html") {
     throw new Error("编辑器只接受 .html 文件。");
   }
   if (!existsSync(sourcePath)) throw new Error(`找不到 HTML 文件：${sourcePath}`);
 
   let original = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
-  let documentId = createHash("sha256").update(sourcePath).update(original).digest("hex");
+  let documentId = documentVersion(sourcePath, original);
   const sseClients = new Set();
 
-  let debounceTimer = null;
-  const fileWatcher = watch(sourcePath, () => {
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
+  const sendEvent = (event, data) => {
+    const payload = event === "reload" ? "data: reload\n\n" : `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    for (const clientResponse of sseClients) {
       try {
-        if (!existsSync(sourcePath)) return;
-        const updated = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
-        original = updated;
-        documentId = createHash("sha256").update(sourcePath).update(original).digest("hex");
-        for (const clientResponse of sseClients) {
-          try {
-            clientResponse.write("data: reload\n\n");
-          } catch {
-            sseClients.delete(clientResponse);
-          }
-        }
+        clientResponse.write(payload);
       } catch {
-        // Ignore transient reading errors during file saves
+        sseClients.delete(clientResponse);
       }
-    }, 100);
+    }
+  };
+  const reloadFromDisk = () => {
+    try {
+      if (!existsSync(sourcePath)) throw new Error("文件不存在或正在被替换。");
+      const updated = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
+      original = updated;
+      documentId = documentVersion(sourcePath, original);
+      sendEvent("reload");
+    } catch (error) {
+      sendEvent("status", { level: "error", message: `无法读取简历文件：${error.message}` });
+    }
+  };
+  let debounceTimer = null;
+  const sourceName = basename(sourcePath).toLowerCase();
+  const fileWatcher = watch(dirname(sourcePath), (_eventType, changedName) => {
+    if (changedName && String(changedName).toLowerCase() !== sourceName) return;
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(reloadFromDisk, 100);
   });
+  fileWatcher.on("error", (error) => sendEvent("status", { level: "error", message: `无法监听简历文件：${error.message}` }));
 
   const server = createServer((request, response) => {
     if (request.method === "GET" && request.url === "/") {
@@ -86,8 +132,8 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
     if (request.method === "GET" && request.url === "/app.css") {
       return send(response, 200, "text/css; charset=utf-8", readFileSync(join(publicRoot, "app.css")));
     }
-    if (request.method === "GET" && request.url === "/editor-document.js") {
-      return send(response, 200, "text/javascript; charset=utf-8", readFileSync(join(packageRoot, "lib", "editor-document.mjs")));
+    if (request.method === "GET" && (request.url === "/editor-document.js" || request.url === "/editor-toolbar.js")) {
+      return send(response, 200, "text/javascript; charset=utf-8", readFileSync(join(packageRoot, "lib", "editor-toolbar.mjs")));
     }
     if (request.method === "GET" && request.url === "/editor-controls.js") {
       return send(response, 200, "text/javascript; charset=utf-8", readFileSync(join(packageRoot, "lib", "editor-controls.mjs")));
@@ -106,21 +152,53 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
       const cleanup = () => sseClients.delete(response);
       request.on("close", cleanup);
       request.on("error", cleanup);
+      response.on("close", cleanup);
+      response.on("error", cleanup);
       return;
     }
     if (request.method === "POST" && request.url === "/api/save") {
+      const rejectOversizedSave = ({ destroy = false } = {}) => {
+        if (response.writableEnded) return;
+        send(response, 413, "application/json; charset=utf-8", JSON.stringify({ error: "保存内容超过大小限制。" }));
+        if (destroy) request.destroy();
+      };
+      const contentLength = Number(request.headers["content-length"]);
+      if (Number.isFinite(contentLength) && contentLength > maxSaveBodyBytes) {
+        request.resume();
+        return rejectOversizedSave();
+      }
+
       let body = "";
-      request.on("data", (chunk) => { body += chunk; });
+      let bodySize = 0;
+      request.on("data", (chunk) => {
+        bodySize += chunk.length;
+        if (bodySize > maxSaveBodyBytes) return rejectOversizedSave({ destroy: true });
+        body += chunk;
+      });
       request.on("end", () => {
+        if (response.writableEnded) return;
+        let exportHtml;
         try {
-          const { html } = JSON.parse(body);
-          const exportHtml = prepareEditorDocument(html);
-          writeFileSync(sourcePath, exportHtml, "utf8");
-          // NOTE: Saving to sourcePath triggers the file watcher, which triggers hot reload.
-          // The browser will automatically clear the draft and reload.
-          send(response, 200, "application/json; charset=utf-8", JSON.stringify({ outputName: basename(sourcePath) }));
+          const { html, documentId: submittedDocumentId } = JSON.parse(body);
+          const diskOriginal = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
+          const diskDocumentId = documentVersion(sourcePath, diskOriginal);
+          original = diskOriginal;
+          documentId = diskDocumentId;
+          if (!submittedDocumentId || submittedDocumentId !== diskDocumentId) {
+            return send(response, 409, "application/json; charset=utf-8", JSON.stringify({ error: "文档版本已过期，请先重新加载后再保存。", documentId }));
+          }
+          exportHtml = validateEditorSave(original, html);
         } catch (error) {
-          send(response, 400, "application/json; charset=utf-8", JSON.stringify({ error: error.message }));
+          return send(response, 400, "application/json; charset=utf-8", JSON.stringify({ error: error.message }));
+        }
+        try {
+          invalidateManifest(sourcePath, manifestPath);
+          writeAtomically(sourcePath, exportHtml);
+          original = exportHtml;
+          documentId = documentVersion(sourcePath, original);
+          send(response, 200, "application/json; charset=utf-8", JSON.stringify({ outputName: basename(sourcePath), documentId }));
+        } catch (error) {
+          send(response, 500, "application/json; charset=utf-8", JSON.stringify({ error: `保存失败：${error.message}` }));
         }
       });
       return;
@@ -146,7 +224,8 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
   server.listen(port, host, () => {
     const address = server.address();
     const actualPort = typeof address === "object" && address !== null ? address.port : port;
-    const url = `http://${host}:${actualPort}`;
+    const urlHost = host.includes(":") ? `[${host}]` : host;
+    const url = `http://${urlHost}:${actualPort}`;
     const exportPath = sourcePath;
 
     if (json) {
@@ -176,6 +255,7 @@ if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
         port: { type: "string", short: "p" },
         host: { type: "string", default: "127.0.0.1" },
         json: { type: "boolean", default: false },
+        manifest: { type: "string" },
         open: { type: "boolean", default: true },
         "no-open": { type: "boolean", default: false },
       },
@@ -194,6 +274,7 @@ if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
         port: portNumber,
         host: values.host,
         json: values.json,
+        manifestPath: values.manifest ? resolve(values.manifest) : undefined,
       });
     } else {
       printHelp();

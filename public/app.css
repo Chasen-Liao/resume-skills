@@ -1,8 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-
 :root {
   color-scheme: light;
-  font-family: Inter, "Microsoft YaHei", sans-serif;
+  font-family: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   color: #1f2937;
   /* Soft Mesh Gradient for Glassmorphism */
   background-color: #f8fafc;

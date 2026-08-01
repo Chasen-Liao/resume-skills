@@ -6,7 +6,7 @@
 
 这是一个面向 Codex、Claude Code 和其他兼容 Agent Skills 的简历工作流技能。
 
-它把做简历拆成一条可复用的工作流：从已有简历解析并补充，或从真实经历采访开始，建立一份简历母版；再分析目标 JD、生成岗位定制版、检查 ATS 可读性，并维护不同投递版本。生成的简历是独立 HTML，可在浏览器中打印为 PDF；视觉版还可以用附带的本地 Canvas 做最后的文字和排版微调。
+它把做简历拆成一条可复用的工作流：从已有简历解析并补充，或从真实经历采访开始，建立一份简历母版；再分析目标 JD、生成岗位定制版、检查 ATS 可读性，并维护不同投递版本。生成的简历是独立 HTML，可在浏览器中打印为 PDF；视觉版还可以用附带的本地 Canvas 做最后的排版微调。
 
 > 这不是一个独立的在线简历网站，而是一组让你的 Agent 按稳定流程工作的 Skills。你仍然需要在 Codex、Claude Code 或其他兼容客户端中与 Agent 对话。
 
@@ -41,7 +41,7 @@ npx skills add Chasen-Liao/resume-skills --list
 
 ### npm 包：本地 Canvas 编辑器
 
-本仓库同时发布了 npm 包 [`@chasen-liao/resume-skills`](https://www.npmjs.com/package/@chasen-liao/resume-skills)，当前版本为 `0.4.5`。
+本仓库同时发布了 npm 包 [`@chasen-liao/resume-skills`](https://www.npmjs.com/package/@chasen-liao/resume-skills)，当前版本为 `0.5.0`。
 
 - GitHub 仓库中的 `SKILL.md`：提供简历采访、JD 定制、ATS 检查和版本管理流程
 - npm 包：提供 `resume-skills` CLI 和本地 Canvas 编辑器
@@ -49,14 +49,14 @@ npx skills add Chasen-Liao/resume-skills --list
 Skill 的安装不依赖 npm 包；只有需要手动打开本地 Canvas 时才需要使用 npm CLI：
 
 ```bash
-npx @chasen-liao/resume-skills editor resume-visual.html
+npx @chasen-liao/resume-skills editor resume_visual.html
 ```
 
 也可以全局安装后使用：
 
 ```bash
 npm install --global @chasen-liao/resume-skills
-resume-skills editor resume-visual.html
+resume-skills editor resume_visual.html
 ```
 
 包地址：<https://www.npmjs.com/package/@chasen-liao/resume-skills>
@@ -157,7 +157,7 @@ resume-version-manager（记录确认后的版本与投递历史）
 </tr>
 </table>
 
-视觉版以 A4 单页为目标。`resume-builder`、`jd-tailorer` 或 `resume-workflow` 生成视觉母版或视觉定制版并完成 PDF 验证后，交付流程必须执行 `npx @chasen-liao/resume-skills editor <实际生成的_visual.html路径>`，启动本地 Canvas 预览；若当前环境不能执行 `npx`，Agent 必须明确说明未启动并给出完整手动命令。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。
+视觉版以 A4 单页为目标。`resume-builder`、`jd-tailorer` 或 `resume-workflow` 生成视觉母版或视觉定制版并完成 PDF 验证后，交付流程必须执行 `npx @chasen-liao/resume-skills editor <实际生成的_visual.html路径> --manifest <实际_manifest路径>`，启动本地 Canvas 预览；若当前环境不能执行 `npx`，Agent 必须明确说明未启动并给出完整手动命令。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。最终 PDF 必须有 `*.resume-manifest.json`，其中 HTML/PDF hash、Playwright renderer 版本与验证结果都对应当前文件。
 
 ### ATS-safe HTML/PDF
 
@@ -167,9 +167,9 @@ ATS-safe 只是降低解析风险，不代表一定通过任何 ATS，也不代�
 
 ## 本地 Canvas 编辑器
 
-Canvas 只负责已生成视觉简历的最后排版微调，不负责采访、改写、JD 匹配或重新设计结构。
+Canvas 只负责已生成视觉简历的最后排版微调，不负责采访、文字改写、JD 匹配或重新设计结构。文字事实必须通过 Agent 工作流确认，并重新生成 HTML。
 
-下面是通过 `npx @chasen-liao/resume-skills editor <resume.html>` 打开的实际网页界面：
+下面是通过 `npx @chasen-liao/resume-skills editor <生成的_visual.html>` 打开的实际网页界面：
 
 <p align="center">
   <img src="assets/canvas-editor-preview.jpg" width="1100" alt="ResumeSkills Canvas 本地网页编辑器预览">
@@ -180,16 +180,16 @@ Canvas 只负责已生成视觉简历的最后排版微调，不负责采访、�
 1. **打开视觉版 HTML**：在简历文件所在目录执行下面的命令。编辑器会启动本机服务，并尝试自动打开浏览器。
 
    ```bash
-   npx @chasen-liao/resume-skills editor resume-visual.html
+   npx @chasen-liao/resume-skills editor resume_visual.html
    ```
 
-2. **选择并编辑文字**：在中间的 A4 画布上单击文字进行选择；双击已有文字可以直接编辑。编辑器只允许修改已有文本。
+2. **选择文字**：在中间的 A4 画布上单击文字进行选择；双击会提示事实修改流程。也可用 Tab、方向键移动焦点，Enter/空格选择，Escape 清除选择。
 
 3. **调整排版**：选中文字后，在右侧“排版”面板调整字号、字重、颜色、对齐、行高和段后间距；页面级设置可以调整页边距和主题色。修改会实时反映在画布中。
 
 4. **检查页面状态**：左侧会显示 A4 垂直溢出提示。出现溢出时，先回到内容或排版流程处理，不要把字号压缩到难以阅读。
 
-5. **保存修改后的 HTML**：点击左侧“保存修改”，会直接覆盖原始 HTML，使简历工作流始终使用同一份最新文件。
+5. **保存修改后的 HTML**：点击左侧“保存修改”，会直接覆盖原始 HTML，并把同名前缀的 PDF manifest 标为失效。保存后必须重新渲染和验证 PDF。
 
 6. **打印 PDF**：点击“打印为 PDF”，在浏览器打印面板中选择 A4，并按需要关闭浏览器默认的页眉和页脚后保存。
 
@@ -197,7 +197,6 @@ Canvas 只负责已生成视觉简历的最后排版微调，不负责采访、�
 
 可以调整：
 
-- 已有文字
 - 字号、字重、颜色和对齐方式
 - 行高、段后距、页边距和主题色
 
@@ -205,25 +204,26 @@ Canvas 只负责已生成视觉简历的最后排版微调，不负责采访、�
 
 - AI 改写或自动补充经历
 - JD 分析和关键词匹配
-- 自由拖拽、结构重排或图片编辑
+- 文字内容、自由拖拽、结构重排或图片编辑
 - ATS-safe 单栏模板
 
 对已有视觉 HTML 手动打开编辑器：
 
 ```bash
-npx @chasen-liao/resume-skills editor resume-visual.html
+npx @chasen-liao/resume-skills editor resume_visual.html
 ```
 
 支持的高级 CLI 参数：
 
 - `--port <number>` 或 `-p <number>`：指定监听端口（默认 0 使用随机可用端口）。
-- `--host <host>`：指定绑定的主机地址（默认 `127.0.0.1`）。
+- `--host <host>`：仅允许 loopback 地址 `127.0.0.1` 或 `::1`（默认 `127.0.0.1`）；编辑器不会绑定到局域网或公网地址。
 - `--json`：以标准 JSON 格式输出一次服务启动消息，便于 Agent 读取地址和端口；服务会继续在前台运行，直到该进程结束。
+- `--manifest <path>`：显式指定与该 HTML 关联的 PDF manifest，支持 HTML、PDF 和 manifest 分目录或不同文件名。
 - `--no-open`：禁用自动调起系统浏览器（适合集成环境或无 GUI 控制台）。
 
 编辑器建立连接后支持 **Live Preview 实时热重载**：当源 HTML 文件在外部或由 Agent 更新时，预览与 Canvas 编辑器会自动拉取并刷新最新页面内容。
 
-点击“保存修改”后，原始 HTML 会被直接覆盖并成为最新版本。
+点击“保存修改”后，排版覆盖会原子写回原始 HTML；关联的 `*.resume-manifest.json` 会立即失效，防止旧 PDF 被误认为仍对应当前 HTML。若 manifest 不在同目录或文件名不同，请用 `--manifest <path>` 显式关联。
 
 点击“打印为 PDF”后，在浏览器打印面板中选择 A4 并保存 PDF。若浏览器没有自动打开，请直接打开终端中显示的本地地址。
 
@@ -234,16 +234,18 @@ npx @chasen-liao/resume-skills editor resume-visual.html
 ```text
 resume/
 ├── resume-facts.yaml                 # 唯一事实源；不存放未确认内容
-├── resume-visual.html
-├── resume-visual.pdf
-├── resume-ats.html
-├── resume-ats.pdf
+├── resume_visual.html
+├── resume_visual.pdf
+├── resume_visual.resume-manifest.json
+├── resume_ats.html
+├── resume_ats.pdf
 └── tailored/
     └── company-role/
-        ├── resume-visual.html
-        ├── resume-visual.pdf
-        ├── resume-ats.html
-        ├── resume-ats.pdf
+        ├── resume_visual.html
+        ├── resume_visual.pdf
+        ├── resume_visual.resume-manifest.json
+        ├── resume_ats.html
+        ├── resume_ats.pdf
         └── matching-analysis.md
 ```
 
@@ -298,7 +300,7 @@ resume/
 ### 投递前做 ATS 检查
 
 ```text
-请检查这份 resume-ats.pdf 的文本提取顺序、章节结构和 JD 关键词覆盖。
+请检查这份 resume_ats.pdf 的文本提取顺序、章节结构和 JD 关键词覆盖。
 请把解析风险和真实内容缺口分开说明，不要承诺一定通过 ATS。
 ```
 

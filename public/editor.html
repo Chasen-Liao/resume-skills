@@ -20,8 +20,8 @@
   <main class="layout">
     <aside class="guide">
       <h1>排版微调</h1>
-      <p>单击选择文字，双击直接编辑。仅能调整允许的排版项。</p>
-      <p>修改后直接覆盖保存，维持单一版本。</p>
+      <p>单击选择文字；双击文字查看事实修改说明。仅能调整允许的排版项。</p>
+      <p>文字事实须由 Agent 工作流确认并重新生成 HTML；这里保存的仅是排版覆盖。</p>
       <button id="save-html">保存修改</button>
       <button id="print-pdf" class="secondary">打印为 PDF</button>
       <p id="overflow-status" class="status"></p>
@@ -32,7 +32,7 @@
       </footer>
     </aside>
     <section id="canvas" class="canvas" aria-label="A4 简历画布">
-      <iframe id="resume-frame" title="可编辑简历预览"></iframe>
+      <iframe id="resume-frame" title="可编辑简历预览" sandbox="allow-same-origin"></iframe>
     </section>
     <aside class="inspector">
       <h2>
@@ -40,6 +40,7 @@
         排版细节
       </h2>
       <p id="selection-name">请选择一段文字</p>
+      <button id="reset-selected" class="secondary" type="button">恢复所选文字默认排版</button>
 
       <label>
         <div class="label-header"><span>字号 (px)</span></div>
