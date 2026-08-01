@@ -32,7 +32,7 @@ description: 编排从导入已有简历或采访开始，到母版、JD 定制�
 ## 3. 审计与记录
 
 - 调用 `resume-ats-optimizer` 作为生成后的质量关卡。报告可直接修复的呈现问题与不能伪造的事实缺口；修复前取得用户确认。
-- 母版或 JD 定制流程生成视觉 HTML 后，必须先完成 PDF 验证：运行 `resume-builder` 的 PDF 单页/页面密度验证和必要修正，再启动最终视觉文件的本地 Canvas 预览：
+- 母版或 JD 定制流程生成视觉 HTML 后，必须先完成 **PDF 验证**：用 `resume-builder` 的渲染脚本完成溢出、PDF 单页/页面密度验证并生成 hash manifest，再启动最终视觉文件的本地 Canvas 预览。Canvas 保存会让 manifest 失效，保存后必须重新渲染与验证：
 
   ```bash
   python skills/resume-builder/scripts/validate_resume.py --html "<最终_visual.html路径>" --pdf "<最终_visual.pdf路径>" --mode visual --check-layout --min-fill-ratio 0.78 --json

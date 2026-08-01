@@ -74,7 +74,7 @@ ATS-safe 模式：
 视觉 HTML/PDF：导出 PDF 后同时检查结构、PDF 页数和可提取文本、页面密度和可打印安全区：
 
 ```bash
-python skills/resume-builder/scripts/validate_resume.py --html <resume-visual.html> --pdf <resume-visual.pdf> --mode visual --check-layout --min-fill-ratio 0.78 --json
+powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<生成的_visual.html路径>" -OutputPdf "<生成的_visual.pdf路径>"
 ```
 
 `--check-layout` 的验收规则：
@@ -86,7 +86,7 @@ python skills/resume-builder/scripts/validate_resume.py --html <resume-visual.ht
 
 版面调整顺序：先使用已有且已确认的板块和内容；页面偏空时均匀增加板块/条目间距、行高或容器内边距，页面溢出时反向压缩；仍溢出再按“页边距不小于 8mm → 间距 → 行高不低于 1.25 → 正文不小于 9.5px → 精简低相关内容 → 在适合时切换双栏”的顺序处理。上下间距尽量相近，任何一次调整后都重新导出 PDF 并运行同一命令。不得新增未确认经历、指标、技能或占位文本，也不以难以阅读的小字号硬塞一页。
 
-完成自动检查后，再人工检查截图中的可见裁切、字体回退、链接和打印背景；自动检查不能保证这些视觉细节。视觉模式以 A4 单页为目标，所有警告都要记录处理结果。
+渲染脚本会执行浏览器溢出和 PDF 布局验证，并生成同名前缀的 `*.resume-manifest.json`，其中包含 HTML/PDF SHA-256、renderer 版本和验证结果。`degraded`、`fail` 或 hash 不一致都不可交付。完成自动检查后，再人工检查截图中的可见裁切、字体回退、链接和打印背景；自动检查不能保证这些视觉细节。视觉模式以 A4 单页为目标，所有警告都要记录处理结果。
 
 ATS-safe HTML/PDF：检查 DOM 是否单栏、标题和时间/组织/职位关系是否清晰、正文复制后顺序是否正确，以及 PDF 文本是否可提取；再检查无图片文字、复杂嵌套表格、关键页眉页脚信息和不可复制装饰字体。按目标平台要求检查 HTML/PDF 格式，不宣称 ATS 必然通过。
 
@@ -104,7 +104,7 @@ npx @chasen-liao/resume-skills editor "<生成的_visual.html路径>"
 - `--port <number>`：指定监听端口。
 - **Live Preview**：编辑器建立连接后支持 SSE 热刷新。当 Agent 重新写入或修改该 HTML 时，页面将自动重载展示最新效果。
 
-命令会在本机启动服务并打开浏览器。告知用户原始 HTML 和 PDF 的位置；Canvas 保存时会直接覆盖该 HTML，使其成为最新的排版版本。Canvas 只允许修改受限排版，不能改写内容、做 JD 匹配或调整结构；需要修改文字事实时，必须回到工作流确认并重新生成 HTML。如当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已启动。
+命令会在本机启动服务并打开浏览器。告知用户原始 HTML 和 PDF 的位置；Canvas 保存时会直接覆盖该 HTML，使其成为最新的排版版本，并将关联 PDF manifest 标为失效。保存后必须重新运行渲染脚本，只有新 manifest 的 hash 和验证结果有效才可交付。Canvas 只允许修改受限排版，不能改写内容、做 JD 匹配或调整结构；需要修改文字事实时，必须回到工作流确认并重新生成 HTML。如当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已启动。
 
 ATS-safe 模式不使用 Canvas（其单栏 HTML 不属于 Canvas 支持的视觉模板）；告知文件位置与浏览器打印 PDF 方法。两种模式都可在后续使用 `jd-tailorer` 针对 JD 定制。
 

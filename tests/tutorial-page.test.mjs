@@ -49,6 +49,24 @@ test("Markdown source preserves front matter and article content", () => {
   assert.match(source, /pbs\.twimg\.com\/media/);
 });
 
+test("tutorial follows the current seven-skill delivery workflow", () => {
+  const source = readRequired(markdown);
+  const skills = [
+    "resume-workflow", "resume-builder", "job-description-analyzer",
+    "resume-bullet-writer", "jd-tailorer", "resume-ats-optimizer",
+    "resume-version-manager",
+  ];
+  for (const skill of skills) assert.match(source, new RegExp(`\\b${skill}\\b`), skill);
+  assert.match(source, /\*_visual\.html/);
+  assert.match(source, /\*_ats\.html/);
+  assert.match(source, /npx skills add Chasen-Liao\/resume-skills --skill '\*' --agent codex --yes/);
+  assert.match(source, /npx @chasen-liao\/resume-skills editor "<[^>]+_visual\.html路径>"/);
+  assert.match(source, /Canvas[^\n]+(?:排版|文字内容)/);
+  assert.match(source, /保存[^\n]+manifest[^\n]+失效/i);
+  assert.doesNotMatch(source, /制作一份 resume\.html 文件/);
+  assert.doesNotMatch(source, /双击要修改的行/);
+});
+
 test("reader renders Markdown, builds navigation, and remains accessible", () => {
   const js = readRequired(script);
   const css = readRequired(styles);

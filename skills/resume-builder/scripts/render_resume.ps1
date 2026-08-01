@@ -7,6 +7,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$previousNpmLogLevel = $env:npm_config_loglevel
+$env:npm_config_loglevel = 'error'
 
 try {
     $htmlPath = (Resolve-Path -LiteralPath $HTML -ErrorAction Stop).Path
@@ -40,7 +42,21 @@ try {
     if (-not (Test-Path -LiteralPath $outputPath -PathType Leaf)) {
         throw "Playwright completed without creating '$outputPath'."
     }
+
+    $versionOutput = (& npx --no-install playwright --version 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or $versionOutput -notmatch '(\d+\.\d+\.\d+)') {
+        throw "Unable to determine the installed Playwright version."
+    }
+    $renderer = "playwright@$($Matches[1])"
+    $manifestPath = Join-Path $outputDirectory "$([System.IO.Path]::GetFileNameWithoutExtension($outputPath)).resume-manifest.json"
+    $validator = Join-Path $PSScriptRoot 'validate_resume.py'
+    & python $validator --html $htmlPath --pdf $outputPath --mode visual --check-overflow --check-layout --manifest $manifestPath --renderer $renderer --json
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
 } catch {
     Write-Error $_
     exit 1
+} finally {
+    $env:npm_config_loglevel = $previousNpmLogLevel
 }

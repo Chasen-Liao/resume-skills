@@ -18,7 +18,7 @@ description: 管理简历母版及针对不同公司、岗位和 JD 的定制版
 1. 找到或创建私有 `resume-facts.yaml` 和明确标识的母版；事实文件保存候选人全部已确认的 claim，不能被定制操作覆盖。
 2. 为一个公司/岗位/JD 创建独立目录：`tailored/<公司名>-<岗位>/`。
 3. 记录父版本、目标 JD、创建日期、使用的候选人事实、重排项、改写项、关键词来源、未匹配要求和待确认字段。
-4. 生成该版本的 `resume-visual.html`，必要时生成 `resume-ats.html` 和 `matching-analysis.md`；验证 PDF 页数与可提取文本。
+4. 生成该版本的 `resume_visual.html`，必要时生成 `resume_ats.html` 和 `matching-analysis.md`；验证 PDF 页数、可提取文本和 HTML 溢出，并只记录 hash 对应当前文件的 valid manifest。
 5. 比较版本时按事实、顺序、措辞和样式分组；发现事实不一致时标记冲突并请求候选人确认。
 
 ## Git 版本历史（推荐）
@@ -38,8 +38,8 @@ resume/
 ├── resume.html                         # 母版
 └── tailored/
     └── <公司名>-<岗位>/
-        ├── resume-visual.html
-        ├── resume-ats.html            # 按需生成
+        ├── resume_visual.html
+        ├── resume_ats.html            # 按需生成
         ├── matching-analysis.md
         └── version-notes.md
 ```

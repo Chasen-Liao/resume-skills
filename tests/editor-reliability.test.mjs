@@ -106,6 +106,33 @@ test("save atomically replaces the resume, keeps one backup, and returns a new d
   });
 });
 
+test("save invalidates the PDF manifest associated with the edited HTML", async () => {
+  await withEditor(async (sourcePath, url) => {
+    const manifestPath = sourcePath.replace(/\.html$/i, ".resume-manifest.json");
+    await writeFile(manifestPath, JSON.stringify({
+      schemaVersion: 1,
+      status: "valid",
+      html: { path: sourcePath, sha256: "old-html-hash" },
+      pdf: { path: sourcePath.replace(/\.html$/i, ".pdf"), sha256: "old-pdf-hash" },
+      renderer: { name: "playwright", version: "1.62.1" },
+      validation: { ok: true, checks: [], summary: { pass: 1, warn: 0, fail: 0 } },
+    }));
+    const before = await (await fetch(`${url}/api/document`)).json();
+
+    const response = await fetch(`${url}/api/save`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ documentId: before.documentId, html: withFontSize(sourceHtml, "12") }),
+    });
+
+    assert.equal(response.status, 200);
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    assert.equal(manifest.status, "invalid");
+    assert.equal(manifest.validation.ok, false);
+    assert.match(manifest.invalidated.reason, /Canvas|HTML/i);
+  });
+});
+
 test("directory watch keeps sending reloads after the resume is replaced by rename", async () => {
   await withEditor(async (sourcePath, url) => {
     const events = await fetch(`${url}/api/events`);

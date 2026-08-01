@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
+import subprocess
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
@@ -76,6 +78,37 @@ class ResumeHTMLParser(HTMLParser):
 
 def add(checks: list[Check], name: str, status: str, message: str) -> None:
     checks.append(Check(name, status, message))
+
+
+def file_hash(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def parse_renderer(value: str) -> dict[str, str]:
+    name, separator, version = value.rpartition("@")
+    if not separator or not name or not version:
+        raise ValueError("renderer must use NAME@VERSION, for example playwright@1.62.1")
+    return {"name": name, "version": version}
+
+
+def check_html_overflow(path: Path, layout_script: Path, checks: list[Check]) -> None:
+    try:
+        result = subprocess.run(
+            ["node", str(layout_script), "--html", str(path)],
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            capture_output=True,
+            timeout=60,
+        )
+        measurement = json.loads(result.stdout)
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError) as exc:
+        add(checks, "overflow measurement", "degraded", f"Playwright layout measurement unavailable: {exc}")
+        return
+    status = measurement.get("status")
+    if status not in {"pass", "fail", "degraded"}:
+        status = "degraded"
+    add(checks, "overflow measurement", status, measurement.get("message", "layout measurement returned no message"))
 
 
 def read_html(path: Path, checks: list[Check]) -> str | None:
@@ -227,13 +260,19 @@ def validate_pdf(
     text = ""
     page_count: int | None = None
     reader: Any = None
+    dependency_error: str | None = None
     try:
         from pypdf import PdfReader  # Optional dependency; fallback below remains stdlib-only.
 
         reader = PdfReader(str(path))
         page_count = len(reader.pages)
         text = "\n".join(page.extract_text() or "" for page in reader.pages)
-    except (ImportError, Exception):
+    except ImportError as exc:
+        dependency_error = str(exc)
+        page_count = len(re.findall(rb"/Type\s*/Page(?:\s|/|>)", data))
+        text = pdf_literal_text(data)
+    except Exception as exc:
+        dependency_error = str(exc)
         page_count = len(re.findall(rb"/Type\s*/Page(?:\s|/|>)", data))
         text = pdf_literal_text(data)
 
@@ -254,10 +293,17 @@ def validate_pdf(
             add(checks, f"required text: {value}", "fail", "required text is missing from PDF text")
 
     if check_layout:
+        if reader is None:
+            add(
+                checks,
+                "PDF layout dependency",
+                "degraded",
+                f"pypdf layout parsing unavailable: {dependency_error or 'unknown error'}; install requirements-test.txt and retry",
+            )
         if page_count != 1:
             add(checks, "page fill", "fail", "layout check requires exactly one readable PDF page")
         elif reader is None:
-            add(checks, "page fill", "warn", "无法从当前 PDF 解析页面占用率，请人工检查截图")
+            add(checks, "page fill", "degraded", "无法从当前 PDF 解析页面占用率，不可作为已验证交付物")
         else:
             bounds = measure_pdf_text_bounds(reader.pages[0])
             if bounds is None:
@@ -322,6 +368,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--json", action="store_true", dest="as_json")
     parser.add_argument("--check-overflow", action="store_true")
     parser.add_argument(
+        "--layout-script",
+        type=Path,
+        default=Path(__file__).with_name("measure_resume_layout.mjs"),
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
         "--check-layout",
         action="store_true",
         help="check one-page layout, printable bottom safety, and text fill ratio",
@@ -332,6 +384,9 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.78,
         help="warn when measurable PDF text occupies less than this ratio of the printable height",
     )
+    parser.add_argument("--manifest", type=Path, help="write an HTML/PDF delivery manifest")
+    parser.add_argument("--verify-manifest", type=Path, help="verify hashes in an existing delivery manifest")
+    parser.add_argument("--renderer", help="renderer identity in NAME@VERSION form")
     return parser
 
 
@@ -345,7 +400,7 @@ def main(argv: list[str] | None = None) -> int:
         if html is not None:
             validate_html(html, args.mode, args.required_text, checks)
             if args.check_overflow:
-                add(checks, "overflow measurement", "warn", "browser layout measurement not available in this script")
+                check_html_overflow(args.html, args.layout_script, checks)
     if args.pdf:
         validate_pdf(
             args.pdf,
@@ -355,22 +410,78 @@ def main(argv: list[str] | None = None) -> int:
             min_fill_ratio=args.min_fill_ratio,
         )
 
-    ok = not any(check.status == "fail" for check in checks)
+    if args.verify_manifest:
+        try:
+            manifest = json.loads(args.verify_manifest.read_text(encoding="utf-8"))
+            if manifest.get("status") != "valid":
+                add(checks, "manifest status", "fail", "manifest is not valid")
+            if not args.html or manifest.get("html", {}).get("sha256") != file_hash(args.html):
+                add(checks, "manifest HTML hash", "fail", "HTML hash does not match the validated manifest")
+            else:
+                add(checks, "manifest HTML hash", "pass", "HTML hash matches the validated manifest")
+            if not args.pdf or manifest.get("pdf", {}).get("sha256") != file_hash(args.pdf):
+                add(checks, "manifest PDF hash", "fail", "PDF hash does not match the validated manifest")
+            else:
+                add(checks, "manifest PDF hash", "pass", "PDF hash matches the validated manifest")
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            add(checks, "manifest", "fail", f"cannot verify manifest: {exc}")
+
+    has_failures = any(check.status == "fail" for check in checks)
+    degraded = any(check.status == "degraded" for check in checks)
+    deliverable = not has_failures and not degraded
+    ok = deliverable
     report = {
         "ok": ok,
+        "deliverable": deliverable,
         "checks": [check.as_dict() for check in checks],
         "summary": {
             "pass": sum(check.status == "pass" for check in checks),
             "warn": sum(check.status == "warn" for check in checks),
             "fail": sum(check.status == "fail" for check in checks),
+            "degraded": sum(check.status == "degraded" for check in checks),
         },
     }
+    if args.manifest:
+        if not args.html or not args.pdf:
+            add(checks, "manifest inputs", "fail", "manifest generation requires both --html and --pdf")
+            deliverable = False
+            report["ok"] = False
+            report["deliverable"] = False
+        try:
+            renderer = parse_renderer(args.renderer or "")
+        except ValueError as exc:
+            renderer = {"name": "unknown", "version": "unknown"}
+            add(checks, "manifest renderer", "degraded", str(exc))
+            deliverable = False
+            report["ok"] = False
+            report["deliverable"] = False
+        report["checks"] = [check.as_dict() for check in checks]
+        report["summary"] = {
+            "pass": sum(check.status == "pass" for check in checks),
+            "warn": sum(check.status == "warn" for check in checks),
+            "fail": sum(check.status == "fail" for check in checks),
+            "degraded": sum(check.status == "degraded" for check in checks),
+        }
+        record = {
+            "schemaVersion": 1,
+            "status": "valid" if deliverable else "invalid",
+            "html": {"path": str(args.html.resolve()), "sha256": file_hash(args.html)} if args.html else None,
+            "pdf": {"path": str(args.pdf.resolve()), "sha256": file_hash(args.pdf)} if args.pdf else None,
+            "renderer": renderer,
+            "validation": report,
+        }
+        args.manifest.parent.mkdir(parents=True, exist_ok=True)
+        args.manifest.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if args.as_json:
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
         for check in checks:
             print(f"[{check.status.upper()}] {check.name}: {check.message}")
-    return 0 if ok else 1
+    if any(check.status == "fail" for check in checks):
+        return 1
+    if any(check.status == "degraded" for check in checks):
+        return 2
+    return 0
 
 
 if __name__ == "__main__":

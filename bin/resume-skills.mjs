@@ -7,6 +7,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { prepareEditorDocument, validateEditorSave } from "../lib/editor-document.mjs";
+import { invalidateArtifactManifest } from "../lib/artifact-manifest.mjs";
 import { resolveSourceAsset } from "../lib/source-asset.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -191,6 +192,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
         }
         try {
           writeAtomically(sourcePath, exportHtml);
+          invalidateArtifactManifest(sourcePath);
           original = exportHtml;
           documentId = documentVersion(sourcePath, original);
           send(response, 200, "application/json; charset=utf-8", JSON.stringify({ outputName: basename(sourcePath), documentId }));
