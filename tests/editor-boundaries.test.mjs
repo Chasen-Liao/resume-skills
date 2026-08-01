@@ -55,10 +55,11 @@ test("Canvas save rejects changed resume facts but accepts typography overrides"
   try {
     const { port } = server.address();
     const endpoint = `http://127.0.0.1:${port}/api/save`;
+    const initialDocument = await (await fetch(`http://127.0.0.1:${port}/api/document`)).json();
     const changedFact = await fetch(endpoint, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ html: sourceHtml.replace("安全内容", "未经确认的指标提升 80%") }),
+      body: JSON.stringify({ documentId: initialDocument.documentId, html: sourceHtml.replace("安全内容", "未经确认的指标提升 80%") }),
     });
 
     assert.equal(changedFact.status, 400);
@@ -69,17 +70,18 @@ test("Canvas save rejects changed resume facts but accepts typography overrides"
     const saved = await fetch(endpoint, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ html: typographyOnly }),
+      body: JSON.stringify({ documentId: initialDocument.documentId, html: typographyOnly }),
     });
 
     assert.equal(saved.status, 200);
+    const savedResult = await saved.json();
     assert.match(await readFile(sourcePath, "utf8"), /font-size: 12px !important/);
 
     const misplacedOverride = sourceHtml.replace("</body>", '<style id="resume-editor-overrides">[data-resume-editor-id="profile-name"] { font-size: 12px !important; }</style></body>');
     const misplaced = await fetch(endpoint, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ html: misplacedOverride }),
+      body: JSON.stringify({ documentId: savedResult.documentId, html: misplacedOverride }),
     });
 
     assert.equal(misplaced.status, 400);
@@ -89,7 +91,7 @@ test("Canvas save rejects changed resume facts but accepts typography overrides"
     const attributed = await fetch(endpoint, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ html: attributedOverride }),
+      body: JSON.stringify({ documentId: savedResult.documentId, html: attributedOverride }),
     });
 
     assert.equal(attributed.status, 400);
@@ -111,10 +113,11 @@ test("Canvas save rejects duplicate editor IDs", async () => {
 
   try {
     const { port } = server.address();
+    const document = await (await fetch(`http://127.0.0.1:${port}/api/document`)).json();
     const response = await fetch(`http://127.0.0.1:${port}/api/save`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ html: sourceHtml }),
+      body: JSON.stringify({ documentId: document.documentId, html: sourceHtml }),
     });
 
     assert.equal(response.status, 400);

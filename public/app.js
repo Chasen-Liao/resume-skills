@@ -1,5 +1,5 @@
 import { stripLegacyToolbar } from "/editor-toolbar.js";
-import { appendOverrideRule, configureSelectionTarget, controlEventTypes, rovingSelectionTargets, selectFromPointer, setRovingTabStop, setSelectionPressed } from "/editor-controls.js";
+import { appendOverrideRule, configureSelectionTarget, removeOverrideRules, rovingSelectionTargets, selectFromPointer, setRovingTabStop, setSelectionPressed, upsertRootToken } from "/editor-controls.js";
 
 const frame = document.querySelector("#resume-frame");
 const status = document.querySelector("#save-status");
@@ -9,6 +9,7 @@ let selected;
 let documentId;
 let sourceName;
 let selectionTargets = [];
+let draftTimer;
 
 function draftKey() { return `resume-editor:draft:${documentId}`; }
 function overrideStyle(doc) {
@@ -21,31 +22,62 @@ function ensureRules(doc) {
   if (!style.textContent.includes("/* resume-editor-overrides */")) style.textContent = "/* resume-editor-overrides */\n";
   return style;
 }
-function setRule(element, property, value) {
+function setRule(element, property, value, commit = false) {
   const doc = frame.contentDocument;
   const style = ensureRules(doc);
   style.textContent = appendOverrideRule(style.textContent, element.dataset.resumeEditorId, property, value);
-  saveDraft();
+  saveDraft(commit);
+  updateOverflow();
 }
-function setRootToken(token, value) {
+function setRootToken(token, value, commit = false) {
   const doc = frame.contentDocument;
   const style = ensureRules(doc);
-  const rootRule = /:root\s*\{([^}]*)\}/s;
-  if (rootRule.test(style.textContent)) {
-    style.textContent = style.textContent.replace(rootRule, (match, body) => `:root { ${body} ${token}: ${value}; }`);
-  } else {
-    style.textContent += `:root { ${token}: ${value}; }\n`;
-  }
-  saveDraft();
+  style.textContent = upsertRootToken(style.textContent, token, value);
+  saveDraft(commit);
+  updateOverflow();
 }
 function serializedHtml() {
   const doc = frame.contentDocument;
   return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
 }
-function saveDraft() {
+function saveDraft(commit = false) {
+  if (commit) {
+    clearTimeout(draftTimer);
+    draftTimer = undefined;
+    persistDraft();
+    return;
+  }
+  if (!draftTimer) draftTimer = setTimeout(() => {
+    draftTimer = undefined;
+    persistDraft();
+  }, 300);
+}
+function persistDraft() {
   localStorage.setItem(draftKey(), serializedHtml());
   status.textContent = "草稿已保存在此浏览器";
-  updateOverflow();
+}
+function setControlValue(id, value) {
+  if (value === "" || value === undefined || value === "normal") return;
+  controls[id].value = value;
+  const slider = document.querySelector(`.sync-slider[data-target="${id}"]`);
+  if (slider) slider.value = value;
+}
+function colorToHex(color) {
+  if (/^#[0-9a-f]{6}$/i.test(color)) return color;
+  const values = color.match(/\d+/g)?.slice(0, 3).map(Number);
+  return values?.length === 3 ? `#${values.map((value) => value.toString(16).padStart(2, "0")).join("")}` : "";
+}
+function syncControlsFromSelection(element) {
+  const style = frame.contentWindow.getComputedStyle(element);
+  setControlValue("font-size", parseFloat(style.fontSize));
+  setControlValue("font-weight", style.fontWeight);
+  setControlValue("font-color", colorToHex(style.color));
+  setControlValue("text-align", style.textAlign);
+  setControlValue("line-height", parseFloat(style.lineHeight));
+  setControlValue("margin-bottom", parseFloat(style.marginBottom));
+  const rootStyle = frame.contentWindow.getComputedStyle(frame.contentDocument.documentElement);
+  setControlValue("page-margin", parseFloat(rootStyle.getPropertyValue("--page-margin")));
+  setControlValue("accent-color", colorToHex(rootStyle.getPropertyValue("--color-accent").trim()));
 }
 function select(element) {
   if (selected) {
@@ -61,6 +93,7 @@ function select(element) {
   selectionName.classList.remove("animate-pop");
   void selectionName.offsetWidth;
   selectionName.classList.add("animate-pop");
+  syncControlsFromSelection(selected);
 }
 function clearSelection() {
   if (!selected) return;
@@ -115,11 +148,13 @@ function cleanForExport() {
   return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
 }
 function bindControl(control, handler) {
-  controlEventTypes.forEach((eventType) => control.addEventListener(eventType, handler));
+  control.addEventListener("input", () => handler(false));
+  control.addEventListener("change", () => handler(true));
+  control.addEventListener("blur", () => handler(true));
 }
-Object.entries({ "font-size": (v) => setRule(selected, "font-size", `${v}px`), "font-weight": (v) => v && setRule(selected, "font-weight", v), "font-color": (v) => setRule(selected, "color", v), "text-align": (v) => v && setRule(selected, "text-align", v), "line-height": (v) => setRule(selected, "line-height", v), "margin-bottom": (v) => setRule(selected, "margin-bottom", `${v}px`) }).forEach(([id, action]) => bindControl(controls[id], () => { if (selected) action(controls[id].value); }));
-bindControl(controls["page-margin"], () => setRootToken("--page-margin", `${controls["page-margin"].value}mm`));
-bindControl(controls["accent-color"], () => setRootToken("--color-accent", controls["accent-color"].value));
+Object.entries({ "font-size": (v, commit) => setRule(selected, "font-size", `${v}px`, commit), "font-weight": (v, commit) => v && setRule(selected, "font-weight", v, commit), "font-color": (v, commit) => setRule(selected, "color", v, commit), "text-align": (v, commit) => v && setRule(selected, "text-align", v, commit), "line-height": (v, commit) => setRule(selected, "line-height", v, commit), "margin-bottom": (v, commit) => setRule(selected, "margin-bottom", `${v}px`, commit) }).forEach(([id, action]) => bindControl(controls[id], (commit) => { if (selected) action(controls[id].value, commit); }));
+bindControl(controls["page-margin"], (commit) => setRootToken("--page-margin", `${controls["page-margin"].value}mm`, commit));
+bindControl(controls["accent-color"], (commit) => setRootToken("--color-accent", controls["accent-color"].value, commit));
 
 // Sync ranges with number inputs
 document.querySelectorAll(".sync-slider").forEach(slider => {
@@ -130,26 +165,45 @@ document.querySelectorAll(".sync-slider").forEach(slider => {
       numInput.value = e.target.value;
       numInput.dispatchEvent(new Event("input"));
     });
+    slider.addEventListener("change", () => numInput.dispatchEvent(new Event("change")));
     numInput.addEventListener("input", (e) => {
       slider.value = e.target.value;
     });
   }
 });
 document.querySelector("#save-html").addEventListener("click", async () => {
-  const response = await fetch("/api/save", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ html: cleanForExport() }) });
+  const savedDraftKey = draftKey();
+  const response = await fetch("/api/save", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ documentId, html: cleanForExport() }) });
   const result = await response.json();
-  status.textContent = response.ok ? `已成功保存 ${result.outputName}` : `保存失败：${result.error}`;
+  if (response.ok) {
+    clearTimeout(draftTimer);
+    draftTimer = undefined;
+    localStorage.removeItem(savedDraftKey);
+    documentId = result.documentId;
+    status.textContent = `已成功保存 ${result.outputName}`;
+  } else {
+    status.textContent = `保存失败：${result.error}`;
+  }
+});
+document.querySelector("#reset-selected").addEventListener("click", () => {
+  if (!selected) return;
+  const style = frame.contentDocument.querySelector("#resume-editor-overrides");
+  if (!style) return;
+  style.textContent = removeOverrideRules(style.textContent, selected.dataset.resumeEditorId);
+  saveDraft(true);
+  syncControlsFromSelection(selected);
 });
 document.querySelector("#print-pdf").addEventListener("click", () => frame.contentWindow.print());
 window.addEventListener("beforeunload", (event) => { if (localStorage.getItem(draftKey())) { event.preventDefault(); event.returnValue = ""; } });
 async function reloadDocument({ isHotReload = false } = {}) {
   const response = await fetch("/api/document");
   const { html, documentId: id, sourceName: name } = await response.json();
+  const previousDraftKey = documentId && draftKey();
   documentId = id;
   sourceName = name;
   document.querySelector("#source-name").textContent = sourceName;
   if (isHotReload) {
-    localStorage.removeItem(draftKey());
+    localStorage.removeItem(previousDraftKey);
   }
   frame.srcdoc = stripLegacyToolbar(localStorage.getItem(draftKey()) || html);
 }
@@ -164,4 +218,8 @@ if (typeof EventSource !== "undefined") {
       reloadDocument({ isHotReload: true });
     }
   };
+  events.addEventListener("status", (event) => {
+    const update = JSON.parse(event.data);
+    status.textContent = update.message;
+  });
 }

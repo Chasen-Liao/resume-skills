@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, statSync, watch, writeFileSync } from "node:fs";
+import { closeSync, copyFileSync, existsSync, fsyncSync, openSync, readFileSync, renameSync, statSync, unlinkSync, watch, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import { spawn } from "node:child_process";
@@ -43,7 +43,24 @@ function openBrowser(url) {
   child.unref();
 }
 
-export function startEditor(sourcePath, { log = true, open = true, port = 0, host = "127.0.0.1", json = false, logFn = console.log } = {}) {
+export function atomicSave(sourcePath, contents) {
+  const temporaryPath = join(dirname(sourcePath), `.${basename(sourcePath)}.resume-skills-${process.pid}-${Date.now()}.tmp`);
+  let fileDescriptor;
+  try {
+    fileDescriptor = openSync(temporaryPath, "wx");
+    writeFileSync(fileDescriptor, contents, "utf8");
+    fsyncSync(fileDescriptor);
+    closeSync(fileDescriptor);
+    fileDescriptor = undefined;
+    copyFileSync(sourcePath, `${sourcePath}.bak`);
+    renameSync(temporaryPath, sourcePath);
+  } finally {
+    if (fileDescriptor !== undefined) closeSync(fileDescriptor);
+    if (existsSync(temporaryPath)) unlinkSync(temporaryPath);
+  }
+}
+
+export function startEditor(sourcePath, { log = true, open = true, port = 0, host = "127.0.0.1", json = false, logFn = console.log, writeAtomically = atomicSave } = {}) {
   if (!loopbackHosts.has(host)) {
     throw new Error("编辑器仅支持 loopback host（127.0.0.1 或 ::1）。");
   }
@@ -56,27 +73,35 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
   let documentId = createHash("sha256").update(sourcePath).update(original).digest("hex");
   const sseClients = new Set();
 
-  let debounceTimer = null;
-  const fileWatcher = watch(sourcePath, () => {
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
+  const sendEvent = (event, data) => {
+    const payload = event === "reload" ? "data: reload\n\n" : `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    for (const clientResponse of sseClients) {
       try {
-        if (!existsSync(sourcePath)) return;
-        const updated = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
-        original = updated;
-        documentId = createHash("sha256").update(sourcePath).update(original).digest("hex");
-        for (const clientResponse of sseClients) {
-          try {
-            clientResponse.write("data: reload\n\n");
-          } catch {
-            sseClients.delete(clientResponse);
-          }
-        }
+        clientResponse.write(payload);
       } catch {
-        // Ignore transient reading errors during file saves
+        sseClients.delete(clientResponse);
       }
-    }, 100);
+    }
+  };
+  const reloadFromDisk = () => {
+    try {
+      if (!existsSync(sourcePath)) throw new Error("文件不存在或正在被替换。");
+      const updated = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
+      original = updated;
+      documentId = createHash("sha256").update(sourcePath).update(original).digest("hex");
+      sendEvent("reload");
+    } catch (error) {
+      sendEvent("status", { level: "error", message: `无法读取简历文件：${error.message}` });
+    }
+  };
+  let debounceTimer = null;
+  const sourceName = basename(sourcePath).toLowerCase();
+  const fileWatcher = watch(dirname(sourcePath), (_eventType, changedName) => {
+    if (changedName && String(changedName).toLowerCase() !== sourceName) return;
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(reloadFromDisk, 100);
   });
+  fileWatcher.on("error", (error) => sendEvent("status", { level: "error", message: `无法监听简历文件：${error.message}` }));
 
   const server = createServer((request, response) => {
     if (request.method === "GET" && request.url === "/") {
@@ -134,15 +159,23 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
       });
       request.on("end", () => {
         if (response.writableEnded) return;
+        let exportHtml;
         try {
-          const { html } = JSON.parse(body);
-          const exportHtml = validateEditorSave(original, html);
-          writeFileSync(sourcePath, exportHtml, "utf8");
-          // NOTE: Saving to sourcePath triggers the file watcher, which triggers hot reload.
-          // The browser will automatically clear the draft and reload.
-          send(response, 200, "application/json; charset=utf-8", JSON.stringify({ outputName: basename(sourcePath) }));
+          const { html, documentId: submittedDocumentId } = JSON.parse(body);
+          if (!submittedDocumentId || submittedDocumentId !== documentId) {
+            return send(response, 409, "application/json; charset=utf-8", JSON.stringify({ error: "文档版本已过期，请先重新加载后再保存。", documentId }));
+          }
+          exportHtml = validateEditorSave(original, html);
         } catch (error) {
-          send(response, 400, "application/json; charset=utf-8", JSON.stringify({ error: error.message }));
+          return send(response, 400, "application/json; charset=utf-8", JSON.stringify({ error: error.message }));
+        }
+        try {
+          writeAtomically(sourcePath, exportHtml);
+          original = exportHtml;
+          documentId = createHash("sha256").update(sourcePath).update(original).digest("hex");
+          send(response, 200, "application/json; charset=utf-8", JSON.stringify({ outputName: basename(sourcePath), documentId }));
+        } catch (error) {
+          send(response, 500, "application/json; charset=utf-8", JSON.stringify({ error: `保存失败：${error.message}` }));
         }
       });
       return;

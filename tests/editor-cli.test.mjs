@@ -220,10 +220,11 @@ test("editor refuses unsafe saves and preserves the source resume", async () => 
 
     try {
       const { port } = server.address();
+      const document = await (await fetch(`http://127.0.0.1:${port}/api/document`)).json();
       const response = await fetch(`http://127.0.0.1:${port}/api/save`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ html: sourceHtml.replace("</body>", "<script>alert(1)</script></body>") }),
+        body: JSON.stringify({ documentId: document.documentId, html: sourceHtml.replace("</body>", "<script>alert(1)</script></body>") }),
       });
 
       assert.equal(response.status, 400);

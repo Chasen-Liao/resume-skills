@@ -4,10 +4,10 @@ import { parse } from "parse5";
 import test from "node:test";
 import * as editorControls from "../lib/editor-controls.mjs";
 
-const { appendOverrideRule, controlEventTypes, importantDeclaration } = editorControls;
+const { appendOverrideRule, controlEventTypes, importantDeclaration, removeOverrideRules, upsertRootToken } = editorControls;
 
-test("editor controls react to both live input and committed changes", () => {
-  assert.deepEqual(controlEventTypes, ["input", "change"]);
+test("editor controls react to live input and committed changes or blur", () => {
+  assert.deepEqual(controlEventTypes, ["input", "change", "blur"]);
 });
 
 test("editor declarations override template-specific text rules", () => {
@@ -17,6 +17,39 @@ test("editor declarations override template-specific text rules", () => {
 test("appends a safe attribute selector rule without parsing it as a regular expression", () => {
   const stylesheet = appendOverrideRule("/* overrides */\n", "project-1-bullet-2", "font-weight", "600");
   assert.match(stylesheet, /\[data-resume-editor-id="project-1-bullet-2"\] \{ font-weight: 600 !important; \}/);
+});
+
+test("replaces a selected element property instead of accumulating CSS during a drag", () => {
+  let stylesheet = "/* overrides */\n";
+  stylesheet = appendOverrideRule(stylesheet, "project-1-bullet-2", "font-size", "11px");
+  stylesheet = appendOverrideRule(stylesheet, "project-1-bullet-2", "font-size", "12px");
+
+  const declarations = [...stylesheet.matchAll(/\[data-resume-editor-id="project-1-bullet-2"\]\s*\{\s*font-size:\s*([^;]+);\s*\}/g)];
+  assert.equal(declarations.length, 1);
+  assert.equal(declarations[0][1], "12px !important");
+});
+
+test("restores one selected text item to its template defaults without affecting another item", () => {
+  const stylesheet = [
+    '/* overrides */',
+    '[data-resume-editor-id="profile-name"] { font-size: 12px !important; }',
+    '[data-resume-editor-id="profile-title"] { font-size: 11px !important; }',
+  ].join("\n");
+
+  const restored = removeOverrideRules(stylesheet, "profile-name");
+
+  assert.doesNotMatch(restored, /profile-name/);
+  assert.match(restored, /profile-title/);
+});
+
+test("replaces a root token while dragging a document-level control", () => {
+  let stylesheet = "/* overrides */\n";
+  stylesheet = upsertRootToken(stylesheet, "--page-margin", "10mm");
+  stylesheet = upsertRootToken(stylesheet, "--page-margin", "12mm");
+
+  const declarations = [...stylesheet.matchAll(/--page-margin:\s*([^;]+);/g)];
+  assert.equal(declarations.length, 1);
+  assert.equal(declarations[0][1], "12mm");
 });
 
 test("font size is a numeric input with browser stepper controls", () => {
