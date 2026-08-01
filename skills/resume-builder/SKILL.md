@@ -61,8 +61,8 @@ CSS 文件包含 3 套配色变量 + 推荐字体 + 风格 CSS。`css/common.md`
 - 交付为单文件时，头像等本地图片使用 `data URL` 内嵌；若保留外部网页字体，必须同时提供系统字体回退，并在验证中说明离线渲染可能不同。
 - 技能标签用 `<span class="skill-badge">` 排列，badge 样式由风格 CSS 定义（ATS 友好）
 - 不在简历模板中嵌入导出按钮；PDF 由浏览器打印或本地 Canvas 的“打印为 PDF”操作导出，避免遮挡简历内容
-- 使用任一内置风格时，生成的 `<html>` 必须包含对应的 `data-resume-editor-template`（`modern-minimal`、`classic-business`、`creative-bold`、`japanese-minimal`、`minimal-blue-business` 或 `tech-dark`）和 `data-resume-editor-version="1"`。可为真实文本提供稳定的 `data-resume-editor-id`；未标记的内置模板文字由本地 Canvas 在打开时补齐可编辑标记。
-- 上述标记供 `npx @chasen-liao/resume-skills editor <resume.html>` 的本地 Canvas 微调器识别；它只允许用户修改已有文字和受限排版，不能替代事实契约或 JD 定制流程。不要将标记用于头像、布局容器、任意 HTML 或未经确认的字段。
+- 使用任一内置风格时，生成的 `<html>` 必须包含对应的 `data-resume-editor-template`（`modern-minimal`、`classic-business`、`creative-bold`、`japanese-minimal`、`minimal-blue-business` 或 `tech-dark`）和 `data-resume-editor-version="1"`。每个需要 Canvas 微调的真实文本必须有稳定、唯一、语义化的 `data-resume-editor-id`；不要依赖运行时补齐。
+- 上述标记供 `npx @chasen-liao/resume-skills editor <resume.html>` 的本地 Canvas 微调器识别；Canvas 只保存受限排版覆盖，不保存文字内容。任何文字事实变更必须先经 Agent 工作流和事实契约确认，再重新生成 HTML。不要将标记用于头像、布局容器、任意 HTML 或未经确认的字段。
 
 ATS-safe 模式：
 - 使用单栏、标准板块标题、普通可复制文本和稳定的正文阅读顺序；重要信息不依赖图片、文本框、复杂嵌套表格、页眉页脚或装饰字体。
@@ -92,7 +92,7 @@ ATS-safe HTML/PDF：检查 DOM 是否单栏、标题和时间/组织/职位关�
 
 ### 第五步：交付
 
-视觉模式完成 A4/PDF 验证后，必须启动本地 Canvas 预览，让用户先看到成品，再按需做受限的文字和排版微调：
+视觉模式完成 A4/PDF 验证后，必须启动本地 Canvas 预览，让用户先看到成品，再按需做受限排版微调：
 
 ```bash
 npx @chasen-liao/resume-skills editor "<生成的_visual.html路径>"
@@ -104,7 +104,7 @@ npx @chasen-liao/resume-skills editor "<生成的_visual.html路径>"
 - `--port <number>`：指定监听端口。
 - **Live Preview**：编辑器建立连接后支持 SSE 热刷新。当 Agent 重新写入或修改该 HTML 时，页面将自动重载展示最新效果。
 
-命令会在本机启动服务并打开浏览器。告知用户原始 HTML 和 PDF 的位置；Canvas 保存时会直接覆盖该 HTML，使其成为最新版本。Canvas 只允许修改已有文字和受限排版，不能改写内容、做 JD 匹配或调整结构。如当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已启动。
+命令会在本机启动服务并打开浏览器。告知用户原始 HTML 和 PDF 的位置；Canvas 保存时会直接覆盖该 HTML，使其成为最新的排版版本。Canvas 只允许修改受限排版，不能改写内容、做 JD 匹配或调整结构；需要修改文字事实时，必须回到工作流确认并重新生成 HTML。如当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已启动。
 
 ATS-safe 模式不使用 Canvas（其单栏 HTML 不属于 Canvas 支持的视觉模板）；告知文件位置与浏览器打印 PDF 方法。两种模式都可在后续使用 `jd-tailorer` 针对 JD 定制。
 

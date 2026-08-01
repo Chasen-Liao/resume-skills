@@ -6,7 +6,7 @@ import { basename, dirname, extname, join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { prepareEditorDocument } from "../lib/editor-document.mjs";
+import { prepareEditorDocument, validateEditorSave } from "../lib/editor-document.mjs";
 import { resolveSourceAsset } from "../lib/source-asset.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -136,7 +136,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
         if (response.writableEnded) return;
         try {
           const { html } = JSON.parse(body);
-          const exportHtml = prepareEditorDocument(html);
+          const exportHtml = validateEditorSave(original, html);
           writeFileSync(sourcePath, exportHtml, "utf8");
           // NOTE: Saving to sourcePath triggers the file watcher, which triggers hot reload.
           // The browser will automatically clear the draft and reload.

@@ -39,7 +39,6 @@ function setRootToken(token, value) {
 }
 function serializedHtml() {
   const doc = frame.contentDocument;
-  doc.querySelectorAll("[contenteditable]").forEach((node) => node.removeAttribute("contenteditable"));
   return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
 }
 function saveDraft() {
@@ -48,42 +47,52 @@ function saveDraft() {
   updateOverflow();
 }
 function select(element) {
-  if (selected) selected.removeAttribute("data-resume-editor-selected");
+  if (selected) {
+    selected.removeAttribute("data-resume-editor-selected");
+    selected.setAttribute("aria-pressed", "false");
+  }
   selected = element;
   selected.setAttribute("data-resume-editor-selected", "true");
+  selected.setAttribute("aria-pressed", "true");
+  selected.tabIndex = 0;
   selectionName.textContent = selected.textContent.trim().slice(0, 42) || "已选择空文本";
   // CSS spring feedback
   selectionName.classList.remove("animate-pop");
   void selectionName.offsetWidth;
   selectionName.classList.add("animate-pop");
 }
-function assignFallbackEditorIds(doc) {
-  const selector = [
-    "h1", "h2", "h3", "p", "li", ".job-title", ".header-contacts > div",
-    ".education-line > div", ".item-title", ".item-meta", ".skill-badge",
-    ".summary-block", ".info-value", ".experience-time", ".experience-org",
-    ".experience-role", ".experience-sub-info",
-  ].join(",");
-  let index = 1;
-  doc.querySelectorAll(selector).forEach((node) => {
-    if (!node.dataset.resumeEditorId && node.textContent.trim()) {
-      node.dataset.resumeEditorId = `template-text-${index}`;
-      index += 1;
-    }
-  });
+function clearSelection() {
+  if (!selected) return;
+  selected.removeAttribute("data-resume-editor-selected");
+  selected.setAttribute("aria-pressed", "false");
+  selected = undefined;
+  selectionName.textContent = "请选择一段文字";
+}
+function showFactConfirmation() {
+  status.textContent = "事实内容只能通过 Agent 工作流确认后重新生成 HTML。";
+}
+function moveFocus(nodes, current, direction) {
+  const index = nodes.indexOf(current);
+  const next = nodes[(index + direction + nodes.length) % nodes.length];
+  nodes.forEach((node) => { node.tabIndex = node === next ? 0 : -1; });
+  next.focus();
 }
 function bindCanvas() {
   const doc = frame.contentDocument;
-  assignFallbackEditorIds(doc);
-  doc.head.insertAdjacentHTML("beforeend", "<style id=\"resume-editor-chrome\">[data-resume-editor-id]{cursor:text}[data-resume-editor-selected]{outline:2px solid #2563eb;outline-offset:2px}</style>");
-  doc.querySelectorAll("[data-resume-editor-id]").forEach((node) => {
+  doc.head.insertAdjacentHTML("beforeend", "<style id=\"resume-editor-chrome\">[data-resume-editor-id]{cursor:pointer}[data-resume-editor-id]:focus-visible{outline:2px solid #2563eb;outline-offset:2px}[data-resume-editor-selected]{outline:2px solid #2563eb;outline-offset:2px}</style>");
+  const nodes = [...doc.querySelectorAll("[data-resume-editor-id]")];
+  nodes.forEach((node, index) => {
+    node.tabIndex = index === 0 ? 0 : -1;
+    node.setAttribute("role", "button");
+    node.setAttribute("aria-pressed", "false");
     node.addEventListener("click", (event) => { event.stopPropagation(); select(node); });
-    node.addEventListener("dblclick", () => { select(node); node.setAttribute("contenteditable", "true"); node.focus(); });
+    node.addEventListener("dblclick", () => { select(node); showFactConfirmation(); });
     node.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") { node.blur(); node.removeAttribute("contenteditable"); }
-      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") { node.blur(); node.removeAttribute("contenteditable"); saveDraft(); }
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(node); }
+      if (event.key === "Escape") { event.preventDefault(); clearSelection(); }
+      if (event.key === "ArrowDown" || event.key === "ArrowRight") { event.preventDefault(); moveFocus(nodes, node, 1); }
+      if (event.key === "ArrowUp" || event.key === "ArrowLeft") { event.preventDefault(); moveFocus(nodes, node, -1); }
     });
-    node.addEventListener("blur", () => { node.removeAttribute("contenteditable"); saveDraft(); });
   });
 }
 function updateOverflow() {
@@ -94,8 +103,13 @@ function updateOverflow() {
 }
 function cleanForExport() {
   const doc = frame.contentDocument.cloneNode(true);
-  doc.querySelectorAll("[contenteditable], [data-resume-editor-selected], #resume-editor-chrome").forEach((node) => {
-    if (node.id === "resume-editor-chrome") node.remove(); else { node.removeAttribute("contenteditable"); node.removeAttribute("data-resume-editor-selected"); }
+  doc.querySelectorAll("[data-resume-editor-selected], #resume-editor-chrome").forEach((node) => {
+    if (node.id === "resume-editor-chrome") node.remove(); else node.removeAttribute("data-resume-editor-selected");
+  });
+  doc.querySelectorAll("[data-resume-editor-id]").forEach((node) => {
+    node.removeAttribute("tabindex");
+    node.removeAttribute("role");
+    node.removeAttribute("aria-pressed");
   });
   return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
 }

@@ -61,7 +61,7 @@ description: 根据职位描述(JD)定制简历的技能。当用户提到「JD�
 - `matching-analysis.md` — 匹配分析报告（模板见 `references/matching-analysis.md`）
 - `matching-analysis.md` 可包含匹配缺口、关键词来源和待确认字段；待确认字段不得复制到上述最终 HTML/PDF。
 - 仓库当前只生成 HTML 与浏览器打印 PDF，没有 DOCX 生成能力，不承诺 DOCX 产物。
-- 若沿用任一内置视觉样式，保留或生成对应的 `data-resume-editor-template`、`data-resume-editor-version="1"` 和已有的稳定 `data-resume-editor-id` 文字标记；Canvas 也会为未标记的内置模板文字补齐可编辑标记，使用户可在不改变定制工作流的前提下做后续文字/排版微调。
+- 若沿用任一内置视觉样式，保留或生成对应的 `data-resume-editor-template`、`data-resume-editor-version="1"` 和稳定、唯一、语义化的 `data-resume-editor-id` 文字标记；不要依赖 Canvas 运行时补齐标记。
 
 ### PDF 验证
 
@@ -81,7 +81,7 @@ npx @chasen-liao/resume-skills editor "<tailored目录中的resume-visual.html�
 - `--port <number>`：指定监听端口。
 - **Live Preview**：编辑器建立连接后支持 SSE 热刷新。当 Agent 重新写入或修改该 HTML 时，页面将自动重载展示最新效果。
 
-命令会启动本地服务并尝试打开浏览器。告知用户定制版 HTML/PDF 与匹配报告的位置；Canvas 保存时会直接覆盖定制版 HTML，使其成为最新版本。若当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
+命令会启动本地服务并尝试打开浏览器。告知用户定制版 HTML/PDF 与匹配报告的位置；Canvas 保存时会直接覆盖定制版 HTML 的排版覆盖，使其成为最新排版版本。Canvas 不保存文字事实；任何内容变更必须回到 Agent 工作流确认后重新生成 HTML。若当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
 
 ## 硬约束
 
