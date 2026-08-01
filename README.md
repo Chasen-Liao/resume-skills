@@ -217,7 +217,7 @@ npx @chasen-liao/resume-skills editor resume-visual.html
 支持的高级 CLI 参数：
 
 - `--port <number>` 或 `-p <number>`：指定监听端口（默认 0 使用随机可用端口）。
-- `--host <host>`：指定绑定的主机地址（默认 `127.0.0.1`）。
+- `--host <host>`：仅允许 loopback 地址 `127.0.0.1` 或 `::1`（默认 `127.0.0.1`）；编辑器不会绑定到局域网或公网地址。
 - `--json`：以标准 JSON 格式输出一次服务启动消息，便于 Agent 读取地址和端口；服务会继续在前台运行，直到该进程结束。
 - `--no-open`：禁用自动调起系统浏览器（适合集成环境或无 GUI 控制台）。
 

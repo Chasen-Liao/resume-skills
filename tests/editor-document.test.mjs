@@ -41,6 +41,27 @@ test("rejects HTML that does not opt into the editor protocol with detailed diag
   );
 });
 
+test("rejects executable and embedded markup before it reaches the canvas", () => {
+  const unsafeDocuments = [
+    modernResume.replace("</body>", "<script>alert(1)</script></body>"),
+    modernResume.replace("<body>", '<body onload="alert(1)">'),
+    modernResume.replace("</body>", '<iframe src="https://attacker.example"></iframe></body>'),
+  ];
+
+  for (const html of unsafeDocuments) {
+    assert.throws(() => prepareEditorDocument(html), /不安全的 HTML/);
+  }
+});
+
+test("requires editor protocol attributes on the html start tag", () => {
+  const misplacedProtocol = '<html><body data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><h1>个人简历</h1></body></html>';
+
+  assert.throws(
+    () => prepareEditorDocument(misplacedProtocol),
+    /<html> 开始标签.*data-resume-editor-template/,
+  );
+});
+
 test("removes a legacy template export toolbar before opening the canvas", () => {
   const legacy = modernResume.replace(
     "<body>",

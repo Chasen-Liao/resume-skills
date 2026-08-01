@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { once } from "node:events";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -99,6 +99,23 @@ test("editor server exposes the SVG favicon", async () => {
   }
 });
 
+test("editor server delivers the resume in a sandbox that cannot run scripts", async () => {
+  const server = startEditor(exampleResume, { open: false, log: false });
+  await once(server, "listening");
+
+  try {
+    const { port } = server.address();
+    const page = await (await fetch(`http://127.0.0.1:${port}/`)).text();
+    const resumeFrame = page.match(/<iframe\b[^>]*\bid=["']resume-frame["'][^>]*>/i)?.[0] || "";
+
+    assert.match(resumeFrame, /\bsandbox(?:\s*=\s*["'][^"']*["'])?/i);
+    assert.doesNotMatch(resumeFrame, /\ballow-scripts\b/i);
+  } finally {
+    server.close();
+    await once(server, "close");
+  }
+});
+
 async function withEditorFixture(run) {
   const directory = await mkdtemp(join(tmpdir(), "resume-skills-editor-"));
   const sourcePath = join(directory, "resume.html");
@@ -148,4 +165,121 @@ test("editor rejects encoded directory traversal in asset paths", async () => {
       await once(server, "close");
     }
   });
+});
+
+test("editor refuses unsafe HTML before starting a server", async () => {
+  await withEditorFixture(async (directory, sourcePath) => {
+    const unsafeDocuments = [
+      '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body><script>alert(1)</script></body></html>',
+      '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body onload="alert(1)"></body></html>',
+      '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body><iframe src="https://attacker.example"></iframe></body></html>',
+      '<html><body data-resume-editor-template="modern-minimal" data-resume-editor-version="1"></body></html>',
+    ];
+
+    for (const html of unsafeDocuments) {
+      await writeFile(sourcePath, html);
+      let server;
+      let thrown;
+      try {
+        server = startEditor(sourcePath, { open: false, log: false });
+      } catch (error) {
+        thrown = error;
+      }
+      if (server) {
+        await once(server, "listening");
+        server.close();
+        await once(server, "close");
+      }
+      assert.match(thrown?.message || "", /不安全的 HTML|<html> 开始标签/);
+    }
+  });
+});
+
+test("editor refuses unsafe saves and preserves the source resume", async () => {
+  await withEditorFixture(async (directory, sourcePath) => {
+    const sourceHtml = '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body><div class="resume">安全内容</div></body></html>';
+    await writeFile(sourcePath, sourceHtml);
+    const server = startEditor(sourcePath, { open: false, log: false });
+    await once(server, "listening");
+
+    try {
+      const { port } = server.address();
+      const response = await fetch(`http://127.0.0.1:${port}/api/save`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ html: sourceHtml.replace("</body>", "<script>alert(1)</script></body>") }),
+      });
+
+      assert.equal(response.status, 400);
+      assert.match((await response.json()).error, /不安全的 HTML/);
+      assert.equal(await (await import("node:fs/promises")).readFile(sourcePath, "utf8"), sourceHtml);
+    } finally {
+      server.close();
+      await once(server, "close");
+    }
+  });
+});
+
+test("editor rejects non-loopback hosts", async () => {
+  let server;
+  let thrown;
+  try {
+    server = startEditor(exampleResume, { open: false, log: false, host: "0.0.0.0" });
+  } catch (error) {
+    thrown = error;
+  }
+
+  if (server) {
+    await once(server, "listening");
+    server.close();
+    await once(server, "close");
+  }
+
+  assert.match(thrown?.message || "", /loopback/i);
+});
+
+test("editor limits the size of save requests", async () => {
+  await withEditorFixture(async (directory, sourcePath) => {
+    const server = startEditor(sourcePath, { open: false, log: false });
+    await once(server, "listening");
+
+    try {
+      const { port } = server.address();
+      const html = '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body><div class="resume">' + "x".repeat(2 * 1024 * 1024) + "</div></body></html>";
+      const response = await fetch(`http://127.0.0.1:${port}/api/save`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ html }),
+      });
+
+      assert.equal(response.status, 413);
+    } finally {
+      server.close();
+      await once(server, "close");
+    }
+  });
+});
+
+test("editor does not serve assets through a junction outside the resume directory", async () => {
+  const externalDirectory = await mkdtemp(join(tmpdir(), "resume-skills-external-"));
+  await writeFile(join(externalDirectory, "secret.png"), "private");
+
+  try {
+    await withEditorFixture(async (directory, sourcePath) => {
+      await symlink(externalDirectory, join(directory, "images"), process.platform === "win32" ? "junction" : "dir");
+      const server = startEditor(sourcePath, { open: false, log: false });
+      await once(server, "listening");
+
+      try {
+        const { port } = server.address();
+        const response = await fetch(`http://127.0.0.1:${port}/images/secret.png`);
+        assert.equal(response.status, 403);
+      } finally {
+        server.close();
+        await once(server, "close");
+      }
+    });
+  } finally {
+    await rm(externalDirectory, { recursive: true, force: true });
+  }
 });

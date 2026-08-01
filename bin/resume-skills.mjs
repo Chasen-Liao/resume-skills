@@ -11,13 +11,15 @@ import { resolveSourceAsset } from "../lib/source-asset.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const publicRoot = join(packageRoot, "public");
+const maxSaveBodyBytes = 1024 * 1024;
+const loopbackHosts = new Set(["127.0.0.1", "::1"]);
 
 function printHelp() {
   console.log("Usage: resume-skills editor <resume.html> [options]");
   console.log("\nOpen a generated ResumeSkills template in the local canvas editor.");
   console.log("\nOptions:");
   console.log("  -p, --port <number>   Specify server port (default: 0 for random available port)");
-  console.log("  --host <host>         Specify host to bind (default: 127.0.0.1)");
+  console.log("  --host <host>         Loopback host only: 127.0.0.1 or ::1 (default: 127.0.0.1)");
   console.log("  --json                Output status in JSON format");
   console.log("  --no-open             Do not automatically open the browser");
   console.log("  -h, --help            Show this help message");
@@ -42,6 +44,9 @@ function openBrowser(url) {
 }
 
 export function startEditor(sourcePath, { log = true, open = true, port = 0, host = "127.0.0.1", json = false, logFn = console.log } = {}) {
+  if (!loopbackHosts.has(host)) {
+    throw new Error("编辑器仅支持 loopback host（127.0.0.1 或 ::1）。");
+  }
   if (extname(sourcePath).toLowerCase() !== ".html") {
     throw new Error("编辑器只接受 .html 文件。");
   }
@@ -109,9 +114,22 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
       return;
     }
     if (request.method === "POST" && request.url === "/api/save") {
+      const contentLength = Number(request.headers["content-length"]);
+      if (Number.isFinite(contentLength) && contentLength > maxSaveBodyBytes) {
+        request.resume();
+        return send(response, 413, "application/json; charset=utf-8", JSON.stringify({ error: "保存内容超过大小限制。" }));
+      }
+
       let body = "";
-      request.on("data", (chunk) => { body += chunk; });
+      let bodySize = 0;
+      request.on("data", (chunk) => {
+        bodySize += chunk.length;
+        if (bodySize <= maxSaveBodyBytes) body += chunk;
+      });
       request.on("end", () => {
+        if (bodySize > maxSaveBodyBytes) {
+          return send(response, 413, "application/json; charset=utf-8", JSON.stringify({ error: "保存内容超过大小限制。" }));
+        }
         try {
           const { html } = JSON.parse(body);
           const exportHtml = prepareEditorDocument(html);
@@ -146,7 +164,8 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
   server.listen(port, host, () => {
     const address = server.address();
     const actualPort = typeof address === "object" && address !== null ? address.port : port;
-    const url = `http://${host}:${actualPort}`;
+    const urlHost = host.includes(":") ? `[${host}]` : host;
+    const url = `http://${urlHost}:${actualPort}`;
     const exportPath = sourcePath;
 
     if (json) {
