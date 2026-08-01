@@ -1,5 +1,5 @@
 import { stripLegacyToolbar } from "/editor-toolbar.js";
-import { appendOverrideRule, controlEventTypes } from "/editor-controls.js";
+import { appendOverrideRule, configureSelectionTarget, controlEventTypes, selectFromPointer, setRovingTabStop, setSelectionPressed } from "/editor-controls.js";
 
 const frame = document.querySelector("#resume-frame");
 const status = document.querySelector("#save-status");
@@ -8,6 +8,7 @@ const controls = Object.fromEntries(["font-size", "font-weight", "font-color", "
 let selected;
 let documentId;
 let sourceName;
+let selectionTargets = [];
 
 function draftKey() { return `resume-editor:draft:${documentId}`; }
 function overrideStyle(doc) {
@@ -49,12 +50,12 @@ function saveDraft() {
 function select(element) {
   if (selected) {
     selected.removeAttribute("data-resume-editor-selected");
-    selected.setAttribute("aria-pressed", "false");
+    setSelectionPressed(selected, false);
   }
   selected = element;
   selected.setAttribute("data-resume-editor-selected", "true");
-  selected.setAttribute("aria-pressed", "true");
-  selected.tabIndex = 0;
+  setSelectionPressed(selected, true);
+  setRovingTabStop(selectionTargets, selected);
   selectionName.textContent = selected.textContent.trim().slice(0, 42) || "已选择空文本";
   // CSS spring feedback
   selectionName.classList.remove("animate-pop");
@@ -64,7 +65,7 @@ function select(element) {
 function clearSelection() {
   if (!selected) return;
   selected.removeAttribute("data-resume-editor-selected");
-  selected.setAttribute("aria-pressed", "false");
+  setSelectionPressed(selected, false);
   selected = undefined;
   selectionName.textContent = "请选择一段文字";
 }
@@ -74,18 +75,16 @@ function showFactConfirmation() {
 function moveFocus(nodes, current, direction) {
   const index = nodes.indexOf(current);
   const next = nodes[(index + direction + nodes.length) % nodes.length];
-  nodes.forEach((node) => { node.tabIndex = node === next ? 0 : -1; });
+  setRovingTabStop(nodes, next);
   next.focus();
 }
 function bindCanvas() {
   const doc = frame.contentDocument;
   doc.head.insertAdjacentHTML("beforeend", "<style id=\"resume-editor-chrome\">[data-resume-editor-id]{cursor:pointer}[data-resume-editor-id]:focus-visible{outline:2px solid #2563eb;outline-offset:2px}[data-resume-editor-selected]{outline:2px solid #2563eb;outline-offset:2px}</style>");
-  const nodes = [...doc.querySelectorAll("[data-resume-editor-id]")];
+  const nodes = selectionTargets = [...doc.querySelectorAll("[data-resume-editor-id]")];
   nodes.forEach((node, index) => {
-    node.tabIndex = index === 0 ? 0 : -1;
-    node.setAttribute("role", "button");
-    node.setAttribute("aria-pressed", "false");
-    node.addEventListener("click", (event) => { event.stopPropagation(); select(node); });
+    configureSelectionTarget(node, index);
+    node.addEventListener("click", (event) => selectFromPointer(event, node, select));
     node.addEventListener("dblclick", () => { select(node); showFactConfirmation(); });
     node.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(node); }

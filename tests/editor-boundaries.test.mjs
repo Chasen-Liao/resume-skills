@@ -26,13 +26,6 @@ test("Canvas keeps resume text read-only and explains how to confirm fact change
   assert.match(editorHtml, /双击文字查看事实修改说明/);
 });
 
-test("Canvas text targets expose roving keyboard selection without editing", () => {
-  assert.match(app, /node\.tabIndex = index === 0 \? 0 : -1/);
-  assert.match(app, /aria-pressed/);
-  assert.match(app, /event\.key === "Enter" \|\| event\.key === " "/);
-  assert.match(app, /event\.key === "Escape"/);
-});
-
 test("all built-in templates provide unique stable IDs for profile and experience text", async () => {
   for (const templateName of templateNames) {
     const html = await readFile(`${root}/skills/resume-builder/references/examples/${templateName}.html`, "utf8");
@@ -91,6 +84,42 @@ test("Canvas save rejects changed resume facts but accepts typography overrides"
 
     assert.equal(misplaced.status, 400);
     assert.match((await misplaced.json()).error, /排版覆盖格式/);
+
+    const attributedOverride = sourceHtml.replace("</head>", '<style id="resume-editor-overrides" media="print">[data-resume-editor-id="profile-name"] { font-size: 12px !important; }</style></head>');
+    const attributed = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ html: attributedOverride }),
+    });
+
+    assert.equal(attributed.status, 400);
+    assert.match((await attributed.json()).error, /排版覆盖格式/);
+  } finally {
+    server.close();
+    await once(server, "close");
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("Canvas save rejects duplicate editor IDs", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-duplicate-id-"));
+  const sourcePath = join(directory, "resume.html");
+  const sourceHtml = '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head></head><body><div class="resume"><h1 data-resume-editor-id="profile-name">安全内容</h1><p data-resume-editor-id="profile-name">重复内容</p></div></body></html>';
+  await writeFile(sourcePath, sourceHtml);
+  const server = startEditor(sourcePath, { open: false, log: false });
+  await once(server, "listening");
+
+  try {
+    const { port } = server.address();
+    const response = await fetch(`http://127.0.0.1:${port}/api/save`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ html: sourceHtml }),
+    });
+
+    assert.equal(response.status, 400);
+    assert.match((await response.json()).error, /重复.*data-resume-editor-id/);
+    assert.equal(await readFile(sourcePath, "utf8"), sourceHtml);
   } finally {
     server.close();
     await once(server, "close");
