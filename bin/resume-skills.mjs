@@ -13,6 +13,16 @@ const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const publicRoot = join(packageRoot, "public");
 const maxSaveBodyBytes = 1024 * 1024;
 const loopbackHosts = new Set(["127.0.0.1", "::1"]);
+const atomicFileOps = {
+  open: openSync,
+  write: writeFileSync,
+  fsync: fsyncSync,
+  close: closeSync,
+  copy: copyFileSync,
+  rename: renameSync,
+  exists: existsSync,
+  unlink: unlinkSync,
+};
 
 function printHelp() {
   console.log("Usage: resume-skills editor <resume.html> [options]");
@@ -43,20 +53,24 @@ function openBrowser(url) {
   child.unref();
 }
 
-export function atomicSave(sourcePath, contents) {
+function documentVersion(sourcePath, html) {
+  return createHash("sha256").update(sourcePath).update(html).digest("hex");
+}
+
+export function atomicSave(sourcePath, contents, { fileOps = atomicFileOps } = {}) {
   const temporaryPath = join(dirname(sourcePath), `.${basename(sourcePath)}.resume-skills-${process.pid}-${Date.now()}.tmp`);
   let fileDescriptor;
   try {
-    fileDescriptor = openSync(temporaryPath, "wx");
-    writeFileSync(fileDescriptor, contents, "utf8");
-    fsyncSync(fileDescriptor);
-    closeSync(fileDescriptor);
+    fileDescriptor = fileOps.open(temporaryPath, "wx");
+    fileOps.write(fileDescriptor, contents, "utf8");
+    fileOps.fsync(fileDescriptor);
+    fileOps.close(fileDescriptor);
     fileDescriptor = undefined;
-    copyFileSync(sourcePath, `${sourcePath}.bak`);
-    renameSync(temporaryPath, sourcePath);
+    fileOps.copy(sourcePath, `${sourcePath}.bak`);
+    fileOps.rename(temporaryPath, sourcePath);
   } finally {
-    if (fileDescriptor !== undefined) closeSync(fileDescriptor);
-    if (existsSync(temporaryPath)) unlinkSync(temporaryPath);
+    if (fileDescriptor !== undefined) fileOps.close(fileDescriptor);
+    if (fileOps.exists(temporaryPath)) fileOps.unlink(temporaryPath);
   }
 }
 
@@ -70,7 +84,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
   if (!existsSync(sourcePath)) throw new Error(`找不到 HTML 文件：${sourcePath}`);
 
   let original = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
-  let documentId = createHash("sha256").update(sourcePath).update(original).digest("hex");
+  let documentId = documentVersion(sourcePath, original);
   const sseClients = new Set();
 
   const sendEvent = (event, data) => {
@@ -88,7 +102,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
       if (!existsSync(sourcePath)) throw new Error("文件不存在或正在被替换。");
       const updated = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
       original = updated;
-      documentId = createHash("sha256").update(sourcePath).update(original).digest("hex");
+      documentId = documentVersion(sourcePath, original);
       sendEvent("reload");
     } catch (error) {
       sendEvent("status", { level: "error", message: `无法读取简历文件：${error.message}` });
@@ -136,6 +150,8 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
       const cleanup = () => sseClients.delete(response);
       request.on("close", cleanup);
       request.on("error", cleanup);
+      response.on("close", cleanup);
+      response.on("error", cleanup);
       return;
     }
     if (request.method === "POST" && request.url === "/api/save") {
@@ -162,7 +178,11 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
         let exportHtml;
         try {
           const { html, documentId: submittedDocumentId } = JSON.parse(body);
-          if (!submittedDocumentId || submittedDocumentId !== documentId) {
+          const diskOriginal = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
+          const diskDocumentId = documentVersion(sourcePath, diskOriginal);
+          original = diskOriginal;
+          documentId = diskDocumentId;
+          if (!submittedDocumentId || submittedDocumentId !== diskDocumentId) {
             return send(response, 409, "application/json; charset=utf-8", JSON.stringify({ error: "文档版本已过期，请先重新加载后再保存。", documentId }));
           }
           exportHtml = validateEditorSave(original, html);
@@ -172,7 +192,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
         try {
           writeAtomically(sourcePath, exportHtml);
           original = exportHtml;
-          documentId = createHash("sha256").update(sourcePath).update(original).digest("hex");
+          documentId = documentVersion(sourcePath, original);
           send(response, 200, "application/json; charset=utf-8", JSON.stringify({ outputName: basename(sourcePath), documentId }));
         } catch (error) {
           send(response, 500, "application/json; charset=utf-8", JSON.stringify({ error: `保存失败：${error.message}` }));

@@ -1,5 +1,5 @@
 import { stripLegacyToolbar } from "/editor-toolbar.js";
-import { appendOverrideRule, configureSelectionTarget, removeOverrideRules, rovingSelectionTargets, selectFromPointer, setRovingTabStop, setSelectionPressed, upsertRootToken } from "/editor-controls.js";
+import { appendOverrideRule, computedControlValues, configureSelectionTarget, createDraftController, restoreSelectedDefaults, rovingSelectionTargets, selectFromPointer, setRovingTabStop, setSelectionPressed, upsertRootToken } from "/editor-controls.js";
 
 const frame = document.querySelector("#resume-frame");
 const status = document.querySelector("#save-status");
@@ -9,9 +9,8 @@ let selected;
 let documentId;
 let sourceName;
 let selectionTargets = [];
-let draftTimer;
 
-function draftKey() { return `resume-editor:draft:${documentId}`; }
+function draftKey(id = documentId) { return `resume-editor:draft:${id}`; }
 function overrideStyle(doc) {
   let style = doc.querySelector("#resume-editor-overrides");
   if (!style) { style = doc.createElement("style"); style.id = "resume-editor-overrides"; doc.head.append(style); }
@@ -40,44 +39,23 @@ function serializedHtml() {
   const doc = frame.contentDocument;
   return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
 }
-function saveDraft(commit = false) {
-  if (commit) {
-    clearTimeout(draftTimer);
-    draftTimer = undefined;
-    persistDraft();
-    return;
-  }
-  if (!draftTimer) draftTimer = setTimeout(() => {
-    draftTimer = undefined;
-    persistDraft();
-  }, 300);
-}
-function persistDraft() {
-  localStorage.setItem(draftKey(), serializedHtml());
-  status.textContent = "草稿已保存在此浏览器";
-}
+const drafts = createDraftController({
+  getDocumentId: () => documentId,
+  serialize: serializedHtml,
+  persist: (id, html) => { localStorage.setItem(draftKey(id), html); status.textContent = "草稿已保存在此浏览器"; },
+  remove: (id) => localStorage.removeItem(draftKey(id)),
+});
+function saveDraft(commit = false) { if (commit) drafts.commit(); else drafts.schedule(); }
 function setControlValue(id, value) {
   if (value === "" || value === undefined || value === "normal") return;
   controls[id].value = value;
   const slider = document.querySelector(`.sync-slider[data-target="${id}"]`);
   if (slider) slider.value = value;
 }
-function colorToHex(color) {
-  if (/^#[0-9a-f]{6}$/i.test(color)) return color;
-  const values = color.match(/\d+/g)?.slice(0, 3).map(Number);
-  return values?.length === 3 ? `#${values.map((value) => value.toString(16).padStart(2, "0")).join("")}` : "";
-}
 function syncControlsFromSelection(element) {
   const style = frame.contentWindow.getComputedStyle(element);
-  setControlValue("font-size", parseFloat(style.fontSize));
-  setControlValue("font-weight", style.fontWeight);
-  setControlValue("font-color", colorToHex(style.color));
-  setControlValue("text-align", style.textAlign);
-  setControlValue("line-height", parseFloat(style.lineHeight));
-  setControlValue("margin-bottom", parseFloat(style.marginBottom));
   const rootStyle = frame.contentWindow.getComputedStyle(frame.contentDocument.documentElement);
-  setControlValue("page-margin", parseFloat(rootStyle.getPropertyValue("--page-margin")));
-  setControlValue("accent-color", colorToHex(rootStyle.getPropertyValue("--color-accent").trim()));
+  Object.entries(computedControlValues(style, rootStyle)).forEach(([id, value]) => setControlValue(id, value));
 }
 function select(element) {
   if (selected) {
@@ -172,13 +150,10 @@ document.querySelectorAll(".sync-slider").forEach(slider => {
   }
 });
 document.querySelector("#save-html").addEventListener("click", async () => {
-  const savedDraftKey = draftKey();
   const response = await fetch("/api/save", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ documentId, html: cleanForExport() }) });
   const result = await response.json();
   if (response.ok) {
-    clearTimeout(draftTimer);
-    draftTimer = undefined;
-    localStorage.removeItem(savedDraftKey);
+    drafts.clear();
     documentId = result.documentId;
     status.textContent = `已成功保存 ${result.outputName}`;
   } else {
@@ -189,7 +164,7 @@ document.querySelector("#reset-selected").addEventListener("click", () => {
   if (!selected) return;
   const style = frame.contentDocument.querySelector("#resume-editor-overrides");
   if (!style) return;
-  style.textContent = removeOverrideRules(style.textContent, selected.dataset.resumeEditorId);
+  style.textContent = restoreSelectedDefaults(style.textContent, selected.dataset.resumeEditorId);
   saveDraft(true);
   syncControlsFromSelection(selected);
 });
@@ -198,12 +173,12 @@ window.addEventListener("beforeunload", (event) => { if (localStorage.getItem(dr
 async function reloadDocument({ isHotReload = false } = {}) {
   const response = await fetch("/api/document");
   const { html, documentId: id, sourceName: name } = await response.json();
-  const previousDraftKey = documentId && draftKey();
+  const previousDocumentId = documentId;
   documentId = id;
   sourceName = name;
   document.querySelector("#source-name").textContent = sourceName;
   if (isHotReload) {
-    localStorage.removeItem(previousDraftKey);
+    drafts.clear(previousDocumentId);
   }
   frame.srcdoc = stripLegacyToolbar(localStorage.getItem(draftKey()) || html);
 }

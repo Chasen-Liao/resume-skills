@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { closeSync, copyFileSync, existsSync, fsyncSync, openSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { once } from "node:events";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import test from "node:test";
-import { startEditor } from "../bin/resume-skills.mjs";
+import { atomicSave, startEditor } from "../bin/resume-skills.mjs";
 
 const sourceHtml = '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head></head><body><div class="resume"><h1 data-resume-editor-id="profile-name">安全内容</h1></div></body></html>';
 
@@ -19,6 +20,56 @@ test("save rejects an expired document version without changing the resume", asy
     assert.equal(response.status, 409);
     assert.match((await response.json()).error, /版本.*过期|冲突/);
     assert.equal(await readFile(sourcePath, "utf8"), sourceHtml);
+  });
+});
+
+test("save detects a disk change before its watcher reloads and preserves the external content", async () => {
+  await withEditor(async (sourcePath, url) => {
+    const document = await (await fetch(`${url}/api/document`)).json();
+    const externalHtml = sourceHtml.replace("安全内容", "外部写入内容");
+    await writeFile(sourcePath, externalHtml);
+
+    const response = await fetch(`${url}/api/save`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ documentId: document.documentId, html: withFontSize(sourceHtml, "12") }),
+    });
+
+    assert.equal(response.status, 409);
+    assert.match((await response.json()).error, /版本.*过期|冲突/);
+    assert.equal(await readFile(sourcePath, "utf8"), externalHtml);
+  });
+});
+
+test("atomic save fsync failure keeps the source and cleans its same-directory temporary file", async () => {
+  await withTemporaryFile(async (sourcePath) => {
+    let temporaryPath;
+    let fsyncCalled = false;
+    const fileOps = realFileOps({
+      open(path, flags) { temporaryPath = path; return openSync(path, flags); },
+      fsync(descriptor) { fsyncCalled = true; fsyncSync(descriptor); throw new Error("fsync failed"); },
+    });
+
+    assert.throws(() => atomicSave(sourcePath, "new contents", { fileOps }), /fsync failed/);
+    assert.equal(fsyncCalled, true);
+    assert.equal(await readFile(sourcePath, "utf8"), "original contents");
+    assert.equal(dirname(temporaryPath), dirname(sourcePath));
+    assert.equal(existsSync(temporaryPath), false);
+  });
+});
+
+test("atomic save rename failure keeps the source and cleans its temporary file", async () => {
+  await withTemporaryFile(async (sourcePath) => {
+    let temporaryPath;
+    const fileOps = realFileOps({
+      open(path, flags) { temporaryPath = path; return openSync(path, flags); },
+      rename() { throw new Error("rename failed"); },
+    });
+
+    assert.throws(() => atomicSave(sourcePath, "new contents", { fileOps }), /rename failed/);
+    assert.equal(await readFile(sourcePath, "utf8"), "original contents");
+    assert.equal(dirname(temporaryPath), dirname(sourcePath));
+    assert.equal(existsSync(temporaryPath), false);
   });
 });
 
@@ -110,6 +161,31 @@ async function withEditor(run, options = {}) {
     await once(server, "close");
     await rm(directory, { recursive: true, force: true });
   }
+}
+
+async function withTemporaryFile(run) {
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-atomic-"));
+  const sourcePath = join(directory, "resume.html");
+  await writeFile(sourcePath, "original contents");
+  try {
+    await run(sourcePath);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
+
+function realFileOps(overrides) {
+  return {
+    open: openSync,
+    write: writeFileSync,
+    fsync: fsyncSync,
+    close: closeSync,
+    copy: copyFileSync,
+    rename: renameSync,
+    exists: existsSync,
+    unlink: unlinkSync,
+    ...overrides,
+  };
 }
 
 async function replaceFile(sourcePath, contents) {

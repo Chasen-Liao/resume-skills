@@ -27,3 +27,15 @@
 
 - 原子替换依赖 Node `renameSync` 对同目录目标替换的 Windows 行为；本任务的真实 Windows 临时目录测试已覆盖成功替换和 `.bak` 保留。
 - SSE 读取错误已回报；底层 watch 的操作系统级 `error` 事件较难在不替换 Node watcher 的情况下稳定触发，因此以删除源文件后的真实读取错误回归覆盖前端可见状态。
+
+## 审查修复（第二轮）
+
+1. **保存前磁盘版本校验**：`POST /api/save` 现在会同步读取、prepare 并哈希源文件，再和提交的 `documentId` 比较。新增真实临时目录回归：外部写入后立刻提交旧版本（不等待 watch debounce）返回 `409`，外部内容没有被覆盖。
+2. **可执行前端交互测试**：抽取 `createDraftController`、`computedControlValues` 和恢复所选项函数。测试以真实 `setTimeout` 驱动输入拖动、`change/blur` 提交和保存后清理序列，并验证计算样式（包括根 token）回显与单项恢复；`public/app.js` 使用这些函数。
+3. **原子保存故障路径**：`atomicSave` 允许注入最小文件操作集合用于测试；fsync 与 rename 的失败回归使用真实临时目录和真实文件描述符，断言源文件不变、临时文件位于目标同目录且被清理。
+4. **SSE 生命周期**：同时在 response 的 `error` 与 `close` 上移除客户端。
+
+第二轮验证：
+
+- `node --check public/app.js`
+- `node --test tests/editor-reliability.test.mjs tests/editor-draft.test.mjs tests/editor-controls.test.mjs`：21/21 通过。
