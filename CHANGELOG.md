@@ -2,6 +2,13 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.5.1] - 2026-08-01
+
+### Fixed
+
+- 恢复 Canvas 对已有字段的纯文本编辑：双击即可编辑，保存后直接写回本地 HTML。
+- 保留结构白名单与安全 HTML 校验，富文本/新增字段/HTML 结构变更仍会被拒绝；保存后关联 PDF manifest 失效并需重新验证。
+
 ## [0.5.0] - 2026-08-01
 
 ### Added

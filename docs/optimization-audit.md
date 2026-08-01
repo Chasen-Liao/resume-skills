@@ -242,7 +242,8 @@
 
 ## 执行状态（2026-08-01）
 
-- P0 与 P1 的安全、事实边界、保存可靠性、渲染验证、manifest、CI 和教程同步已落地并通过复审。
+- P0 与 P1 的安全、保存可靠性、渲染验证、manifest、CI 和教程同步已落地并通过复审。
+- 根据用户对 Canvas 产品定位的确认，0.5.1 恢复了已有字段的纯文本编辑；结构白名单、纯文本模式和恶意 HTML 防护仍保留。
 - P2 的键盘选择、草稿节流、样式回显/恢复和模板稳定 ID 已落地；本地字体与窄屏 drawer 暂列后续版本。
 - 当前验证：`npm test`、`npm run test:integration`、Python validator 和 `npm pack --dry-run --json` 均通过；IPv6 回连测试在受限环境中显式跳过。
 - 该文档是本次审计与实施记录，不是运行时合同；现役使用方式以 `README.md`、`AGENTS.md` 和各 Skill 的当前说明为准。

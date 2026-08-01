@@ -87,7 +87,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/script
 npx @chasen-liao/resume-skills editor "<生成的_visual.html路径>"
 ```
 
-Canvas 只负责受限排版微调，不修改文字内容、经历事实、DOM 结构或 JD 匹配结果。需要改文字时，回到 Agent 工作流确认事实并重新生成 HTML。
+Canvas 支持编辑已有字段的纯文本和受限排版，不允许新增字段、插入 HTML、改 DOM 结构或做 JD 匹配。文字修改后仍需回到 Agent 工作流确认事实并重新验证 PDF。
 
 Canvas 保存会覆盖当前 HTML，并让关联的 PDF manifest 立即失效；因此保存后必须重新运行渲染脚本，直到新 manifest 的 HTML hash、PDF hash 和验证结果全部有效，才能交付或记录版本。
 

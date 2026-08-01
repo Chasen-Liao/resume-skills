@@ -20,10 +20,10 @@ const templateNames = [
   "tech-dark",
 ];
 
-test("Canvas keeps resume text read-only and explains how to confirm fact changes", () => {
-  assert.doesNotMatch(app, /contenteditable/i);
-  assert.match(app, /事实内容只能通过 Agent 工作流确认后重新生成 HTML/);
-  assert.match(editorHtml, /双击文字查看事实修改说明/);
+test("Canvas supports plain-text editing of existing text fields", () => {
+  assert.match(app, /setAttribute\("contenteditable", "plaintext-only"\)/);
+  assert.match(app, /仅允许纯文本/);
+  assert.match(editorHtml, /双击文字.*编辑/);
 });
 
 test("all built-in templates provide unique stable IDs for profile and experience text", async () => {
@@ -44,7 +44,7 @@ test("all built-in templates provide unique stable IDs for profile and experienc
   }
 });
 
-test("Canvas save rejects changed resume facts but accepts typography overrides", async () => {
+test("Canvas save persists changed text and accepts typography overrides", async () => {
   const directory = await mkdtemp(join(tmpdir(), "resume-skills-boundary-"));
   const sourcePath = join(directory, "resume.html");
   const sourceHtml = '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head></head><body><div class="resume"><h1 data-resume-editor-id="profile-name">安全内容</h1></div></body></html>';
@@ -62,20 +62,30 @@ test("Canvas save rejects changed resume facts but accepts typography overrides"
       body: JSON.stringify({ documentId: initialDocument.documentId, html: sourceHtml.replace("安全内容", "未经确认的指标提升 80%") }),
     });
 
-    assert.equal(changedFact.status, 400);
-    assert.match((await changedFact.json()).error, /事实内容或简历结构/);
-    assert.equal(await readFile(sourcePath, "utf8"), sourceHtml);
+    assert.equal(changedFact.status, 200);
+    assert.match(await readFile(sourcePath, "utf8"), /未经确认的指标提升 80%/);
+    const changedDocument = await changedFact.json();
 
     const typographyOnly = sourceHtml.replace("</head>", '<style id="resume-editor-overrides">/* resume-editor-overrides */\n[data-resume-editor-id="profile-name"] { font-size: 12px !important; }\n</style></head>');
     const saved = await fetch(endpoint, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ documentId: initialDocument.documentId, html: typographyOnly }),
+      body: JSON.stringify({ documentId: changedDocument.documentId, html: typographyOnly.replace("安全内容", "新的姓名") }),
     });
 
     assert.equal(saved.status, 200);
     const savedResult = await saved.json();
     assert.match(await readFile(sourcePath, "utf8"), /font-size: 12px !important/);
+
+    const richText = sourceHtml.replace("安全内容", "新的 <em>姓名</em>");
+    const richTextResponse = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ documentId: savedResult.documentId, html: richText }),
+    });
+
+    assert.equal(richTextResponse.status, 400);
+    assert.match((await richTextResponse.json()).error, /结构|纯文本/);
 
     const misplacedOverride = sourceHtml.replace("</body>", '<style id="resume-editor-overrides">[data-resume-editor-id="profile-name"] { font-size: 12px !important; }</style></body>');
     const misplaced = await fetch(endpoint, {
