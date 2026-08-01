@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { parse } from "parse5";
 import test from "node:test";
 import * as editorControls from "../lib/editor-controls.mjs";
 
@@ -71,6 +72,26 @@ test("pointer selection prevents link navigation while selecting the link", () =
   assert.equal(event.propagationStopped, true);
 });
 
+test("creative contact containers with a selectable link do not become an extra roving tab stop", () => {
+  const creativeDocument = parse(readFileSync(new URL("../skills/resume-builder/references/examples/creative-bold.html", import.meta.url), "utf8"));
+  const contact = findByEditorId(creativeDocument, "profile-contact-phone-label");
+  const link = findByEditorId(creativeDocument, "profile-email");
+  assert.ok(contact);
+  assert.ok(link);
+  assert.equal(hasDescendant(contact, link), true);
+
+  const contactTarget = new SelectionTarget("DIV", {}, [new SelectionTarget("A", { href: "/portfolio" })]);
+  const linkTarget = contactTarget.children[0];
+  assert.equal(typeof editorControls.rovingSelectionTargets, "function");
+
+  const targets = editorControls.rovingSelectionTargets([contactTarget, linkTarget]);
+  editorControls.configureSelectionTarget(targets[0], 0);
+
+  assert.deepEqual(targets, [linkTarget]);
+  assert.equal(contactTarget.tabIndex, -1);
+  assert.equal(linkTarget.tabIndex, 0);
+});
+
 class SelectionTarget {
   constructor(tagName, attributes = {}, children = []) {
     this.tagName = tagName;
@@ -92,4 +113,19 @@ class PointerEventStub {
 
   preventDefault() { this.defaultPrevented = true; }
   stopPropagation() { this.propagationStopped = true; }
+}
+
+function findByEditorId(node, id) {
+  if (node.attrs?.some((attribute) => attribute.name === "data-resume-editor-id" && attribute.value === id)) return node;
+  for (const child of node.childNodes || []) {
+    const found = findByEditorId(child, id);
+    if (found) return found;
+  }
+}
+
+function hasDescendant(node, descendant) {
+  for (const child of node.childNodes || []) {
+    if (child === descendant || hasDescendant(child, descendant)) return true;
+  }
+  return false;
 }

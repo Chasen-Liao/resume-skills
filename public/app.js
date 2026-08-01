@@ -1,5 +1,5 @@
 import { stripLegacyToolbar } from "/editor-toolbar.js";
-import { appendOverrideRule, configureSelectionTarget, controlEventTypes, selectFromPointer, setRovingTabStop, setSelectionPressed } from "/editor-controls.js";
+import { appendOverrideRule, configureSelectionTarget, controlEventTypes, rovingSelectionTargets, selectFromPointer, setRovingTabStop, setSelectionPressed } from "/editor-controls.js";
 
 const frame = document.querySelector("#resume-frame");
 const status = document.querySelector("#save-status");
@@ -55,7 +55,7 @@ function select(element) {
   selected = element;
   selected.setAttribute("data-resume-editor-selected", "true");
   setSelectionPressed(selected, true);
-  setRovingTabStop(selectionTargets, selected);
+  if (selectionTargets.includes(selected)) setRovingTabStop(selectionTargets, selected);
   selectionName.textContent = selected.textContent.trim().slice(0, 42) || "已选择空文本";
   // CSS spring feedback
   selectionName.classList.remove("animate-pop");
@@ -81,9 +81,11 @@ function moveFocus(nodes, current, direction) {
 function bindCanvas() {
   const doc = frame.contentDocument;
   doc.head.insertAdjacentHTML("beforeend", "<style id=\"resume-editor-chrome\">[data-resume-editor-id]{cursor:pointer}[data-resume-editor-id]:focus-visible{outline:2px solid #2563eb;outline-offset:2px}[data-resume-editor-selected]{outline:2px solid #2563eb;outline-offset:2px}</style>");
-  const nodes = selectionTargets = [...doc.querySelectorAll("[data-resume-editor-id]")];
-  nodes.forEach((node, index) => {
-    configureSelectionTarget(node, index);
+  const allNodes = [...doc.querySelectorAll("[data-resume-editor-id]")];
+  const nodes = selectionTargets = rovingSelectionTargets(allNodes);
+  allNodes.forEach((node) => {
+    const index = nodes.indexOf(node);
+    if (index !== -1) configureSelectionTarget(node, index);
     node.addEventListener("click", (event) => selectFromPointer(event, node, select));
     node.addEventListener("dblclick", () => { select(node); showFactConfirmation(); });
     node.addEventListener("keydown", (event) => {
