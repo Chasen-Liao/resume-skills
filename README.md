@@ -157,7 +157,7 @@ resume-version-manager（记录确认后的版本与投递历史）
 </tr>
 </table>
 
-视觉版以 A4 单页为目标。`resume-builder`、`jd-tailorer` 或 `resume-workflow` 生成视觉母版或视觉定制版并完成 PDF 验证后，交付流程必须执行 `npx @chasen-liao/resume-skills editor <实际生成的_visual.html路径>`，启动本地 Canvas 预览；若当前环境不能执行 `npx`，Agent 必须明确说明未启动并给出完整手动命令。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。最终 PDF 必须有同名前缀的 `*.resume-manifest.json`，其中 HTML/PDF hash、Playwright renderer 版本与验证结果都对应当前文件。
+视觉版以 A4 单页为目标。`resume-builder`、`jd-tailorer` 或 `resume-workflow` 生成视觉母版或视觉定制版并完成 PDF 验证后，交付流程必须执行 `npx @chasen-liao/resume-skills editor <实际生成的_visual.html路径> --manifest <实际_manifest路径>`，启动本地 Canvas 预览；若当前环境不能执行 `npx`，Agent 必须明确说明未启动并给出完整手动命令。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。最终 PDF 必须有 `*.resume-manifest.json`，其中 HTML/PDF hash、Playwright renderer 版本与验证结果都对应当前文件。
 
 ### ATS-safe HTML/PDF
 
@@ -218,11 +218,12 @@ npx @chasen-liao/resume-skills editor resume_visual.html
 - `--port <number>` 或 `-p <number>`：指定监听端口（默认 0 使用随机可用端口）。
 - `--host <host>`：仅允许 loopback 地址 `127.0.0.1` 或 `::1`（默认 `127.0.0.1`）；编辑器不会绑定到局域网或公网地址。
 - `--json`：以标准 JSON 格式输出一次服务启动消息，便于 Agent 读取地址和端口；服务会继续在前台运行，直到该进程结束。
+- `--manifest <path>`：显式指定与该 HTML 关联的 PDF manifest，支持 HTML、PDF 和 manifest 分目录或不同文件名。
 - `--no-open`：禁用自动调起系统浏览器（适合集成环境或无 GUI 控制台）。
 
 编辑器建立连接后支持 **Live Preview 实时热重载**：当源 HTML 文件在外部或由 Agent 更新时，预览与 Canvas 编辑器会自动拉取并刷新最新页面内容。
 
-点击“保存修改”后，原始 HTML 会被直接覆盖并成为最新版本；关联的 `*.resume-manifest.json` 会立即失效，防止旧 PDF 被误认为仍对应当前 HTML。
+点击“保存修改”后，排版覆盖会原子写回原始 HTML；关联的 `*.resume-manifest.json` 会立即失效，防止旧 PDF 被误认为仍对应当前 HTML。若 manifest 不在同目录或文件名不同，请用 `--manifest <path>` 显式关联。
 
 点击“打印为 PDF”后，在浏览器打印面板中选择 A4 并保存 PDF。若浏览器没有自动打开，请直接打开终端中显示的本地地址。
 

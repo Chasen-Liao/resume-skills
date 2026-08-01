@@ -11,6 +11,8 @@
 
 ### Changed
 
+- Canvas 现在只保存受限排版覆盖；正文事实、结构和重复编辑 ID 会被拒绝，必须回到事实工作流修改。
+- 编辑器默认仅监听 loopback，拒绝危险 HTML、超大/分块超限保存和目录外资源；保存采用版本校验、原子替换、备份和冲突保护。
 - 请求浏览器/PDF 布局检查但缺少 Playwright、Chromium 或 `pypdf` 时，明确返回不可交付的 `degraded` 状态。
 - Canvas 保存会使同名前缀 PDF manifest 失效，要求重新渲染与验证。
 - 教程同步为当前 7-skill 流程、`*_visual.html` / `*_ats.html` 命名和真实 CLI 命令；内置模板明确标记为虚构 demo。
