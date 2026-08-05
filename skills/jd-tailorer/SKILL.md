@@ -72,7 +72,7 @@ description: 根据职位描述(JD)定制简历的技能。当用户提到「JD�
 视觉模式完成 PDF 验证和必要修正后，必须启动定制版的本地 Canvas 预览：
 
 ```bash
-npx @chasen-liao/resume-skills editor "<tailored目录中的resume_visual.html路径>"
+npx @chasen-liao/resume-skills@latest editor "<tailored目录中的resume_visual.html路径>"
 ```
 
 高级 CLI 参数说明（适用于 Agent 自动化或无 GUI 容器环境）：

@@ -2,6 +2,12 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.5.2] - 2026-08-05
+
+### Changed
+
+- Skill 工作流中的 `resume-skills` CLI 调用统一使用 `@latest`，确保启动本地 Canvas 时获取最新 CLI 版本。
+
 ## [0.5.1] - 2026-08-01
 
 ### Fixed

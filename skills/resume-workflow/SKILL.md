@@ -44,7 +44,7 @@ description: 编排从导入已有简历或采访开始，到母版、JD 定制�
   PDF 页数必须为 1；页面偏空或上下留白不均的警告应在不改变事实的前提下通过均匀间距调整处理，底部安全区失败必须修复。
 
   ```bash
-  npx @chasen-liao/resume-skills editor "<最终_visual.html路径>" --manifest "<交付目录/自定义文件名.resume-manifest.json>"
+  npx @chasen-liao/resume-skills@latest editor "<最终_visual.html路径>" --manifest "<交付目录/自定义文件名.resume-manifest.json>"
   ```
 
   Canvas 只保存排版覆盖，并直接写回该 HTML；文字事实修改必须回到 Agent 工作流确认后重新生成 HTML。高级选项：支持 `--json`（输出一次 JSON 握手，服务继续运行）、`--no-open`（无 GUI 环境）和 Live Preview 热刷新。命令应指向实际生成的母版或 `tailored/` 定制版。若当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令；不得声称已打开 Web 预览。ATS-safe 模式不启动 Canvas。
