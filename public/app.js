@@ -89,6 +89,8 @@ function finishTextEdit(node, save = true) {
   }
 }
 function supportsPlaintextOnly() {
+  // 测试钩子：浏览器回归测试用它强制走 contenteditable="true" 回退分支
+  if (window.__RESUME_SKILLS_FORCE_PLAINTEXT_FALLBACK === true) return false;
   const probe = document.createElement("div");
   probe.setAttribute("contenteditable", "plaintext-only");
   return probe.isContentEditable === true;
@@ -125,7 +127,7 @@ function bindCanvas() {
       node.addEventListener("paste", (event) => {
         if (!node.isContentEditable) return;
         event.preventDefault();
-        document.execCommand("insertText", false, event.clipboardData?.getData("text/plain") ?? "");
+        frame.contentDocument.execCommand("insertText", false, event.clipboardData?.getData("text/plain") ?? "");
       });
     }
     node.addEventListener("keydown", (event) => {

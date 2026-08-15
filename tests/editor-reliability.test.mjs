@@ -208,6 +208,31 @@ test("directory watch keeps sending reloads after the resume is replaced by rena
   });
 });
 
+
+test("self-save does not echo a reload to SSE clients", async () => {
+  await withEditor(async (sourcePath, url) => {
+    const events = await fetch(`${url}/api/events`);
+    const reader = events.body.getReader();
+    try {
+      const document = await (await fetch(`${url}/api/document`)).json();
+      const response = await fetch(`${url}/api/save`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ documentId: document.documentId, html: sourceHtml }),
+      });
+      assert.equal(response.status, 200);
+
+      const race = await Promise.race([
+        nextSseData(reader).then((data) => ({ data }), (error) => ({ error: String(error) })),
+        new Promise((resolve) => setTimeout(() => resolve({ timeout: true }), 800)),
+      ]);
+      assert.deepEqual(race, { timeout: true }, "a save from the editor itself must not reset the canvas via reload");
+    } finally {
+      reader.cancel();
+    }
+  });
+});
+
 test("watch reports a readable status when the resume cannot be read", async () => {
   await withEditor(async (sourcePath, url) => {
     const events = await fetch(`${url}/api/events`);

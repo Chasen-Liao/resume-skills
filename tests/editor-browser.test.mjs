@@ -161,3 +161,72 @@ test("single-click selection followed by typing edits the field in Firefox", { s
   assert.match(r.textAfterTyping, /高级前端工程师/, "typing right after selection must edit the selected text");
   assert.match(r.onDisk, /高级前端工程师/, "saved file must contain the typed text");
 });
+async function fallbackEditRoundTrip(browserType) {
+  let result;
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-browser-"));
+  const sourcePath = join(directory, "resume.html");
+  await writeFile(sourcePath, sampleHtml);
+  const server = startEditor(sourcePath, { open: false, log: false });
+  await once(server, "listening");
+  try {
+    const { port } = server.address();
+    const url = `http://127.0.0.1:${port}`;
+    const browser = await browserType.launch();
+    try {
+      const page = await browser.newPage();
+      // 强制走 contenteditable="true" 回退分支（Firefox < 136 / Safari < 16.4 的真实形态）
+      await page.addInitScript(() => { window.__RESUME_SKILLS_FORCE_PLAINTEXT_FALLBACK = true; });
+      const pageErrors = [];
+      page.on("pageerror", (error) => pageErrors.push(String(error)));
+      await page.goto(url);
+      const frame = page.frames().find((candidate) => candidate !== page.mainFrame());
+      assert.ok(frame, "resume iframe must be present");
+      const field = frame.locator('[data-resume-editor-id="profile-name"]');
+      await field.waitFor({ state: "visible" });
+      await field.click();
+      const editState = await frame.evaluate(() => {
+        const element = document.querySelector('[data-resume-editor-id="profile-name"]');
+        return { attribute: element.getAttribute("contenteditable"), isContentEditable: element.isContentEditable };
+      });
+      await page.keyboard.type("李四");
+      await frame.waitForFunction(() => document.querySelector('[data-resume-editor-id="profile-name"]')?.textContent?.includes("李四") ?? false);
+      // 回退模式下粘贴富文本必须只插入纯文本
+      await frame.evaluate(() => {
+        const element = document.querySelector('[data-resume-editor-id="profile-name"]');
+        const data = new DataTransfer();
+        data.setData("text/html", "<b>粗体内容</b>");
+        data.setData("text/plain", "纯文本粘贴");
+        element.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+      });
+      await frame.waitForFunction(() => document.querySelector('[data-resume-editor-id="profile-name"]')?.textContent?.includes("纯文本粘贴") ?? false);
+      const afterPaste = await frame.evaluate(() => {
+        const element = document.querySelector('[data-resume-editor-id="profile-name"]');
+        return { text: element.textContent, hasBold: Boolean(element.querySelector("b")) };
+      });
+      await page.keyboard.press("Control+Enter");
+      await frame.waitForFunction(() => !document.querySelector('[data-resume-editor-id="profile-name"]')?.hasAttribute("contenteditable"));
+      await page.locator("#save-html").click();
+      await page.waitForFunction(() => document.querySelector("#save-status")?.textContent.includes("已成功保存"));
+      const onDisk = await readFile(sourcePath, "utf8");
+      result = { editState, afterPaste, onDisk, pageErrors };
+    } finally {
+      await browser.close();
+    }
+  } finally {
+    server.close();
+    await once(server, "close");
+    await rm(directory, { recursive: true, force: true });
+  }
+  return result;
+}
+
+test("plaintext-only fallback still edits and pastes plain text in Chromium", { skip: !chromium }, async () => {
+  const r = await fallbackEditRoundTrip(chromium);
+  assert.deepEqual(r.pageErrors, [], "no page errors in fallback mode");
+  assert.equal(r.editState.attribute, "true", "fallback must use contenteditable=true");
+  assert.equal(r.editState.isContentEditable, true, "field must be editable in fallback mode");
+  assert.equal(r.afterPaste.hasBold, false, "rich text paste must not create elements");
+  assert.match(r.afterPaste.text, /纯文本粘贴/, "paste must insert the plain text");
+  assert.match(r.onDisk, /李四/, "typed text must persist to the saved file");
+  assert.match(r.onDisk, /纯文本粘贴/, "pasted plain text must persist to the saved file");
+});

@@ -40,5 +40,6 @@ jobs:
           cache: pip
       - run: npm ci
       - run: python -m pip install -r requirements-test.txt
-      - run: npx playwright install chromium
+      - run: npx playwright install chromium firefox
       - run: npm run test:integration
+      - run: node --test tests/editor-browser.test.mjs

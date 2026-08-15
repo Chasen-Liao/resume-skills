@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const css = readFileSync(`${root}/public/app.css`, "utf8");
 const editorHtml = readFileSync(`${root}/public/editor.html`, "utf8");
+const app = readFileSync(`${root}/public/app.js`, "utf8");
 const faviconPath = `${root}/public/favicon.svg`;
 
 test("editor header includes a compact accessible SVG brand mark", () => {
@@ -21,6 +22,10 @@ test("editor provides a simple SVG favicon for browser tabs", () => {
   const favicon = readFileSync(faviconPath, "utf8");
   assert.match(favicon, /<svg[^>]+viewBox="0 0 32 32"/);
   assert.doesNotMatch(favicon, /<text\b/);
+});
+
+test("save export strips every editor-only attribute including the original-text marker", () => {
+  assert.match(app, /removeAttribute\("data-resume-editor-original-text"\)/);
 });
 
 test("editor shows a version chip in the bottom-left project meta", () => {

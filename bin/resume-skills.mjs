@@ -95,6 +95,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
   let original = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
   let documentId = documentVersion(sourcePath, original);
   let latestVersion = null;
+  let lastSelfSaveAt = 0;
   const sseClients = new Set();
 
   const sendEvent = (event, data) => {
@@ -122,6 +123,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
   const sourceName = basename(sourcePath).toLowerCase();
   const fileWatcher = watch(dirname(sourcePath), (_eventType, changedName) => {
     if (changedName && String(changedName).toLowerCase() !== sourceName) return;
+    if (Date.now() - lastSelfSaveAt < 500) return; // 自己保存的原子写回显，避免保存后无意义地重置编辑器
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(reloadFromDisk, 100);
   });
@@ -204,6 +206,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
         }
         try {
           invalidateManifest(sourcePath, manifestPath);
+          lastSelfSaveAt = Date.now();
           writeAtomically(sourcePath, exportHtml);
           original = exportHtml;
           documentId = documentVersion(sourcePath, original);
