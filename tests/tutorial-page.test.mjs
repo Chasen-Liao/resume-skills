@@ -42,7 +42,7 @@ test("HTML is a reader shell and points to the Markdown source", () => {
 test("Markdown source preserves front matter and article content", () => {
   const source = readRequired(markdown);
 
-  assert.match(source, /^---\n/);
+  assert.match(source, /^---\r?\n/);
   assert.match(source, /^title:/m);
   assert.match(source, /^# 安装 resume-skills/m);
   assert.match(source, /```plaintext/);

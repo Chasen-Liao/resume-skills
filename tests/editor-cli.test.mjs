@@ -25,7 +25,7 @@ test("editor help documents an HTML input path and options", () => {
 });
 
 test("editor CLI exposes a reachable server after JSON startup", async () => {
-  const child = spawn(process.execPath, [cli, "editor", exampleResume, "--no-open", "--json"], { cwd: root });
+  const child = spawn(process.execPath, [cli, "editor", exampleResume, "--no-open", "--json"], { cwd: root, env: { ...process.env, RESUME_SKILLS_NO_UPDATE_CHECK: "1" } });
   child.stdout.setEncoding("utf8");
   const [output] = await once(child.stdout, "data");
   const parsed = JSON.parse(output.trim());
@@ -368,5 +368,74 @@ test("editor does not serve assets through a junction outside the resume directo
     });
   } finally {
     await rm(externalDirectory, { recursive: true, force: true });
+  }
+});
+
+test("editor /api/version reports the local version and an injected latest", async () => {
+  const logs = [];
+  const logFn = (msg) => logs.push(msg);
+  const server = startEditor(exampleResume, { open: false, log: false, json: true, logFn, checkLatest: async () => ({ version: "99.0.0" }) });
+  await once(server, "listening");
+
+  try {
+    const { port } = server.address();
+    let versionInfo;
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      versionInfo = await (await fetch(`http://127.0.0.1:${port}/api/version`)).json();
+      if (versionInfo.latest === "99.0.0") break;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    assert.match(versionInfo.name, /resume-skills/);
+    assert.match(versionInfo.version, /^\d+\.\d+\.\d+$/);
+    assert.equal(versionInfo.latest, "99.0.0");
+    assert.equal(versionInfo.updateAvailable, true);
+
+    // the async update notice must be emitted once the check settles
+    for (let attempt = 0; attempt < 40 && !logs.some((entry) => entry.includes("update_available")); attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    const notice = logs.find((entry) => entry.includes("update_available"));
+    assert.ok(notice, "JSON mode must log an update_available event");
+    const parsed = JSON.parse(notice);
+    assert.equal(parsed.event, "update_available");
+    assert.equal(parsed.current, "0.5.3");
+    assert.equal(parsed.latest, "99.0.0");
+  } finally {
+    server.close();
+    await once(server, "close");
+  }
+});
+
+test("editor /api/version reports no update when the check is skipped", async () => {
+  const server = startEditor(exampleResume, { open: false, log: false });
+  await once(server, "listening");
+
+  try {
+    const { port } = server.address();
+    const versionInfo = await (await fetch(`http://127.0.0.1:${port}/api/version`)).json();
+    assert.equal(versionInfo.latest, null);
+    assert.equal(versionInfo.updateAvailable, false);
+  } finally {
+    server.close();
+    await once(server, "close");
+  }
+});
+
+test("editor logs a plain-text update notice when a newer version exists", async () => {
+  const logs = [];
+  const logFn = (msg) => logs.push(msg);
+  const server = startEditor(exampleResume, { open: false, log: true, logFn, checkLatest: async () => ({ version: "99.0.0" }) });
+  await once(server, "listening");
+
+  try {
+    for (let attempt = 0; attempt < 40 && !logs.some((entry) => entry.includes("检测到新版本")); attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    const notice = logs.find((entry) => entry.includes("检测到新版本"));
+    assert.ok(notice, "plain mode must print an update notice");
+    assert.match(notice, /99.0.0/);
+  } finally {
+    server.close();
+    await once(server, "close");
   }
 });

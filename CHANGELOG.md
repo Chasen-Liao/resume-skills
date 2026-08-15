@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.5.3] - 2026-08-06
+
+### Fixed
+
+- 修复"选中文字后无法编辑"：单击选中字段即进入编辑态（原生 contenteditable，对中文输入法/粘贴同样生效），键盘 Enter/Space 或双击同样进入编辑；输入后 Ctrl/Cmd+Enter 或点击别处完成，Esc 撤销。
+- 修复双击编辑在 Firefox < 136（以及 Safari < 16.4）下完全失效的问题：contenteditable="plaintext-only" 在这些浏览器中不被支持，字段无法进入编辑态。现在编辑前会检测浏览器支持情况，不支持时回退为 contenteditable="true"，并拦截粘贴保证仍是纯文本。
+- 保存导出前清理残留的 data-resume-editor-original-text 属性，避免触发保存校验拒绝。
+- 新增真实浏览器回归测试（tests/editor-browser.test.mjs，Chromium + Firefox）：单击/双击进入编辑、键入中文、Ctrl+Enter 提交、保存写回源 HTML 全链路验证；缺少浏览器二进制时自动跳过。
+
 ## [0.5.2] - 2026-08-05
 
 ### Changed

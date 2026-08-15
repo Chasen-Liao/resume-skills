@@ -88,11 +88,17 @@ function finishTextEdit(node, save = true) {
     saveDraft(true);
   }
 }
+function supportsPlaintextOnly() {
+  const probe = document.createElement("div");
+  probe.setAttribute("contenteditable", "plaintext-only");
+  return probe.isContentEditable === true;
+}
+const plaintextOnlySupported = supportsPlaintextOnly();
 function beginTextEdit(node) {
   select(node);
   node.dataset.resumeEditorOriginalText = node.textContent;
-  node.setAttribute("contenteditable", "plaintext-only");
-  node.focus();
+  node.setAttribute("contenteditable", plaintextOnlySupported ? "plaintext-only" : "true");
+  node.focus({ preventScroll: true });
   status.textContent = "正在编辑文字；仅允许纯文本，Ctrl/Cmd+Enter 完成。";
 }
 function moveFocus(nodes, current, direction) {
@@ -109,9 +115,19 @@ function bindCanvas() {
   allNodes.forEach((node) => {
     const index = nodes.indexOf(node);
     if (index !== -1) configureSelectionTarget(node, index);
-    node.addEventListener("click", (event) => selectFromPointer(event, node, select));
+    node.addEventListener("click", (event) => {
+      selectFromPointer(event, node, select);
+      beginTextEdit(node);
+    });
     node.addEventListener("dblclick", () => beginTextEdit(node));
     node.addEventListener("blur", () => { if (node.isContentEditable) finishTextEdit(node); });
+    if (!plaintextOnlySupported) {
+      node.addEventListener("paste", (event) => {
+        if (!node.isContentEditable) return;
+        event.preventDefault();
+        document.execCommand("insertText", false, event.clipboardData?.getData("text/plain") ?? "");
+      });
+    }
     node.addEventListener("keydown", (event) => {
       if (node.isContentEditable) {
         if (event.key === "Escape") {
@@ -124,7 +140,7 @@ function bindCanvas() {
         }
         return;
       }
-      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(node); }
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); beginTextEdit(node); }
       if (event.key === "Escape") { event.preventDefault(); clearSelection(); }
       if (event.key === "ArrowDown" || event.key === "ArrowRight") { event.preventDefault(); moveFocus(nodes, node, 1); }
       if (event.key === "ArrowUp" || event.key === "ArrowLeft") { event.preventDefault(); moveFocus(nodes, node, -1); }
@@ -144,6 +160,7 @@ function cleanForExport() {
   });
   doc.querySelectorAll("[data-resume-editor-id]").forEach((node) => {
     node.removeAttribute("contenteditable");
+    node.removeAttribute("data-resume-editor-original-text");
     node.removeAttribute("tabindex");
     node.removeAttribute("role");
     node.removeAttribute("aria-pressed");
@@ -223,3 +240,20 @@ if (typeof EventSource !== "undefined") {
     status.textContent = update.message;
   });
 }
+(async () => {
+  try {
+    const response = await fetch("/api/version");
+    const info = await response.json();
+    const chip = document.querySelector("#app-version");
+    if (chip && info.version) chip.textContent = info.version;
+    if (info.updateAvailable && info.latest) {
+      const hint = document.querySelector("#app-version-hint");
+      if (hint) {
+        hint.textContent = `发现新版本 ${info.latest}，请更新 CLI：npm install -g @chasen-liao/resume-skills@latest`;
+        hint.hidden = false;
+      }
+    }
+  } catch {
+    // 版本信息不可用时保持默认占位，不打扰编辑
+  }
+})();

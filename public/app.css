@@ -149,6 +149,7 @@ hr { margin: 24px 0; border: 0; border-top: 1px solid rgba(0,0,0,0.08); }
 .status { margin-top: 22px !important; color: #d97706 !important; font-size: 13px; line-height: 1.5; font-weight: 500; }
 .project-meta { display: grid; gap: 6px; margin-top: auto; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.4; }
 .project-meta a { width: fit-content; color: var(--ink); text-decoration: none; font-weight: 500; }
+.version-hint { color: #d97706; font-weight: 600; }
 .project-meta a:hover { color: var(--accent); }
 
 @media (max-width: 1279px) {

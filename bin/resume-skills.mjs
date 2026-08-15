@@ -9,9 +9,16 @@ import { parseArgs } from "node:util";
 import { prepareEditorDocument, validateEditorSave } from "../lib/editor-document.mjs";
 import { invalidateArtifactManifest } from "../lib/artifact-manifest.mjs";
 import { resolveSourceAsset } from "../lib/source-asset.mjs";
+import { fetchLatestVersion, formatUpdateNotice, isUpdateAvailable } from "../lib/version-check.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const publicRoot = join(packageRoot, "public");
+let cliVersion = "0.0.0";
+try {
+  cliVersion = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")).version || cliVersion;
+} catch {
+  // package.json 缺失（如 DSH 预设的裁剪副本）时回退为 0.0.0，版本检查仍会提示落后
+}
 const maxSaveBodyBytes = 1024 * 1024;
 const loopbackHosts = new Set(["127.0.0.1", "::1"]);
 const atomicFileOps = {
@@ -76,7 +83,7 @@ export function atomicSave(sourcePath, contents, { fileOps = atomicFileOps } = {
   }
 }
 
-export function startEditor(sourcePath, { log = true, open = true, port = 0, host = "127.0.0.1", json = false, manifestPath, logFn = console.log, writeAtomically = atomicSave, invalidateManifest = invalidateArtifactManifest } = {}) {
+export function startEditor(sourcePath, { log = true, open = true, port = 0, host = "127.0.0.1", json = false, manifestPath, logFn = console.log, writeAtomically = atomicSave, invalidateManifest = invalidateArtifactManifest, checkLatest = null } = {}) {
   if (!loopbackHosts.has(host)) {
     throw new Error("编辑器仅支持 loopback host（127.0.0.1 或 ::1）。");
   }
@@ -87,6 +94,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
 
   let original = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
   let documentId = documentVersion(sourcePath, original);
+  let latestVersion = null;
   const sseClients = new Set();
 
   const sendEvent = (event, data) => {
@@ -140,6 +148,9 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
     }
     if (request.method === "GET" && request.url === "/api/document") {
       return send(response, 200, "application/json; charset=utf-8", JSON.stringify({ html: original, documentId, sourceName: basename(sourcePath) }));
+    }
+    if (request.method === "GET" && request.url === "/api/version") {
+      return send(response, 200, "application/json; charset=utf-8", JSON.stringify({ name: "resume-skills", version: cliVersion, latest: latestVersion, updateAvailable: isUpdateAvailable(cliVersion, latestVersion) }));
     }
     if (request.method === "GET" && request.url === "/api/events") {
       response.writeHead(200, {
@@ -241,6 +252,21 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
     }
 
     if (open) openBrowser(url);
+
+    if (checkLatest) {
+      checkLatest().then((info) => {
+        latestVersion = info?.version ?? null;
+        if (isUpdateAvailable(cliVersion, latestVersion)) {
+          if (json) {
+            logFn(JSON.stringify({ event: "update_available", current: cliVersion, latest: latestVersion }));
+          } else if (log) {
+            logFn(formatUpdateNotice({ current: cliVersion, latest: latestVersion }));
+          }
+        }
+      }).catch(() => {
+        latestVersion = null;
+      });
+    }
   });
 
   return server;
@@ -275,6 +301,7 @@ if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
         host: values.host,
         json: values.json,
         manifestPath: values.manifest ? resolve(values.manifest) : undefined,
+        checkLatest: process.env.RESUME_SKILLS_NO_UPDATE_CHECK === "1" ? null : fetchLatestVersion,
       });
     } else {
       printHelp();

@@ -23,6 +23,11 @@ test("editor provides a simple SVG favicon for browser tabs", () => {
   assert.doesNotMatch(favicon, /<text\b/);
 });
 
+test("editor shows a version chip in the bottom-left project meta", () => {
+  assert.match(editorHtml, /id="app-version"/);
+  assert.match(editorHtml, /project-meta/);
+});
+
 test("editor guide credits the author and links to the project repository", () => {
   assert.match(editorHtml, /class="project-meta"/);
   assert.match(editorHtml, /https:\/\/github\.com\/Chasen-Liao/);

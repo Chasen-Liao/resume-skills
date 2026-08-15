@@ -61,6 +61,8 @@ resume-skills editor resume_visual.html
 
 包地址：<https://www.npmjs.com/package/@chasen-liao/resume-skills>
 
+> **版本自检**：CLI 启动时会异步对比 npm registry 的 `@latest`，发现新版本时在终端提示更新命令（`--json` 模式输出 `update_available` 事件）；编辑器左下角也会显示当前版本号，并在有新版本时给出提示。离线或不想检查时设置 `RESUME_SKILLS_NO_UPDATE_CHECK=1`。
+
 ### 2. 选择入口
 
 #### 空的简历工作区：先建立母版

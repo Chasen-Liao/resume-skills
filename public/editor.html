@@ -20,7 +20,7 @@
   <main class="layout">
     <aside class="guide">
       <h1>排版微调</h1>
-      <p>单击选择文字；双击文字直接编辑。仅能编辑已有字段的纯文本。</p>
+      <p>单击选中文字后可直接打字修改；双击也可直接编辑。仅能编辑已有字段的纯文本。</p>
       <p>轻量修改后可直接写回本地 HTML；正式投递前仍需确认事实并重新验证 PDF。</p>
       <button id="save-html">保存修改</button>
       <button id="print-pdf" class="secondary">打印为 PDF</button>
@@ -29,6 +29,8 @@
         <span>Created by Chasen-Liao</span>
         <a href="https://github.com/Chasen-Liao" target="_blank" rel="noreferrer">GitHub</a>
         <a href="https://github.com/Chasen-Liao/resume-skills" target="_blank" rel="noreferrer">Repository</a>
+        <span>ResumeSkills v<span id="app-version">…</span></span>
+        <span id="app-version-hint" class="version-hint" hidden></span>
       </footer>
     </aside>
     <section id="canvas" class="canvas" aria-label="A4 简历画布">

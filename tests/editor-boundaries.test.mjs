@@ -23,7 +23,7 @@ const templateNames = [
 test("Canvas supports plain-text editing of existing text fields", () => {
   assert.match(app, /setAttribute\("contenteditable", "plaintext-only"\)/);
   assert.match(app, /仅允许纯文本/);
-  assert.match(editorHtml, /双击文字.*编辑/);
+  assert.match(editorHtml, /单击选中文字后可直接打字修改；双击也可直接编辑/);
 });
 
 test("all built-in templates provide unique stable IDs for profile and experience text", async () => {
