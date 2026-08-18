@@ -230,7 +230,7 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor resume_visual.html
 - `--port <number>` 或 `-p <number>`：指定监听端口。**默认 `8848`**；被占用时自动顺延到 `8853`，仍不可用则回退随机端口。显式传入 `--port` 时为严格模式：占用即报错退出，不换端口。
 - `--host <host>`：仅允许 loopback 地址 `127.0.0.1` 或 `::1`（默认 `127.0.0.1`）；编辑器不会绑定到局域网或公网地址。
 - `--json`：以 **NDJSON 逐行**输出事件（`server_started` / `error` / `update_available` / `validation_passed`）；协议校验失败、参数校验失败、端口占用失败均输出 `event: "error"`。脚本请逐行 `JSON.parse`。
-- `--manifest <path>`：显式指定与该 HTML 关联的 PDF manifest，支持 HTML、PDF 和 manifest 分目录或不同文件名。
+- `--manifest <path>`：显式指定与该 HTML 关联的 PDF manifest，支持 HTML、PDF 和 manifest 分目录或不同文件名；未传时保存会自动失效与 HTML 同目录同前缀的 `<文件名>.resume-manifest.json`（若存在且关联当前 HTML）。
 - `--write-port-file <path>`：服务启动后把 `{url, port, pid, sourcePath}` 写入该文件（Jupyter 式端口文件），供后台启动/脚本轮询读取就绪状态。
 - `--no-open`：禁用自动调起系统浏览器（适合集成环境或无 GUI 控制台）。
 

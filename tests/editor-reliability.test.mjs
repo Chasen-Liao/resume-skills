@@ -188,6 +188,58 @@ test("save preserves the HTML when its associated manifest cannot be invalidated
   }
 });
 
+test("save auto-invalidates a same-prefix manifest without an explicit --manifest flag", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-manifest-auto-"));
+  const sourcePath = join(directory, "resume.html");
+  const manifestPath = join(directory, "resume.resume-manifest.json");
+  await writeFile(sourcePath, sourceHtml);
+  await writeFile(manifestPath, JSON.stringify({
+    schemaVersion: 1,
+    status: "valid",
+    html: { path: sourcePath, sha256: "old-html-hash" },
+    pdf: { path: join(directory, "resume.pdf"), sha256: "old-pdf-hash" },
+    renderer: { name: "playwright", version: "1.62.1" },
+    validation: { ok: true, deliverable: true, checks: [], summary: { pass: 1, warn: 0, fail: 0, degraded: 0 } },
+  }));
+  const server = startEditor(sourcePath, { open: false, log: false });
+  await once(server, "listening");
+  const { port } = server.address();
+
+  try {
+    const url = `http://127.0.0.1:${port}`;
+    const before = await (await fetch(`${url}/api/document`)).json();
+    const response = await fetch(`${url}/api/save`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ documentId: before.documentId, html: withFontSize(sourceHtml, "12") }),
+    });
+
+    assert.equal(response.status, 200);
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    assert.equal(manifest.status, "invalid");
+    assert.equal(manifest.validation.ok, false);
+    assert.match(manifest.invalidated.reason, /Canvas|HTML/i);
+  } finally {
+    server.close();
+    await once(server, "close");
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("save succeeds when no manifest is present anywhere", async () => {
+  await withEditor(async (sourcePath, url) => {
+    const document = await (await fetch(`${url}/api/document`)).json();
+    const response = await fetch(`${url}/api/save`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ documentId: document.documentId, html: withFontSize(sourceHtml, "12") }),
+    });
+
+    assert.equal(response.status, 200);
+    assert.match(await readFile(sourcePath, "utf8"), /font-size: 12px !important/);
+  });
+});
+
 test("directory watch keeps sending reloads after the resume is replaced by rename", async () => {
   await withEditor(async (sourcePath, url) => {
     const events = await fetch(`${url}/api/events`);

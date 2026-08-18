@@ -28,6 +28,7 @@ skills/                         Agent Skills：工作流与参考资料
   job-description-analyzer/     JD 结构化分析
   resume-ats-optimizer/         ATS 可读性与关键词诊断
   resume-version-manager/       简历版本策略与维护
+  resume-workflow/              完整流程编排（默认入口）
 bin/resume-skills.mjs           npx CLI 与本地 HTTP 服务
 lib/                            HTML 协议、资源路径、控件规则
 public/                         Canvas 前端（editor.html、app.js、app.css）

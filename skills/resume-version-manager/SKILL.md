@@ -39,7 +39,9 @@ resume/
 └── tailored/
     └── <公司名>-<岗位>/
         ├── resume_visual.html
+        ├── resume_visual.pdf
         ├── resume_ats.html            # 按需生成
+        ├── resume_ats.pdf             # 按需生成
         ├── matching-analysis.md
         └── version-notes.md
 ```

@@ -18,6 +18,12 @@ const maxSaveBodyBytes = 1024 * 1024;
 const loopbackHosts = new Set(["127.0.0.1", "::1"]);
 export const DEFAULT_PORT = 8848; // CLI 默认固定端口：被占用时顺延，扫描窗口用尽后回退随机
 const PORT_SCAN_RANGE = 5;
+
+// 未显式 --manifest 时按目录同前缀发现 <stem>.resume-manifest.json；不存在则返回 null（保存不失效任何 manifest）。
+function defaultResumeManifestPath(htmlPath) {
+  const candidate = htmlPath.replace(/\.html$/i, "") + ".resume-manifest.json";
+  return existsSync(candidate) ? candidate : null;
+}
 const atomicFileOps = {
   open: openSync,
   write: writeFileSync,
@@ -102,6 +108,9 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, por
     throw new Error("编辑器只接受 .html 文件。");
   }
   if (!existsSync(sourcePath)) throw new Error(`找不到 HTML 文件：${sourcePath}`);
+
+  // 显式 --manifest 保持严格校验；未传时按同前缀发现同目录 manifest（存在且关联当前 HTML 才失效）。
+  const effectiveManifestPath = manifestPath || defaultResumeManifestPath(sourcePath);
 
   let original = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
   let documentId = documentVersion(sourcePath, original);
@@ -221,7 +230,11 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, por
           return send(response, 400, "application/json; charset=utf-8", JSON.stringify({ error: error.message }));
         }
         try {
-          invalidateManifest(sourcePath, manifestPath);
+          try {
+          invalidateManifest(sourcePath, effectiveManifestPath);
+        } catch (error) {
+          if (manifestPath) throw error; // 显式 --manifest 严格失败；同前缀自动发现的非关联/损坏 manifest 静默跳过，不阻断保存
+        }
           writeAtomically(sourcePath, exportHtml);
           original = exportHtml;
           documentId = documentVersion(sourcePath, original);

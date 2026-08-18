@@ -16,6 +16,8 @@ python skills/resume-builder/scripts/validate_resume.py --html <resume.html> --m
 python skills/resume-builder/scripts/validate_resume.py --pdf <resume.pdf>
 ```
 
+> 上述命令使用仓库相对路径，需在 `resume-skills` 仓库根目录下运行。
+
 ## 协作入口
 
 这是母版生成后和 JD 定制版生成后的**质量关卡**。默认检查并报告解析风险与关键词/事实缺口，但不静默修改简历；用户确认后，才将呈现修复交回 `resume-builder` 或 `jd-tailorer`。
