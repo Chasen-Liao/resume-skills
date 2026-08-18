@@ -16,6 +16,8 @@ const publicRoot = join(packageRoot, "public");
 const cliVersion = resolveCliVersion(packageRoot); // 缺失 package.json（如 DSH 预设裁剪副本）时为 null：版本未知 → 跳过更新检查，避免误报
 const maxSaveBodyBytes = 1024 * 1024;
 const loopbackHosts = new Set(["127.0.0.1", "::1"]);
+export const DEFAULT_PORT = 8848; // CLI 默认固定端口：被占用时顺延，扫描窗口用尽后回退随机
+const PORT_SCAN_RANGE = 5;
 const atomicFileOps = {
   open: openSync,
   write: writeFileSync,
@@ -37,11 +39,13 @@ function printHelp() {
   console.log("validate: Check a resume HTML against the editor protocol without starting a server.");
   console.log("         Exit code 0 = valid, 1 = invalid (with fix guidance on stderr).");
   console.log("\nOptions:");
-  console.log("  -p, --port <number>   Specify server port (default: 0 for random available port)");
+  console.log("  -p, --port <number>   Specify server port. Default: 8848; if taken, walks up to");
+  console.log("                       8853 then a random free port. Explicit --port is strict:");
+  console.log("                       if that port is taken, the editor exits with an error.");
   console.log("  --host <host>         Loopback host only: 127.0.0.1 or ::1 (default: 127.0.0.1)");
-  console.log("  --json                Output status in JSON format");
+  console.log("  --json                Output NDJSON status events (server_started / error / ...)");
   console.log("  --manifest <path>     Delivery manifest explicitly associated with this HTML");
-  console.log("  --write-port-file <path>  After the server starts, write {url, port, pid} JSON to <path>");
+  console.log("  --write-port-file <path>  After start, write {url, port, pid, sourcePath} JSON");
   console.log("                       (for background launches and scripts that poll readiness)");
   console.log("  --no-open             Do not automatically open the browser");
   console.log("  -h, --help            Show this help message");
@@ -87,9 +91,12 @@ export function atomicSave(sourcePath, contents, { fileOps = atomicFileOps } = {
   }
 }
 
-export function startEditor(sourcePath, { log = true, open = true, port = 0, host = "127.0.0.1", json = false, manifestPath, writePortFile, logFn = console.log, writeAtomically = atomicSave, invalidateManifest = invalidateArtifactManifest, checkLatest = null } = {}) {
+export function startEditor(sourcePath, { log = true, open = true, port = 0, portFallback = false, host = "127.0.0.1", json = false, manifestPath, writePortFile, logFn = console.log, writeAtomically = atomicSave, invalidateManifest = invalidateArtifactManifest, checkLatest = null } = {}) {
   if (!loopbackHosts.has(host)) {
     throw new Error("编辑器仅支持 loopback host（127.0.0.1 或 ::1）。");
+  }
+  if (!Number.isInteger(port) || port < 0 || port > 65535) {
+    throw new Error("端口必须是 0–65535 的整数（0 表示随机可用端口）。");
   }
   if (extname(sourcePath).toLowerCase() !== ".html") {
     throw new Error("编辑器只接受 .html 文件。");
@@ -114,7 +121,9 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
   const reloadFromDisk = () => {
     try {
       if (!existsSync(sourcePath)) throw new Error("文件不存在或正在被替换。");
-      const updated = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
+      const raw = readFileSync(sourcePath, "utf8");
+      const updated = prepareEditorDocument(raw);
+      validateEditorFields(raw); // 外部改动也必须通过叶子字段校验；失败不发 reload 并提示
       if (updated === original) return; // 磁盘内容与当前服务一致（如编辑器自己的保存回显），无需 reload；外部修改仍会触发
       original = updated;
       documentId = documentVersion(sourcePath, original);
@@ -150,6 +159,9 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
     }
     if (request.method === "GET" && request.url === "/editor-controls.js") {
       return send(response, 200, "text/javascript; charset=utf-8", readFileSync(join(packageRoot, "lib", "editor-controls.mjs")));
+    }
+    if (request.method === "GET" && request.url === "/editor-rules.js") {
+      return send(response, 200, "text/javascript; charset=utf-8", readFileSync(join(packageRoot, "lib", "editor-rules.mjs")));
     }
     if (request.method === "GET" && request.url === "/api/document") {
       return send(response, 200, "application/json; charset=utf-8", JSON.stringify({ html: original, documentId, sourceName: basename(sourcePath) }));
@@ -238,17 +250,20 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
     fileWatcher.close();
   });
 
-  server.on("error", (error) => {
-    // 启动失败（如端口被占用）时 --json 也输出 JSON 事件，避免后台/脚本场景丢信息。
+  const reportFatalError = (error) => {
+    // 启动失败（如端口被占用）时 --json 也输出 JSON 事件；同时置非零退出码并关闭 watcher，
+    // 避免进程以 0 码永久挂起（后台脚本等待 server_started/端口文件会无限等待）。
     const message = `服务器启动失败：${error.message}`;
     if (json) {
       try { logFn(JSON.stringify({ event: "error", error: message })); } catch { /* 日志失败不影响退出 */ }
     } else if (log) {
       logFn(message);
     }
-  });
+    try { fileWatcher.close(); } catch { /* watcher 可能尚未就绪 */ }
+    process.exitCode = 1;
+  };
 
-  server.listen(port, host, () => {
+  const onListenReady = () => {
     const address = server.address();
     const actualPort = typeof address === "object" && address !== null ? address.port : port;
     const urlHost = host.includes(":") ? `[${host}]` : host;
@@ -301,7 +316,34 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
         latestVersion = null;
       });
     }
+  };
+
+  let portAttempt = 0;
+  let randomFallbackTried = false;
+  // ready 逻辑挂 listening 事件而非 listen() 回调：EADDRINUSE 后重试 listen 时，
+  // 首次 listen() 注册的回调也会被调用（Node 行为），导致 server_started 重复输出。
+  server.on("listening", onListenReady);
+  server.on("error", (error) => {
+    // Vite 式自动回退：固定默认端口被占用时顺延 +1；扫描窗口用尽后回退到随机可用端口。
+    // 仅在非 JSON 模式打印顺延提示，JSON 消费方只关心最终 server_started 里的实际端口。
+    if (portFallback && port !== 0 && error?.code === "EADDRINUSE" && !randomFallbackTried) {
+      if (portAttempt < PORT_SCAN_RANGE && port + portAttempt + 1 <= 65535) {
+        portAttempt += 1;
+        const nextPort = port + portAttempt;
+        if (log && !json) logFn(`端口 ${nextPort - 1} 已被占用，编辑器改用 ${nextPort}。`);
+        server.listen(nextPort, host);
+        return;
+      }
+      randomFallbackTried = true;
+      const scanEnd = Math.min(port + PORT_SCAN_RANGE, 65535);
+      if (log && !json) logFn(`端口 ${port}–${scanEnd} 均不可用，编辑器改用随机可用端口。`);
+      server.listen(0, host);
+      return;
+    }
+    reportFatalError(error);
   });
+
+  server.listen(port, host);
 
   return server;
 }
@@ -349,8 +391,8 @@ if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
       }
       if (protocolError) {
         const hint = [
-          "修复指引：编辑器要求至少 1 个 data-resume-editor-id，且只能位于叶子文本字段",
-          "（禁止 main/.page/.resume/section/header/footer/ul/ol/figure 等容器；ID 必须唯一）。",
+          "修复指引：编辑器要求至少 1 个 data-resume-editor-id，且只能位于叶子文本字段；",
+          "容器黑名单与嵌套判定以 resume-skills validate 的校验结果为准。",
           `定位命令：rg -n \"data-resume-editor-id\" \"${targetPath}\"`,
         ].join("\n");
         if (values.json) {
@@ -364,6 +406,13 @@ if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
       }
 
       if (command === "validate") {
+        if (extname(targetPath).toLowerCase() !== ".html") {
+          const message = "校验器只接受 .html 文件。";
+          if (values.json) console.log(JSON.stringify({ event: "error", error: message }));
+          else console.error(`Error: ${message}`);
+          process.exitCode = 1;
+          return;
+        }
         if (values.json) {
           console.log(JSON.stringify({ event: "validation_passed", sourcePath: targetPath }));
         } else {
@@ -372,17 +421,30 @@ if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
         return;
       }
 
-      const portNumber = values.port ? parseInt(values.port, 10) : 0;
+      // 未指定 --port 时使用固定默认端口 8848（被占用自动顺延）；显式 --port 保持严格：占用即报错。
+      const explicitPort = values.port !== undefined;
+      const portNumber = explicitPort ? Number(values.port) : DEFAULT_PORT;
       const shouldOpen = values["no-open"] ? false : values.open;
-      startEditor(targetPath, {
-        open: shouldOpen,
-        port: portNumber,
-        host: values.host,
-        json: values.json,
-        manifestPath: values.manifest ? resolve(values.manifest) : undefined,
-        writePortFile: values["write-port-file"] ? resolve(values["write-port-file"]) : undefined,
-        checkLatest: process.env.RESUME_SKILLS_NO_UPDATE_CHECK === "1" ? null : fetchLatestVersion,
-      });
+      try {
+        startEditor(targetPath, {
+          open: shouldOpen,
+          port: portNumber,
+          portFallback: !explicitPort,
+          host: values.host,
+          json: values.json,
+          manifestPath: values.manifest ? resolve(values.manifest) : undefined,
+          writePortFile: values["write-port-file"] ? resolve(values["write-port-file"]) : undefined,
+          checkLatest: process.env.RESUME_SKILLS_NO_UPDATE_CHECK === "1" ? null : fetchLatestVersion,
+        });
+      } catch (error) {
+        // startEditor 的同步守卫（非 .html / 非 loopback host）在 --json 下也输出 JSON 错误事件。
+        if (values.json) {
+          console.log(JSON.stringify({ event: "error", error: error.message }));
+          process.exitCode = 1;
+        } else {
+          throw error;
+        }
+      }
     } else {
       printHelp();
       process.exitCode = 1;

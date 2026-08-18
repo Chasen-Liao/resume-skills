@@ -3,16 +3,41 @@ import { execFileSync, spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { once } from "node:events";
 import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
-import { createConnection } from "node:net";
+import { createConnection, createServer as createNetServer } from "node:net";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { startEditor } from "../bin/resume-skills.mjs";
+import { DEFAULT_PORT, startEditor } from "../bin/resume-skills.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const cli = fileURLToPath(new URL("../bin/resume-skills.mjs", import.meta.url));
 const exampleResume = fileURLToPath(new URL("../skills/resume-builder/references/examples/modern-minimal.html", import.meta.url));
+
+// once(server,"listening") 会在端口回退的中间 EADDRINUSE 上直接 reject；回退场景必须忽略临时占用错误。
+function waitForListening(server, timeoutMs = 5000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      server.off("listening", onListening);
+      server.off("error", onError);
+      reject(new Error("listen timeout"));
+    }, timeoutMs);
+    const onListening = () => {
+      clearTimeout(timer);
+      server.off("error", onError);
+      resolve();
+    };
+    const onError = (error) => {
+      if (error?.code === "EADDRINUSE") return;
+      clearTimeout(timer);
+      server.off("listening", onListening);
+      reject(error);
+    };
+    server.once("listening", onListening);
+    server.on("error", onError);
+  });
+}
 
 test("editor help documents an HTML input path and options", () => {
   const output = execFileSync(process.execPath, [cli, "editor", "--help"], {
@@ -170,7 +195,12 @@ test("editor CLI refuses to start a server for a resume without editable fields"
   try {
     assert.throws(
       () => execFileSync(process.execPath, [cli, "editor", sourcePath, "--no-open", "--port", "0"], { cwd: root, encoding: "utf8", stdio: "pipe" }),
-      (error) => error.status === 1 && /可编辑字段/.test(error.stderr.toString()),
+      (error) => {
+        assert.equal(error.status, 1);
+        assert.match(error.stderr.toString(), /可编辑字段/);
+        assert.doesNotMatch(error.stdout.toString(), /server_started|Resume editor is running/, "no server may start on gate failure");
+        return true;
+      },
     );
   } finally {
     await rm(directory, { recursive: true, force: true });
@@ -185,6 +215,7 @@ test("editor CLI emits a JSON error event instead of plain text when --json vali
       (error) => {
         assert.equal(error.status, 1);
         const lines = error.stdout.toString().trim().split(/\r?\n/).map((line) => JSON.parse(line));
+        assert.equal(lines.length, 1, "only the error event may be emitted");
         assert.equal(lines[0].event, "error");
         assert.match(lines[0].error, /data-resume-editor-id/);
         assert.match(lines[0].hint, /rg -n/);
@@ -239,6 +270,234 @@ test("editor CLI --write-port-file persists the ready port for background launch
   }
 });
 
+test("editor CLI --json reports sync guard failures as JSON error events", () => {
+  assert.throws(
+    () => execFileSync(process.execPath, [cli, "editor", exampleResume, "--json", "--host", "0.0.0.0", "--no-open"], { cwd: root, encoding: "utf8", stdio: "pipe" }),
+    (error) => {
+      assert.equal(error.status, 1);
+      const parsed = JSON.parse(error.stdout.toString().trim());
+      assert.equal(parsed.event, "error");
+      assert.match(parsed.error, /loopback/);
+      return true;
+    },
+  );
+});
+
+test("editor CLI exits 1 with a JSON error event when the port is already taken", async () => {
+  const blocker = createServer();
+  await new Promise((resolve) => blocker.listen(0, "127.0.0.1", resolve));
+  const takenPort = blocker.address().port;
+  try {
+    const child = spawn(process.execPath, [cli, "editor", exampleResume, "--no-open", "--json", "--port", String(takenPort)], { cwd: root, env: { ...process.env, RESUME_SKILLS_NO_UPDATE_CHECK: "1" } });
+    child.stdout.setEncoding("utf8");
+    const output = await Promise.race([
+      once(child.stdout, "data").then(([chunk]) => chunk),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("editor did not emit an error event in time")), 5000)),
+    ]);
+    const exit = await Promise.race([
+      once(child, "exit").then(([code]) => code),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("editor did not exit after listen failure")), 5000)),
+    ]);
+    const parsed = JSON.parse(output.trim());
+    assert.equal(parsed.event, "error");
+    assert.match(parsed.error, /启动失败/);
+    assert.equal(exit, 1, "port conflict must exit non-zero instead of hanging");
+  } finally {
+    await new Promise((resolve) => blocker.close(resolve));
+  }
+});
+
+test("editor CLI defaults to the fixed port 8848 when free", async (context) => {
+  // 本机 8848 已被占用时跳过（并发 agent/外部服务），避免假失败。
+  const probe = createServer();
+  try {
+    await new Promise((resolve, reject) => {
+      probe.once("error", reject);
+      probe.listen(DEFAULT_PORT, "127.0.0.1", resolve);
+    });
+  } catch {
+    context.skip(`default port ${DEFAULT_PORT} is already in use`);
+    return;
+  }
+  await new Promise((resolve) => probe.close(resolve));
+
+  const child = spawn(process.execPath, [cli, "editor", exampleResume, "--no-open", "--json"], { cwd: root, env: { ...process.env, RESUME_SKILLS_NO_UPDATE_CHECK: "1" } });
+  child.stdout.setEncoding("utf8");
+  const [output] = await once(child.stdout, "data");
+
+  try {
+    const parsed = JSON.parse(output.trim());
+    assert.equal(parsed.event, "server_started");
+    assert.equal(parsed.port, DEFAULT_PORT, "default port must be the fixed 8848");
+    assert.match(parsed.url, new RegExp(`^http://127\\.0\\.0\\.1:${DEFAULT_PORT}$`));
+  } finally {
+    child.kill();
+    await once(child, "exit");
+  }
+});
+
+test("editor CLI falls back to the next free port when the default is taken, keeping JSON output clean", async () => {
+  // 探针直接当 blocker 占用（listen(0)→close→再听在 Windows 上会竞态）。
+  const blocker = createServer();
+  await new Promise((resolve) => blocker.listen(0, "127.0.0.1", resolve));
+  const basePort = blocker.address().port;
+  const logs = [];
+  const server = startEditor(exampleResume, { open: false, port: basePort, portFallback: true, json: true, logFn: (message) => logs.push(message) });
+  await waitForListening(server);
+
+  try {
+    const started = logs.map((entry) => { try { return JSON.parse(entry); } catch { return null; } }).filter(Boolean).find((entry) => entry.event === "server_started");
+    assert.ok(started, "must emit server_started after falling back");
+    assert.equal(started.port, basePort + 1, "must walk to the next free port");
+    assert.equal(logs.filter((entry) => entry.includes('"event":"server_started"')).length, 1, "JSON mode must not emit duplicate server_started lines");
+  } finally {
+    server.close();
+    await once(server, "close");
+    await new Promise((resolve) => blocker.close(resolve));
+  }
+});
+
+test("startEditor falls back to a random free port after the scan window is exhausted", async () => {
+  // 连续占用 base..base+5：第一口 listen(0) 当 base，后续端口递增占用（失败则整体重试）。
+  const scanRange = 5;
+  let basePort;
+  let scanEnd;
+  let blockers = [];
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const first = createNetServer();
+    try {
+      await new Promise((resolve, reject) => {
+        first.once("error", reject);
+        first.listen(0, "127.0.0.1", resolve);
+      });
+    } catch {
+      continue;
+    }
+    basePort = first.address().port;
+    scanEnd = basePort + scanRange;
+    blockers = [first];
+    let ok = true;
+    for (let port = basePort + 1; port <= scanEnd; port += 1) {
+      const blocker = createNetServer();
+      try {
+        await new Promise((resolve, reject) => {
+          blocker.once("error", reject);
+          blocker.listen(port, "127.0.0.1", resolve);
+        });
+        blockers.push(blocker);
+      } catch {
+        ok = false;
+        for (const item of blockers) await new Promise((resolve) => item.close(resolve));
+        blockers = [];
+        break;
+      }
+    }
+    if (ok) break;
+  }
+  assert.ok(blockers.length === scanRange + 1, "must reserve a contiguous blocked port window");
+
+  try {
+    const server = startEditor(exampleResume, { open: false, log: false, port: basePort, portFallback: true });
+    await waitForListening(server);
+    try {
+      const { port } = server.address();
+      assert.ok(port > 0, "must still start on some port");
+      assert.ok(port < basePort || port > scanEnd, `random port ${port} must not sit inside the blocked scan window ${basePort}-${scanEnd}`);
+    } finally {
+      server.close();
+      await once(server, "close");
+    }
+  } finally {
+    for (const blocker of blockers) await new Promise((resolve) => blocker.close(resolve));
+  }
+});
+
+test("editor CLI rejects invalid --port values with a clear message", () => {
+  for (const bad of ["abc", "99999"]) {
+    assert.throws(
+      () => execFileSync(process.execPath, [cli, "editor", exampleResume, "--json", "--no-open", "--port", bad], { cwd: root, encoding: "utf8", stdio: "pipe" }),
+      (error) => {
+        assert.equal(error.status, 1);
+        const parsed = JSON.parse(error.stdout.toString().trim());
+        assert.equal(parsed.event, "error");
+        assert.match(parsed.error, /端口必须是/);
+        return true;
+      },
+      `--port ${bad}`,
+    );
+  }
+});
+
+test("write-port-file failure is reported as a JSON event without stopping the server", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-portfile-fail-"));
+  const portFile = join(directory, "no-such-dir", "port.json");
+  const logs = [];
+  const server = startEditor(exampleResume, { open: false, port: 0, json: true, logFn: (message) => logs.push(message), writePortFile: portFile });
+  await once(server, "listening");
+
+  try {
+    const errorEvent = logs.find((entry) => entry.includes('"event":"error"'));
+    assert.ok(errorEvent, "must emit a JSON error event for the port file write");
+    assert.match(errorEvent, /无法写入端口文件/);
+    const { port } = server.address();
+    assert.equal((await fetch(`http://127.0.0.1:${port}/api/document`)).status, 200, "server must keep running");
+  } finally {
+    server.close();
+    await once(server, "close");
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("validate subcommand rejects missing protocol attributes, empty files and missing files", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-validate-fail-"));
+  const cases = [
+    { name: "missing-template.html", html: '<html data-resume-editor-version="1"><body><h1 data-resume-editor-id="profile-name">x</h1></body></html>', pattern: /template/ },
+    { name: "missing-version.html", html: '<html data-resume-editor-template="modern-minimal"><body><h1 data-resume-editor-id="profile-name">x</h1></body></html>', pattern: /version/ },
+    { name: "empty.html", html: "", pattern: /空|格式不正确/ },
+    { name: "not-an-html.txt", html: '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body><h1 data-resume-editor-id="profile-name">x</h1></body></html>', pattern: /只接受 \.html/ },
+  ];
+  try {
+    for (const item of cases) {
+      const sourcePath = join(directory, item.name);
+      await writeFile(sourcePath, item.html);
+      assert.throws(
+        () => execFileSync(process.execPath, [cli, "validate", sourcePath], { cwd: root, encoding: "utf8", stdio: "pipe" }),
+        (error) => error.status === 1 && item.pattern.test(error.stderr.toString()),
+        item.name,
+      );
+    }
+    assert.throws(
+      () => execFileSync(process.execPath, [cli, "validate", join(directory, "missing.html")], { cwd: root, encoding: "utf8", stdio: "pipe" }),
+      (error) => error.status === 1 && /无法读取/.test(error.stderr.toString()),
+      "missing file",
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("validate accepts all six built-in templates end to end", () => {
+  const templateNames = ["modern-minimal", "classic-business", "creative-bold", "japanese-minimal", "minimal-blue-business", "tech-dark"];
+  for (const name of templateNames) {
+    const templatePath = join(root, "skills", "resume-builder", "references", "examples", `${name}.html`);
+    const output = execFileSync(process.execPath, [cli, "validate", templatePath], { cwd: root, encoding: "utf8" });
+    assert.match(output, /通过/, name);
+  }
+});
+
+test("startEditor serves a zero-field document directly (the gate lives at the CLI entry)", async () => {
+  await withEditorFixture(async (directory, sourcePath) => {
+    const server = startEditor(sourcePath, { open: false, log: false });
+    await once(server, "listening");
+    try {
+      const { port } = server.address();
+      assert.equal((await fetch(`http://127.0.0.1:${port}/api/document`)).status, 200);
+    } finally {
+      server.close();
+      await once(server, "close");
+    }
+  });
+});
 async function makeTempHtml(html) {
   const directory = await mkdtemp(join(tmpdir(), "resume-skills-cli-field-"));
   const sourcePath = join(directory, "resume.html");

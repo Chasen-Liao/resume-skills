@@ -430,3 +430,136 @@ test("a broken cross-directory image surfaces a clear failure hint", { skip: !ch
   assert.match(r.status, /missing\.png/);
   assert.equal(r.saveDisabled, false, "normal fields must stay editable when only the image fails");
 });
+
+const nestedContactHtml = '<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><meta charset="UTF-8"></head><body><div class="resume"><h1 data-resume-editor-id="profile-name">张小明</h1><div data-resume-editor-id="profile-contact-phone-label">TEL: 135-9999-9999 | MAIL: <a href="mailto:x@y.com" data-resume-editor-id="profile-email">x@y.com</a></div></div></body></html>';
+
+async function openEditableCanvas(browserType, sourceHtml, { templatePath = null } = {}) {
+  let result;
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-editable-"));
+  const sourcePath = templatePath || join(directory, "resume.html");
+  if (!templatePath) await writeFile(sourcePath, sourceHtml);
+  const server = startEditor(sourcePath, { open: false, log: false });
+  await once(server, "listening");
+  try {
+    const { port } = server.address();
+    const browser = await browserType.launch();
+    try {
+      const page = await browser.newPage();
+      const pageErrors = [];
+      page.on("pageerror", (error) => pageErrors.push(String(error)));
+      await page.goto(`http://127.0.0.1:${port}`);
+      await page.waitForFunction(() => document.querySelector("#save-status")?.textContent === "已加载", null, { timeout: 10000 });
+      const frame = page.frames().find((candidate) => candidate !== page.mainFrame());
+      result = { page, frame, port, server, directory, sourcePath, pageErrors };
+    } catch (error) {
+      await browser.close();
+      throw error;
+    }
+  } catch (error) {
+    server.close();
+    await once(server, "close");
+    await rm(directory, { recursive: true, force: true });
+    throw error;
+  }
+  return result;
+}
+
+async function closeEditableCanvas(result) {
+  await result.page.context().browser().close();
+  result.server.close();
+  await once(result.server, "close");
+  if (result.directory) await rm(result.directory, { recursive: true, force: true });
+}
+
+test("a compound contact row with a nested selectable link stays fully editable", { skip: !chromiumAvailable }, async () => {
+  const r = await openEditableCanvas(chromium, nestedContactHtml);
+  try {
+    assert.equal(await r.page.locator("#save-html").isDisabled(), false, "save must stay enabled for a valid nested-compound template");
+    assert.equal(await r.page.locator("#print-pdf").isDisabled(), false);
+    assert.deepEqual(r.pageErrors, [], "no page errors");
+    const email = r.frame.locator('[data-resume-editor-id="profile-email"]');
+    await email.click();
+    await r.page.waitForFunction(() => document.querySelector("#selection-name")?.textContent.includes("x@y.com"));
+    // 全选替换邮箱文字后保存必须成功，且不新增/修改任何字段结构
+    const textEditor = r.page.locator("#selected-text");
+    await textEditor.fill("hello@new.com");
+    await r.page.waitForFunction(() => document.querySelector("#selected-text")?.value === "hello@new.com");
+    await r.page.locator("#save-html").click();
+    await r.page.waitForFunction(() => document.querySelector("#save-status")?.textContent.includes("已成功保存"));
+    const onDisk = await readFile(r.sourcePath, "utf8");
+    assert.match(onDisk, /hello@new\.com/, "edited email text must persist");
+    assert.match(onDisk, /mailto:x@y\.com/, "the link anchor must survive editing the link text");
+  } finally {
+    await closeEditableCanvas(r);
+  }
+});
+
+test("every built-in template opens with editing enabled in a real browser", { skip: !chromiumAvailable }, async () => {
+  const templateNames = ["modern-minimal", "classic-business", "creative-bold", "japanese-minimal", "minimal-blue-business", "tech-dark"];
+  for (const name of templateNames) {
+    const templatePath = new URL(`../skills/resume-builder/references/examples/${name}.html`, import.meta.url);
+    const r = await openEditableCanvas(chromium, "", { templatePath: fileURLToPath(templatePath) });
+    try {
+      assert.equal(await r.page.locator("#save-html").isDisabled(), false, `${name} must not be disabled`);
+      assert.deepEqual(r.pageErrors, [], `${name} page errors`);
+    } finally {
+      await closeEditableCanvas(r);
+    }
+  }
+});
+
+test("saving after a broken image strips the temporary img-hint attribute", { skip: !chromiumAvailable }, async () => {
+  // 有失败图时 status 故意保留「图片加载失败」而不是「已加载」，不能复用 openEditableCanvas。
+  const brokenImage = '<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><meta charset="UTF-8"></head><body><div class="resume"><img src="missing.png" alt="证件照"><h1 data-resume-editor-id="profile-name">张小明</h1></div></body></html>';
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-img-save-"));
+  const sourcePath = join(directory, "resume.html");
+  await writeFile(sourcePath, brokenImage);
+  const server = startEditor(sourcePath, { open: false, log: false });
+  await once(server, "listening");
+  const { port } = server.address();
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  try {
+    await page.goto(`http://127.0.0.1:${port}`);
+    await page.waitForFunction(() => document.querySelector("#save-status")?.textContent.includes("图片加载失败"));
+    assert.equal(await page.locator("#save-html").isDisabled(), false, "fields remain editable when only an image fails");
+    const frame = page.frames().find((candidate) => candidate !== page.mainFrame());
+    await frame.waitForFunction(() => document.querySelector("img")?.hasAttribute("data-resume-editor-img-hint"));
+    await page.locator("#save-html").click();
+    await page.waitForFunction(() => document.querySelector("#save-status")?.textContent.includes("已成功保存"));
+    const onDisk = await readFile(sourcePath, "utf8");
+    assert.doesNotMatch(onDisk, /data-resume-editor-img-hint/, "the canvas-only hint attribute must not persist into the saved HTML");
+  } finally {
+    await browser.close();
+    server.close();
+    await once(server, "close");
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("the canvas recovers when an external fix turns a bad file into a good one", { skip: !chromiumAvailable }, async () => {
+  const zeroField = '<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><meta charset="UTF-8"></head><body><div class="resume"><h1>张小明</h1></div></body></html>';
+  const valid = zeroField.replace("<h1>张小明</h1>", '<h1 data-resume-editor-id="profile-name">张小明</h1>');
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-recover-"));
+  const sourcePath = join(directory, "resume.html");
+  await writeFile(sourcePath, zeroField);
+  const server = startEditor(sourcePath, { open: false, log: false });
+  await once(server, "listening");
+  const { port } = server.address();
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  try {
+    await page.goto(`http://127.0.0.1:${port}`);
+    await page.waitForFunction(() => document.querySelector("#save-status")?.textContent.includes("未找到可编辑字段"));
+    await page.waitForFunction(() => document.querySelector("#save-html")?.disabled === true);
+    await writeFile(sourcePath, valid);
+    await page.waitForFunction(() => document.querySelector("#save-html")?.disabled === false, null, { timeout: 10000 });
+    assert.equal(await page.locator("#save-status").textContent(), "已加载", "recovery must clear the error state and mark the document loaded");
+    assert.equal(await page.locator("#save-status").getAttribute("class"), "", "the error class must be cleared");
+  } finally {
+    await browser.close();
+    server.close();
+    await once(server, "close");
+    await rm(directory, { recursive: true, force: true });
+  }
+});

@@ -8,14 +8,21 @@
 
 - 新增 `resume-skills validate <resume.html>` 子命令：不启动服务，直接校验编辑协议（模板/版本属性、至少 1 个 `data-resume-editor-id`、ID 唯一、仅叶子文本字段），退出码 0=通过 / 1=失败，失败时在 stderr 给出 `rg -n` 定位指引。
 - `editor` 子命令启动前强制执行同一字段校验：0 字段或容器级/非叶子 ID 时直接报错退出、不启动服务，`--json` 模式下输出 `event: "error"` JSON 事件。
-- 新增 `--write-port-file <path>`：服务启动后写入 `{url, port, pid}` 端口文件（Jupyter 式），解决后台启动时 stdout 丢失拿不到地址的问题；服务器启动失败时也输出 JSON 错误事件。
-- Canvas 前端对“0 字段/容器级 ID”明确报错并禁用保存/打印（不再静默）；`img` 加载失败（跨目录资源被 403/404 拒绝）时给出明确提示。
-- 生成侧门禁：`resume-builder` / `jd-tailorer` / `resume-workflow` 的 Canvas 字段验收改为先运行 `resume-skills validate` 的可执行门禁，再辅以手检。
-- README/`--help` 推荐显式 npx 调用形式 `npx -p @chasen-liao/resume-skills resume-skills ...`（规避 Git Bash shim 对裸调用的拦截）。
+- CLI 默认端口改为固定 **8848**；被占用时自动顺延至 8853，仍不可用则回退随机端口。显式 `--port` 为严格模式（占用即报错）。
+- 新增 `--write-port-file <path>`：服务启动后写入 `{url, port, pid, sourcePath}` 端口文件；协议/参数/端口监听失败时 `--json` 均输出 `event: "error"`。
+- 新增 `lib/editor-rules.mjs` 作为叶子字段规则的单一事实源（Node 与 Canvas 共用），并加漂移回归测试。
+- Canvas 前端对“0 字段/容器级 ID”明确报错并禁用保存/打印；`img` 加载失败时给出明确提示；热重载从坏文件恢复为好文件时自动解除禁用态。
+- 生成侧门禁：`resume-builder` / `jd-tailorer` / `resume-workflow` 的 Canvas 字段验收改为先运行 `resume-skills validate`。
+- README/`--help` 推荐显式 npx 调用形式 `npx -p @chasen-liao/resume-skills resume-skills ...`。
+- 归档 Issue #4 侦察底稿到 `docs/issue-4-scout.md` 与 `docs/issue-4-research.md`（编辑协议设计决策与外部事实支撑）。
 
 ### Fixed
 
-- 修复内置示例模板中少数嵌套 `data-resume-editor-id`（联系方式行 `<a>`、课程标签 `<span>` 同时携带父级与子级 ID）导致的编辑字段边界模糊：校验器现仅允许“复合字段内单个行内叶子子字段”的嵌套，容器/块级/多子元素嵌套一律拒绝。
+- 前端嵌套判定与 lib 校验器对齐：联系方式行内带 ID 的 `<a>` 可正常编辑（此前 4/6 内置模板会被整页禁用）。
+- 修复 `bindCanvas` 缺少 `return true` 导致成功加载时状态永远停在“正在加载…”。
+- 修复端口回退后 `server_started` 重复输出（listen 回调在重试时被调用两次）；改为挂 `listening` 事件。
+- 端口占用等启动失败不再以退出码 0 挂起；关闭 watcher 并置 `process.exitCode = 1`。
+- 热重载对 0 字段/容器级 ID 文件拒收并提示；保存时剥离 canvas 临时 `data-resume-editor-img-hint` 属性。
 
 ## [0.5.5] - 2026-08-16
 

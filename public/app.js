@@ -1,5 +1,6 @@
 import { stripLegacyToolbar } from "/editor-toolbar.js";
 import { appendOverrideRule, computedControlValues, configureSelectionTarget, createDraftController, restoreSelectedDefaults, rovingSelectionTargets, selectFromPointer, setRovingTabStop, setSelectionPressed, upsertRootToken } from "/editor-controls.js";
+import { editorBlockChildTagNames, editorContainerClassNames, editorContainerTagNames } from "/editor-rules.js";
 
 const frame = document.querySelector("#resume-frame");
 const status = document.querySelector("#save-status");
@@ -127,20 +128,33 @@ function moveFocus(nodes, current, direction) {
   setRovingTabStop(nodes, next);
   next.focus();
 }
-// 与 lib 校验器对齐：容器/块级/多子元素/嵌套都不允许作为编辑字段。
-const editorContainerTagNames = new Set(["HTML", "BODY", "MAIN", "SECTION", "HEADER", "FOOTER", "UL", "OL", "FIGURE"]);
-const editorBlockChildTagNames = new Set(["ADDRESS", "ARTICLE", "ASIDE", "BLOCKQUOTE", "BODY", "CANVAS", "DD", "DETAILS", "DIALOG", "DIV", "DL", "DT", "FIELDSET", "FIGCAPTION", "FIGURE", "FOOTER", "FORM", "H1", "H2", "H3", "H4", "H5", "H6", "HEADER", "HGROUP", "HR", "HTML", "IFRAME", "IMG", "LI", "MAIN", "NAV", "OL", "P", "PICTURE", "PRE", "SECTION", "SUMMARY", "TABLE", "TBODY", "TD", "TFOOT", "TH", "THEAD", "TR", "UL", "VIDEO"]);
+// 容器/块级/嵌套规则来自 /editor-rules.js（与 lib/editor-document.mjs 同一事实源）；
+// 本文件只做大小写规范化与判定，不在此处另行定义黑名单。
+const editorContainerTags = new Set(editorContainerTagNames);
+const editorContainerClasses = new Set(editorContainerClassNames);
+const editorBlockTags = new Set(editorBlockChildTagNames);
 function containerFieldProblem(node) {
-  const tag = node.tagName.toUpperCase();
-  if (editorContainerTagNames.has(tag)) return `是容器 <${tag.toLowerCase()}>`;
+  const tag = node.tagName.toLowerCase();
+  if (editorContainerTags.has(tag)) return `是容器 <${tag}>`;
   const classes = (node.className || "").split(/\s+/).filter(Boolean);
-  const containerClass = classes.find((name) => name === "page" || name === "resume");
+  const containerClass = classes.find((name) => editorContainerClasses.has(name));
   if (containerClass) return `是容器 .${containerClass}`;
   const children = [...node.children];
-  const blockChild = children.find((child) => editorBlockChildTagNames.has(child.tagName.toUpperCase()));
+  const blockChild = children.find((child) => editorBlockTags.has(child.tagName.toLowerCase()));
   if (blockChild) return `内含块级子元素 <${blockChild.tagName.toLowerCase()}>`;
   if (children.length > 1) return `内含 ${children.length} 个子元素`;
-  if (node.querySelector("[data-resume-editor-id]")) return `内含嵌套编辑字段`;
+  const nestedProblem = nestedInlineFieldProblem(node);
+  if (nestedProblem) return nestedProblem;
+  return null;
+}
+// 与 lib 的 nestedInlineFieldProblem 对齐：复合字段（父字段只有 1 个行内子节点）内的
+// 行内叶子子字段（如联系方式行内带 ID 的 <a>）放行；块级嵌套/多子节点父字段拒绝。
+function nestedInlineFieldProblem(node) {
+  const ancestor = node.parentElement && node.parentElement.closest("[data-resume-editor-id]");
+  if (!ancestor) return null;
+  const tag = node.tagName.toLowerCase();
+  if (editorBlockTags.has(tag)) return "是块级嵌套编辑字段（编辑字段不能嵌套在另一个编辑字段内部）";
+  if (ancestor.children.length > 1) return `父字段包含 ${ancestor.children.length} 个子节点，不是单个复合字段`;
   return null;
 }
 function disableEditing(message) {
@@ -150,6 +164,12 @@ function disableEditing(message) {
   document.querySelector("#save-html").disabled = true;
   document.querySelector("#print-pdf").disabled = true;
   selectionName.textContent = "简历不可编辑（编辑协议校验失败）";
+}
+function enableEditing() {
+  // 热重载从“坏文件”恢复为“好文件”时必须清除错误态并恢复按钮。
+  status.classList.remove("error");
+  document.querySelector("#save-html").disabled = false;
+  document.querySelector("#print-pdf").disabled = false;
 }
 function bindImageErrorHints(doc) {
   // 跨目录/缺失资源在服务端被 403/404 拒绝后，浏览器对 <img> 触发 error 事件（捕获阶段）。
@@ -179,6 +199,7 @@ function bindCanvas() {
     disableEditing(`检测到 ${invalidFields.length} 个容器级/非叶子编辑 ID（${sample}）。直接编辑会破坏版面，已禁用编辑；请把 data-resume-editor-id 移到叶子文本字段。`);
     return false;
   }
+  enableEditing();
   const nodes = selectionTargets = rovingSelectionTargets(allNodes);
   allNodes.forEach((node) => {
     const index = nodes.indexOf(node);
@@ -228,6 +249,7 @@ function bindCanvas() {
       if (event.key === "ArrowUp" || event.key === "ArrowLeft") { event.preventDefault(); moveFocus(nodes, node, -1); }
     });
   });
+  return true;
 }
 function updateOverflow() {
   const resume = frame.contentDocument?.querySelector(".resume");
@@ -309,7 +331,17 @@ async function reloadDocument({ isHotReload = false } = {}) {
   frame.srcdoc = stripLegacyToolbar(localStorage.getItem(draftKey()) || html);
 }
 
-frame.addEventListener("load", () => { const editable = bindCanvas(); if (editable) { status.textContent = "已加载"; updateOverflow(); } });
+frame.addEventListener("load", () => {
+  const editable = bindCanvas();
+  if (editable) {
+    // bindImageErrorHints 的预扫描可能在 load 回调前就报告了“图片加载失败”；
+    // 只要画布内还有已标记失败的图，就保留该提示，不覆盖成“已加载”。
+    if (!frame.contentDocument?.querySelector("img[data-resume-editor-img-hint]")) {
+      status.textContent = "已加载";
+    }
+    updateOverflow();
+  }
+});
 await reloadDocument();
 
 function applyVersionInfo(info) {

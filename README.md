@@ -227,11 +227,11 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor resume_visual.html
 
 支持的高级 CLI 参数：
 
-- `--port <number>` 或 `-p <number>`：指定监听端口（默认 0 使用随机可用端口）。
+- `--port <number>` 或 `-p <number>`：指定监听端口。**默认 `8848`**；被占用时自动顺延到 `8853`，仍不可用则回退随机端口。显式传入 `--port` 时为严格模式：占用即报错退出，不换端口。
 - `--host <host>`：仅允许 loopback 地址 `127.0.0.1` 或 `::1`（默认 `127.0.0.1`）；编辑器不会绑定到局域网或公网地址。
-- `--json`：以标准 JSON 格式输出 `server_started` 事件（地址、端口）；启动失败时也输出 `event: "error"` 的 JSON 事件，便于 Agent 读取。
+- `--json`：以 **NDJSON 逐行**输出事件（`server_started` / `error` / `update_available` / `validation_passed`）；协议校验失败、参数校验失败、端口占用失败均输出 `event: "error"`。脚本请逐行 `JSON.parse`。
 - `--manifest <path>`：显式指定与该 HTML 关联的 PDF manifest，支持 HTML、PDF 和 manifest 分目录或不同文件名。
-- `--write-port-file <path>`：服务启动后把 `{url, port, pid}` 写入该文件（Jupyter 式端口文件），供后台启动/脚本轮询读取就绪状态。
+- `--write-port-file <path>`：服务启动后把 `{url, port, pid, sourcePath}` 写入该文件（Jupyter 式端口文件），供后台启动/脚本轮询读取就绪状态。
 - `--no-open`：禁用自动调起系统浏览器（适合集成环境或无 GUI 控制台）。
 
 编辑器建立连接后支持 **Live Preview 实时热重载**：当源 HTML 文件在外部或由 Agent 更新时，预览与 Canvas 编辑器会自动拉取并刷新最新页面内容。
