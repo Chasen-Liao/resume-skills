@@ -4,6 +4,8 @@ import { appendOverrideRule, computedControlValues, configureSelectionTarget, cr
 const frame = document.querySelector("#resume-frame");
 const status = document.querySelector("#save-status");
 const selectionName = document.querySelector("#selection-name");
+const selectedTextEditor = document.querySelector("#selected-text-editor");
+const selectedText = document.querySelector("#selected-text");
 const controls = Object.fromEntries(["font-size", "font-weight", "font-color", "text-align", "line-height", "margin-bottom", "page-margin", "accent-color"].map((id) => [id, document.querySelector(`#${id}`)]));
 let selected;
 let documentId;
@@ -36,8 +38,7 @@ function setRootToken(token, value, commit = false) {
   updateOverflow();
 }
 function serializedHtml() {
-  const doc = frame.contentDocument;
-  return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
+  return cleanForExport();
 }
 const drafts = createDraftController({
   getDocumentId: () => documentId,
@@ -57,6 +58,9 @@ function syncControlsFromSelection(element) {
   const rootStyle = frame.contentWindow.getComputedStyle(frame.contentDocument.documentElement);
   Object.entries(computedControlValues(style, rootStyle)).forEach(([id, value]) => setControlValue(id, value));
 }
+function selectionLabel(element) {
+  return element.textContent.trim().slice(0, 42) || "已选择空文本";
+}
 function select(element) {
   if (selected) {
     selected.removeAttribute("data-resume-editor-selected");
@@ -66,7 +70,9 @@ function select(element) {
   selected.setAttribute("data-resume-editor-selected", "true");
   setSelectionPressed(selected, true);
   if (selectionTargets.includes(selected)) setRovingTabStop(selectionTargets, selected);
-  selectionName.textContent = selected.textContent.trim().slice(0, 42) || "已选择空文本";
+  selectionName.textContent = selectionLabel(selected);
+  selectedText.value = selected.textContent;
+  selectedTextEditor.hidden = false;
   // CSS spring feedback
   selectionName.classList.remove("animate-pop");
   void selectionName.offsetWidth;
@@ -79,11 +85,23 @@ function clearSelection() {
   setSelectionPressed(selected, false);
   selected = undefined;
   selectionName.textContent = "请选择一段文字";
+  selectedText.value = "";
+  selectedTextEditor.hidden = true;
 }
+selectedText.addEventListener("input", () => {
+  if (!selected) return;
+  selected.textContent = selectedText.value;
+  selectionName.textContent = selectionLabel(selected);
+  status.textContent = "文字已修改；保存后请重新确认事实并验证 PDF。";
+  saveDraft();
+  updateOverflow();
+});
 function finishTextEdit(node, save = true) {
+  const originalHtml = node.dataset.resumeEditorOriginalHtml;
+  const changed = originalHtml !== undefined && node.innerHTML !== originalHtml;
   node.removeAttribute("contenteditable");
-  delete node.dataset.resumeEditorOriginalText;
-  if (save) {
+  delete node.dataset.resumeEditorOriginalHtml;
+  if (save && changed) {
     status.textContent = "文字已修改；保存后请重新确认事实并验证 PDF。";
     saveDraft(true);
   }
@@ -98,7 +116,7 @@ function supportsPlaintextOnly() {
 const plaintextOnlySupported = supportsPlaintextOnly();
 function beginTextEdit(node) {
   select(node);
-  node.dataset.resumeEditorOriginalText = node.textContent;
+  if (!node.isContentEditable) node.dataset.resumeEditorOriginalHtml = node.innerHTML;
   node.setAttribute("contenteditable", plaintextOnlySupported ? "plaintext-only" : "true");
   node.focus({ preventScroll: true });
   status.textContent = "正在编辑文字；仅允许纯文本，Ctrl/Cmd+Enter 完成。";
@@ -123,22 +141,36 @@ function bindCanvas() {
     });
     node.addEventListener("dblclick", () => beginTextEdit(node));
     node.addEventListener("blur", () => { if (node.isContentEditable) finishTextEdit(node); });
+    node.addEventListener("input", () => {
+      if (selected !== node) return;
+      selectedText.value = node.textContent;
+      selectionName.textContent = selectionLabel(node);
+      saveDraft();
+    });
     if (!plaintextOnlySupported) {
       node.addEventListener("paste", (event) => {
         if (!node.isContentEditable) return;
         event.preventDefault();
         frame.contentDocument.execCommand("insertText", false, event.clipboardData?.getData("text/plain") ?? "");
       });
+      node.addEventListener("drop", (event) => {
+        if (!node.isContentEditable) return;
+        event.preventDefault();
+        frame.contentDocument.execCommand("insertText", false, event.dataTransfer?.getData("text/plain") ?? "");
+      });
     }
     node.addEventListener("keydown", (event) => {
       if (node.isContentEditable) {
         if (event.key === "Escape") {
           event.preventDefault();
-          node.textContent = node.dataset.resumeEditorOriginalText || node.textContent;
+          node.innerHTML = node.dataset.resumeEditorOriginalHtml || node.innerHTML;
           finishTextEdit(node, false);
         } else if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
           event.preventDefault();
           finishTextEdit(node);
+        } else if (!plaintextOnlySupported && event.key === "Enter") {
+          // 回退模式（contenteditable="true"）下 Enter 会插入 <br> 破坏结构校验；纯文本编辑不接受换行
+          event.preventDefault();
         }
         return;
       }
@@ -162,6 +194,7 @@ function cleanForExport() {
   });
   doc.querySelectorAll("[data-resume-editor-id]").forEach((node) => {
     node.removeAttribute("contenteditable");
+    node.removeAttribute("data-resume-editor-original-html");
     node.removeAttribute("data-resume-editor-original-text");
     node.removeAttribute("tabindex");
     node.removeAttribute("role");
@@ -230,6 +263,19 @@ async function reloadDocument({ isHotReload = false } = {}) {
 frame.addEventListener("load", () => { bindCanvas(); status.textContent = "已加载"; updateOverflow(); });
 await reloadDocument();
 
+function applyVersionInfo(info) {
+  const chip = document.querySelector("#app-version");
+  if (chip) chip.textContent = info.version || "unknown";
+  const hint = document.querySelector("#app-version-hint");
+  if (hint) {
+    if (info.updateAvailable && info.latest) {
+      hint.textContent = `发现新版本 ${info.latest}，请更新 CLI：npm install -g @chasen-liao/resume-skills@latest`;
+      hint.hidden = false;
+    } else {
+      hint.hidden = true;
+    }
+  }
+}
 if (typeof EventSource !== "undefined") {
   const events = new EventSource("/api/events");
   events.onmessage = (event) => {
@@ -241,20 +287,21 @@ if (typeof EventSource !== "undefined") {
     const update = JSON.parse(event.data);
     status.textContent = update.message;
   });
+  // 版本检查结算后服务端会广播，保证"有新版本"提示一定能出现
+  events.addEventListener("version", (event) => {
+    try {
+      applyVersionInfo(JSON.parse(event.data));
+    } catch {
+      // 忽略损坏的版本事件
+    }
+  });
 }
 (async () => {
   try {
     const response = await fetch("/api/version");
+    if (!response.ok) throw new Error(`version endpoint ${response.status}`);
     const info = await response.json();
-    const chip = document.querySelector("#app-version");
-    if (chip && info.version) chip.textContent = info.version;
-    if (info.updateAvailable && info.latest) {
-      const hint = document.querySelector("#app-version-hint");
-      if (hint) {
-        hint.textContent = `发现新版本 ${info.latest}，请更新 CLI：npm install -g @chasen-liao/resume-skills@latest`;
-        hint.hidden = false;
-      }
-    }
+    if (info && typeof info === "object") applyVersionInfo(info);
   } catch {
     // 版本信息不可用时保持默认占位，不打扰编辑
   }

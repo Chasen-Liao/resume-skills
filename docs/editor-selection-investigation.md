@@ -1,6 +1,6 @@
 # 调查记录：CLI 打开的 Canvas 编辑器“不能编辑选中的文字”
 
-> 调查日期：2026-08-06 · 涉及版本：@chasen-liao/resume-skills 0.5.1 / 0.5.2（当前 main）
+> 调查日期：2026-08-06（文档同步至 2026-08-18，含 0.5.3/0.5.4/0.5.5） · 涉及版本：@chasen-liao/resume-skills 0.5.1–0.5.5
 > 触发方式：`resume-skills editor <resume.html>`（本地 CLI，loopback HTTP 服务 + iframe srcdoc 注入简历）
 
 ## 结论（TL;DR）
@@ -34,7 +34,7 @@
 ## 排除项（已核查，非根因）
 
 - **CLI 服务端**（`bin/resume-skills.mjs`）：`/api/document` 原样返回模板 HTML（保留 `data-resume-editor-id`）；保存校验（`lib/editor-document.mjs` `assertEditableDocument`）允许已有字段纯文本修改、拒绝结构/富文本/新增字段；版本 409 冲突、原子保存、manifest 失效逻辑正常。
-- **已发布包**：npm `@latest` = 0.5.2，tarball 中 `public/app.js` 与仓库一致（含 `plaintext-only`，无回退）——用户拿到的是同样的坏实现。
+- **历史已发布包**：npm `@latest` 曾为 0.5.2，tarball 中 `public/app.js` 与当时仓库一致（含 `plaintext-only`，无回退）——用户拿到的是同样的坏实现；后续版本已加入兼容回退。
 - **iframe sandbox**：`sandbox="allow-same-origin"` 不影响 contenteditable；srcdoc 注入无干扰；`selectFromPointer` 的 click preventDefault 不阻断 dblclick。
 - **CSS**：无 `user-select`/pointer-events 干扰；选中态 outline 不阻挡双击。
 
@@ -45,5 +45,5 @@
 
 ## 遗留（与本次无关，未改动）
 
-- `tests/tutorial-page.test.mjs` 在本机（Windows `core.autocrlf`）失败：`docs/tutorial.md` 以 LF 入库、检出为 CRLF，测试期望 `/^---\n/`。CI（Ubuntu）无此问题；属于独立的环境/测试健壮性问题。
+- `tests/tutorial-page.test.mjs` 曾在本机（Windows `core.autocrlf`）因 CRLF 失败，已改为容忍 `\r?\n`（随 0.5.3 一并提交）。
 - 编辑态下对含链接的混合内容字段（如 `profile-contact-primary` 含 `<a>`）做“全选替换”可能删除链接导致保存 400——属既有边界，未在本次范围内。

@@ -196,6 +196,7 @@ test("directory watch keeps sending reloads after the resume is replaced by rena
     const secondReplacement = sourceHtml.replace("安全内容", "第二次热更新");
 
     try {
+      await nextSseData(reader); // 连接的初始 version 事件
       await replaceFile(sourcePath, firstReplacement);
       assert.equal(await nextSseData(reader), "reload");
       await replaceFile(sourcePath, secondReplacement);
@@ -214,6 +215,7 @@ test("self-save does not echo a reload to SSE clients", async () => {
     const events = await fetch(`${url}/api/events`);
     const reader = events.body.getReader();
     try {
+      await nextSseData(reader); // 连接的初始 version 事件
       const document = await (await fetch(`${url}/api/document`)).json();
       const response = await fetch(`${url}/api/save`, {
         method: "POST",
@@ -238,6 +240,7 @@ test("watch reports a readable status when the resume cannot be read", async () 
     const events = await fetch(`${url}/api/events`);
     const reader = events.body.getReader();
     try {
+      await nextSseData(reader); // 连接的初始 version 事件
       await rm(sourcePath);
       const message = await nextSseData(reader);
       assert.equal(message.event, "status");

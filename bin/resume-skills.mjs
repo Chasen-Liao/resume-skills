@@ -9,16 +9,11 @@ import { parseArgs } from "node:util";
 import { prepareEditorDocument, validateEditorSave } from "../lib/editor-document.mjs";
 import { invalidateArtifactManifest } from "../lib/artifact-manifest.mjs";
 import { resolveSourceAsset } from "../lib/source-asset.mjs";
-import { fetchLatestVersion, formatUpdateNotice, isUpdateAvailable } from "../lib/version-check.mjs";
+import { fetchLatestVersion, formatUpdateNotice, isUpdateAvailable, resolveCliVersion } from "../lib/version-check.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const publicRoot = join(packageRoot, "public");
-let cliVersion = "0.0.0";
-try {
-  cliVersion = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")).version || cliVersion;
-} catch {
-  // package.json 缺失（如 DSH 预设的裁剪副本）时回退为 0.0.0，版本检查仍会提示落后
-}
+const cliVersion = resolveCliVersion(packageRoot); // 缺失 package.json（如 DSH 预设裁剪副本）时为 null：版本未知 → 跳过更新检查，避免误报
 const maxSaveBodyBytes = 1024 * 1024;
 const loopbackHosts = new Set(["127.0.0.1", "::1"]);
 const atomicFileOps = {
@@ -95,7 +90,6 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
   let original = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
   let documentId = documentVersion(sourcePath, original);
   let latestVersion = null;
-  let lastSelfSaveAt = 0;
   const sseClients = new Set();
 
   const sendEvent = (event, data) => {
@@ -112,6 +106,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
     try {
       if (!existsSync(sourcePath)) throw new Error("文件不存在或正在被替换。");
       const updated = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
+      if (updated === original) return; // 磁盘内容与当前服务一致（如编辑器自己的保存回显），无需 reload；外部修改仍会触发
       original = updated;
       documentId = documentVersion(sourcePath, original);
       sendEvent("reload");
@@ -123,7 +118,6 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
   const sourceName = basename(sourcePath).toLowerCase();
   const fileWatcher = watch(dirname(sourcePath), (_eventType, changedName) => {
     if (changedName && String(changedName).toLowerCase() !== sourceName) return;
-    if (Date.now() - lastSelfSaveAt < 500) return; // 自己保存的原子写回显，避免保存后无意义地重置编辑器
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(reloadFromDisk, 100);
   });
@@ -152,7 +146,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
       return send(response, 200, "application/json; charset=utf-8", JSON.stringify({ html: original, documentId, sourceName: basename(sourcePath) }));
     }
     if (request.method === "GET" && request.url === "/api/version") {
-      return send(response, 200, "application/json; charset=utf-8", JSON.stringify({ name: "resume-skills", version: cliVersion, latest: latestVersion, updateAvailable: isUpdateAvailable(cliVersion, latestVersion) }));
+      return send(response, 200, "application/json; charset=utf-8", JSON.stringify({ name: "resume-skills", version: cliVersion, latest: latestVersion, updateAvailable: cliVersion ? isUpdateAvailable(cliVersion, latestVersion) : false }));
     }
     if (request.method === "GET" && request.url === "/api/events") {
       response.writeHead(200, {
@@ -161,6 +155,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
         "connection": "keep-alive",
       });
       response.write("retry: 1000\n\n");
+      response.write("event: version\ndata: " + JSON.stringify({ version: cliVersion, latest: latestVersion, updateAvailable: cliVersion ? isUpdateAvailable(cliVersion, latestVersion) : false }) + "\n\n");
       sseClients.add(response);
       const cleanup = () => sseClients.delete(response);
       request.on("close", cleanup);
@@ -206,7 +201,6 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
         }
         try {
           invalidateManifest(sourcePath, manifestPath);
-          lastSelfSaveAt = Date.now();
           writeAtomically(sourcePath, exportHtml);
           original = exportHtml;
           documentId = documentVersion(sourcePath, original);
@@ -256,16 +250,21 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, hos
 
     if (open) openBrowser(url);
 
-    if (checkLatest) {
+    if (checkLatest && cliVersion) {
       checkLatest().then((info) => {
         latestVersion = info?.version ?? null;
         if (isUpdateAvailable(cliVersion, latestVersion)) {
-          if (json) {
-            logFn(JSON.stringify({ event: "update_available", current: cliVersion, latest: latestVersion }));
-          } else if (log) {
-            logFn(formatUpdateNotice({ current: cliVersion, latest: latestVersion }));
+          try {
+            if (json) {
+              logFn(JSON.stringify({ event: "update_available", current: cliVersion, latest: latestVersion }));
+            } else if (log) {
+              logFn(formatUpdateNotice({ current: cliVersion, latest: latestVersion }));
+            }
+          } catch {
+            // 日志输出失败不影响编辑器服务
           }
         }
+        sendEvent("version", { version: cliVersion, latest: latestVersion, updateAvailable: isUpdateAvailable(cliVersion, latestVersion) });
       }).catch(() => {
         latestVersion = null;
       });

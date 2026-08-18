@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { once } from "node:events";
 import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { createConnection } from "node:net";
@@ -371,6 +372,8 @@ test("editor does not serve assets through a junction outside the resume directo
   }
 });
 
+const packageVersion = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8")).version;
+
 test("editor /api/version reports the local version and an injected latest", async () => {
   const logs = [];
   const logFn = (msg) => logs.push(msg);
@@ -398,7 +401,7 @@ test("editor /api/version reports the local version and an injected latest", asy
     assert.ok(notice, "JSON mode must log an update_available event");
     const parsed = JSON.parse(notice);
     assert.equal(parsed.event, "update_available");
-    assert.equal(parsed.current, "0.5.3");
+    assert.equal(parsed.current, packageVersion);
     assert.equal(parsed.latest, "99.0.0");
   } finally {
     server.close();
@@ -434,6 +437,69 @@ test("editor logs a plain-text update notice when a newer version exists", async
     const notice = logs.find((entry) => entry.includes("检测到新版本"));
     assert.ok(notice, "plain mode must print an update notice");
     assert.match(notice, /99.0.0/);
+  } finally {
+    server.close();
+    await once(server, "close");
+  }
+});
+
+async function readSseVersionEvent(reader, deadlineMs = 3000) {
+  const decoder = new TextDecoder();
+  let buffer = "";
+  const deadline = Date.now() + deadlineMs;
+  while (Date.now() < deadline) {
+    const result = await Promise.race([
+      reader.read(),
+      new Promise((resolve) => setTimeout(() => resolve({ timeout: true }), Math.max(1, deadline - Date.now()))),
+    ]);
+    if (result.timeout) break;
+    buffer += decoder.decode(result.value || new Uint8Array(), { stream: !result.done });
+    const match = buffer.match(/event: version\ndata: ([^\n]+)\n\n/);
+    if (match) return JSON.parse(match[1]);
+  }
+  return null;
+}
+
+test("editor /api/version degrades when the latest check finds nothing, and broadcasts via SSE", async () => {
+  const server = startEditor(exampleResume, { open: false, log: false, checkLatest: async () => null });
+  await once(server, "listening");
+
+  try {
+    const { port } = server.address();
+    const versionInfo = await (await fetch(`http://127.0.0.1:${port}/api/version`)).json();
+    assert.equal(versionInfo.latest, null);
+    assert.equal(versionInfo.updateAvailable, false);
+    assert.match(versionInfo.version, /^\d+\.\d+\.\d+$/);
+    // SSE 连接建立时即收到当前版本状态（latest 为 null）
+    const events = await fetch(`http://127.0.0.1:${port}/api/events`);
+    const reader = events.body.getReader();
+    const broadcast = await readSseVersionEvent(reader);
+    assert.ok(broadcast, "SSE must deliver a version event on connect");
+    assert.equal(broadcast.latest, null);
+    assert.equal(broadcast.updateAvailable, false);
+    reader.cancel();
+  } finally {
+    server.close();
+    await once(server, "close");
+  }
+});
+
+test("editor SSE delivers the settled latest version to an already-open client", async () => {
+  const server = startEditor(exampleResume, { open: false, log: false, checkLatest: async () => ({ version: "99.0.0" }) });
+  await once(server, "listening");
+
+  try {
+    const { port } = server.address();
+    const events = await fetch(`http://127.0.0.1:${port}/api/events`);
+    const reader = events.body.getReader();
+    let settled = null;
+    for (let attempt = 0; attempt < 40 && !settled; attempt += 1) {
+      const event = await readSseVersionEvent(reader, 200);
+      if (event?.latest === "99.0.0") settled = event;
+    }
+    assert.ok(settled, "SSE must deliver a version event whose latest is the settled value");
+    assert.equal(settled.updateAvailable, true);
+    reader.cancel();
   } finally {
     server.close();
     await once(server, "close");

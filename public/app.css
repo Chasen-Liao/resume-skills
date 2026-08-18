@@ -49,6 +49,7 @@ body { margin: 0; min-width: 960px; }
 .inspector h2 svg { width: 16px; height: 16px; color: var(--accent); }
 
 #selection-name { min-height: 3em; margin: 0 0 20px; padding: 12px; border: 1px solid rgba(0,0,0,0.05); border-radius: 12px; background: rgba(255,255,255,0.9); color: var(--ink); line-height: 1.45; font-weight: 500; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+#selected-text { width: 100%; min-height: 88px; resize: vertical; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,0.9); color: var(--ink); font: inherit; line-height: 1.5; }
 
 /* Canvas Area */
 .canvas { display: flex; align-items: flex-start; justify-content: center; overflow: auto; padding: 36px; }
