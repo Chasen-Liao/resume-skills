@@ -27,6 +27,7 @@ body { margin: 0; min-width: 960px; }
 .brand-mark { width: 24px; height: 24px; flex: 0 0 auto; stroke: var(--accent); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
 #source-name { max-width: 34ch; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; font-weight: 500;}
 #save-status { margin-left: auto; color: #10b981; font-size: 13px; font-weight: 500;}
+#save-status.error { color: #dc2626; }
 
 /* Layout */
 .layout { display: grid; grid-template-columns: 280px minmax(600px, 1fr) 300px; min-height: calc(100vh - 56px); }

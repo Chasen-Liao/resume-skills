@@ -49,8 +49,10 @@ npx skills add Chasen-Liao/resume-skills --list
 Skill 的安装不依赖 npm 包；只有需要手动打开本地 Canvas 时才需要使用 npm CLI：
 
 ```bash
-npx @chasen-liao/resume-skills@latest editor resume_visual.html
+npx -p @chasen-liao/resume-skills@latest resume-skills editor resume_visual.html
 ```
+
+> 推荐使用带 `-p @chasen-liao/resume-skills@latest resume-skills` 的显式形式：裸写 `npx @chasen-liao/resume-skills@latest resume_visual.html` 在 Git Bash 等环境下可能被 shim 拦截而无声失败。
 
 也可以全局安装后使用：
 
@@ -212,15 +214,24 @@ Canvas 只负责已生成视觉简历的最后排版微调，不负责采访、�
 对已有视觉 HTML 手动打开编辑器：
 
 ```bash
-npx @chasen-liao/resume-skills@latest editor resume_visual.html
+npx -p @chasen-liao/resume-skills@latest resume-skills editor resume_visual.html
 ```
+
+> **启动前强制校验**：`editor` 会先检查编辑协议（至少 1 个 `data-resume-editor-id` 位于叶子文本字段、ID 唯一、无容器级 ID），不合格时直接报错退出并给出 `rg -n` 定位命令，不会启动服务。需要单独检查时使用：
+>
+> ```bash
+> npx -p @chasen-liao/resume-skills@latest resume-skills validate resume_visual.html
+> ```
+>
+> `validate` 只做协议校验不启动服务，退出码 0 = 通过、1 = 失败（失败详情与修复指引在 stderr）。
 
 支持的高级 CLI 参数：
 
 - `--port <number>` 或 `-p <number>`：指定监听端口（默认 0 使用随机可用端口）。
 - `--host <host>`：仅允许 loopback 地址 `127.0.0.1` 或 `::1`（默认 `127.0.0.1`）；编辑器不会绑定到局域网或公网地址。
-- `--json`：以标准 JSON 格式输出一次服务启动消息，便于 Agent 读取地址和端口；服务会继续在前台运行，直到该进程结束。
+- `--json`：以标准 JSON 格式输出 `server_started` 事件（地址、端口）；启动失败时也输出 `event: "error"` 的 JSON 事件，便于 Agent 读取。
 - `--manifest <path>`：显式指定与该 HTML 关联的 PDF manifest，支持 HTML、PDF 和 manifest 分目录或不同文件名。
+- `--write-port-file <path>`：服务启动后把 `{url, port, pid}` 写入该文件（Jupyter 式端口文件），供后台启动/脚本轮询读取就绪状态。
 - `--no-open`：禁用自动调起系统浏览器（适合集成环境或无 GUI 控制台）。
 
 编辑器建立连接后支持 **Live Preview 实时热重载**：当源 HTML 文件在外部或由 Agent 更新时，预览与 Canvas 编辑器会自动拉取并刷新最新页面内容。

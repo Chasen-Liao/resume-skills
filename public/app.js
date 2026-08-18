@@ -127,10 +127,58 @@ function moveFocus(nodes, current, direction) {
   setRovingTabStop(nodes, next);
   next.focus();
 }
+// 与 lib 校验器对齐：容器/块级/多子元素/嵌套都不允许作为编辑字段。
+const editorContainerTagNames = new Set(["HTML", "BODY", "MAIN", "SECTION", "HEADER", "FOOTER", "UL", "OL", "FIGURE"]);
+const editorBlockChildTagNames = new Set(["ADDRESS", "ARTICLE", "ASIDE", "BLOCKQUOTE", "BODY", "CANVAS", "DD", "DETAILS", "DIALOG", "DIV", "DL", "DT", "FIELDSET", "FIGCAPTION", "FIGURE", "FOOTER", "FORM", "H1", "H2", "H3", "H4", "H5", "H6", "HEADER", "HGROUP", "HR", "HTML", "IFRAME", "IMG", "LI", "MAIN", "NAV", "OL", "P", "PICTURE", "PRE", "SECTION", "SUMMARY", "TABLE", "TBODY", "TD", "TFOOT", "TH", "THEAD", "TR", "UL", "VIDEO"]);
+function containerFieldProblem(node) {
+  const tag = node.tagName.toUpperCase();
+  if (editorContainerTagNames.has(tag)) return `是容器 <${tag.toLowerCase()}>`;
+  const classes = (node.className || "").split(/\s+/).filter(Boolean);
+  const containerClass = classes.find((name) => name === "page" || name === "resume");
+  if (containerClass) return `是容器 .${containerClass}`;
+  const children = [...node.children];
+  const blockChild = children.find((child) => editorBlockChildTagNames.has(child.tagName.toUpperCase()));
+  if (blockChild) return `内含块级子元素 <${blockChild.tagName.toLowerCase()}>`;
+  if (children.length > 1) return `内含 ${children.length} 个子元素`;
+  if (node.querySelector("[data-resume-editor-id]")) return `内含嵌套编辑字段`;
+  return null;
+}
+function disableEditing(message) {
+  clearSelection();
+  status.textContent = message;
+  status.classList.add("error");
+  document.querySelector("#save-html").disabled = true;
+  document.querySelector("#print-pdf").disabled = true;
+  selectionName.textContent = "简历不可编辑（编辑协议校验失败）";
+}
+function bindImageErrorHints(doc) {
+  // 跨目录/缺失资源在服务端被 403/404 拒绝后，浏览器对 <img> 触发 error 事件（捕获阶段）。
+  // 本地 404 可能在 iframe load 事件之前完成，因此绑定时刻先扫描已失败图片，再挂后续监听。
+  const markFailed = (target) => {
+    if (!target || target.tagName !== "IMG" || target.hasAttribute("data-resume-editor-img-hint")) return;
+    target.setAttribute("data-resume-editor-img-hint", "true");
+    status.textContent = `图片加载失败：${target.getAttribute("src") || ""}。图片不在简历目录内或文件不存在（跨目录资源被安全边界拒绝）；请把图片放入简历同目录后刷新。`;
+  };
+  doc.querySelectorAll("img").forEach((image) => {
+    if (image.complete && image.naturalWidth === 0) markFailed(image);
+  });
+  doc.addEventListener("error", (event) => markFailed(event.target), true);
+}
 function bindCanvas() {
   const doc = frame.contentDocument;
   doc.head.insertAdjacentHTML("beforeend", "<style id=\"resume-editor-chrome\">[data-resume-editor-id]{cursor:pointer}[data-resume-editor-id]:focus-visible{outline:2px solid #2563eb;outline-offset:2px}[data-resume-editor-selected]{outline:2px solid #2563eb;outline-offset:2px}</style>");
+  bindImageErrorHints(doc);
   const allNodes = [...doc.querySelectorAll("[data-resume-editor-id]")];
+  if (allNodes.length === 0) {
+    disableEditing("未找到可编辑字段（正文缺少 data-resume-editor-id）。该 HTML 不符合编辑协议；请重新生成，或先运行 `resume-skills validate <file>` 检查。");
+    return false;
+  }
+  const invalidFields = allNodes.map((node) => ({ node, problem: containerFieldProblem(node) })).filter((item) => item.problem);
+  if (invalidFields.length) {
+    const sample = invalidFields.slice(0, 3).map(({ node, problem }) => `<${node.tagName.toLowerCase()}${node.className ? ` class="${node.className}"` : ""}>${problem}`).join("；");
+    disableEditing(`检测到 ${invalidFields.length} 个容器级/非叶子编辑 ID（${sample}）。直接编辑会破坏版面，已禁用编辑；请把 data-resume-editor-id 移到叶子文本字段。`);
+    return false;
+  }
   const nodes = selectionTargets = rovingSelectionTargets(allNodes);
   allNodes.forEach((node) => {
     const index = nodes.indexOf(node);
@@ -200,6 +248,7 @@ function cleanForExport() {
     node.removeAttribute("role");
     node.removeAttribute("aria-pressed");
   });
+  doc.querySelectorAll("[data-resume-editor-img-hint]").forEach((node) => node.removeAttribute("data-resume-editor-img-hint"));
   return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
 }
 function bindControl(control, handler) {
@@ -260,7 +309,7 @@ async function reloadDocument({ isHotReload = false } = {}) {
   frame.srcdoc = stripLegacyToolbar(localStorage.getItem(draftKey()) || html);
 }
 
-frame.addEventListener("load", () => { bindCanvas(); status.textContent = "已加载"; updateOverflow(); });
+frame.addEventListener("load", () => { const editable = bindCanvas(); if (editable) { status.textContent = "已加载"; updateOverflow(); } });
 await reloadDocument();
 
 function applyVersionInfo(info) {

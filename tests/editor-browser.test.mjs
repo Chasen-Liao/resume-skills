@@ -366,3 +366,67 @@ test("Escape undo restores nested link structure instead of flattening it in Chr
   assert.match(r.afterEscape.text, /邮箱/, "restored text must include the original label");
   assert.match(r.onDisk, /mailto:x@y\.com/, "saved file must still contain the link");
 });
+
+async function protocolErrorCanvas(browserType, sourceHtml, expectedPattern) {
+  let result;
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-protocol-"));
+  const sourcePath = join(directory, "resume.html");
+  await writeFile(sourcePath, sourceHtml);
+  const server = startEditor(sourcePath, { open: false, log: false });
+  await once(server, "listening");
+  try {
+    const { port } = server.address();
+    const browser = await browserType.launch();
+    try {
+      const page = await browser.newPage();
+      const pageErrors = [];
+      page.on("pageerror", (error) => pageErrors.push(String(error)));
+      await page.goto(`http://127.0.0.1:${port}`);
+      await page.waitForFunction((pattern) => new RegExp(pattern).test(document.querySelector("#save-status")?.textContent || ""), expectedPattern.source);
+      result = {
+        status: await page.locator("#save-status").textContent(),
+        saveDisabled: await page.locator("#save-html").isDisabled(),
+        printDisabled: await page.locator("#print-pdf").isDisabled(),
+        selectionName: await page.locator("#selection-name").textContent(),
+        pageErrors,
+      };
+    } finally {
+      await browser.close();
+    }
+  } finally {
+    server.close();
+    await once(server, "close");
+    await rm(directory, { recursive: true, force: true });
+  }
+  return result;
+}
+
+test("a resume without editable fields shows an explicit error and disables saving", { skip: !chromiumAvailable }, async () => {
+  const zeroField = '<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><meta charset="UTF-8"></head><body><div class="resume"><h1>张小明</h1></div></body></html>';
+  const r = await protocolErrorCanvas(chromium, zeroField, "未找到可编辑字段");
+
+  assert.deepEqual(r.pageErrors, [], "no page errors for a zero-field canvas");
+  assert.match(r.status, /data-resume-editor-id/);
+  assert.equal(r.saveDisabled, true, "save must be disabled");
+  assert.equal(r.printDisabled, true, "print must be disabled");
+  assert.match(r.selectionName, /不可编辑/);
+});
+
+test("a resume with a container-level id shows an explicit error and disables saving", { skip: !chromiumAvailable }, async () => {
+  const containerId = '<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><meta charset="UTF-8"></head><body><main data-resume-editor-id="sanqi-ai-app-dev-20260818"><div class="resume"><h1>张小明</h1><ul><li>经历一</li></ul></div></main></body></html>';
+  const r = await protocolErrorCanvas(chromium, containerId, "容器级");
+
+  assert.deepEqual(r.pageErrors, [], "no page errors for a container-id canvas");
+  assert.match(r.status, /<main>/);
+  assert.equal(r.saveDisabled, true);
+  assert.equal(r.printDisabled, true);
+});
+
+test("a broken cross-directory image surfaces a clear failure hint", { skip: !chromiumAvailable }, async () => {
+  const brokenImage = '<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><meta charset="UTF-8"></head><body><div class="resume"><img src="missing.png" alt="证件照"><h1 data-resume-editor-id="profile-name">张小明</h1></div></body></html>';
+  const r = await protocolErrorCanvas(chromium, brokenImage, "图片加载失败");
+
+  assert.deepEqual(r.pageErrors, [], "no page errors for a broken image");
+  assert.match(r.status, /missing\.png/);
+  assert.equal(r.saveDisabled, false, "normal fields must stay editable when only the image fails");
+});

@@ -21,8 +21,10 @@ test("editor help documents an HTML input path and options", () => {
   });
 
   assert.match(output, /resume-skills editor <resume\.html>/);
+  assert.match(output, /resume-skills validate <resume\.html>/);
   assert.match(output, /--json/);
   assert.match(output, /--port/);
+  assert.match(output, /--write-port-file/);
 });
 
 test("editor CLI exposes a reachable server after JSON startup", async () => {
@@ -132,6 +134,117 @@ test("editor server delivers the resume in a sandbox that cannot run scripts", a
     await once(server, "close");
   }
 });
+
+test("validate subcommand accepts a well-formed example resume", () => {
+  const output = execFileSync(process.execPath, [cli, "validate", exampleResume], { cwd: root, encoding: "utf8" });
+
+  assert.match(output, /通过/);
+});
+
+test("validate subcommand rejects a resume without editor fields and gives grep guidance", async () => {
+  const { directory, sourcePath } = await makeTempHtml('<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body><div class="resume">没有编辑 ID</div></body></html>');
+  try {
+    assert.throws(
+      () => execFileSync(process.execPath, [cli, "validate", sourcePath], { cwd: root, encoding: "utf8", stdio: "pipe" }),
+      (error) => error.status === 1 && /可编辑字段/.test(error.stderr.toString()) && /rg -n/.test(error.stderr.toString()) && /data-resume-editor-id/.test(error.stderr.toString()),
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("validate subcommand rejects a resume with a container-level id", async () => {
+  const { directory, sourcePath } = await makeTempHtml('<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body><main data-resume-editor-id="sanqi-ai-app-dev-20260818">整页内容</main></body></html>');
+  try {
+    assert.throws(
+      () => execFileSync(process.execPath, [cli, "validate", sourcePath], { cwd: root, encoding: "utf8", stdio: "pipe" }),
+      (error) => error.status === 1 && /容器 <main>/.test(error.stderr.toString()),
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("editor CLI refuses to start a server for a resume without editable fields", async () => {
+  const { directory, sourcePath } = await makeTempHtml('<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body><div class="resume">无法编辑</div></body></html>');
+  try {
+    assert.throws(
+      () => execFileSync(process.execPath, [cli, "editor", sourcePath, "--no-open", "--port", "0"], { cwd: root, encoding: "utf8", stdio: "pipe" }),
+      (error) => error.status === 1 && /可编辑字段/.test(error.stderr.toString()),
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("editor CLI emits a JSON error event instead of plain text when --json validation fails", async () => {
+  const { directory, sourcePath } = await makeTempHtml('<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body><div class="resume">无法编辑</div></body></html>');
+  try {
+    assert.throws(
+      () => execFileSync(process.execPath, [cli, "editor", sourcePath, "--json", "--no-open"], { cwd: root, encoding: "utf8", stdio: "pipe" }),
+      (error) => {
+        assert.equal(error.status, 1);
+        const lines = error.stdout.toString().trim().split(/\r?\n/).map((line) => JSON.parse(line));
+        assert.equal(lines[0].event, "error");
+        assert.match(lines[0].error, /data-resume-editor-id/);
+        assert.match(lines[0].hint, /rg -n/);
+        return true;
+      },
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("startEditor writes the port file when requested", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-portfile-"));
+  const portFile = join(directory, "port.json");
+  const logs = [];
+  const server = startEditor(exampleResume, { open: false, port: 0, json: true, logFn: (message) => logs.push(message), writePortFile: portFile });
+  await once(server, "listening");
+
+  try {
+    const written = JSON.parse(await readFile(portFile, "utf8"));
+    const started = JSON.parse(logs[0]);
+    assert.equal(written.port, started.port);
+    assert.equal(written.url, started.url);
+    assert.equal(typeof written.pid, "number");
+    assert.match(written.sourcePath, /modern-minimal\.html$/);
+  } finally {
+    server.close();
+    await once(server, "close");
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("editor CLI --write-port-file persists the ready port for background launches", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-cli-portfile-"));
+  const portFile = join(directory, "port.json");
+  const child = spawn(process.execPath, [cli, "editor", exampleResume, "--no-open", "--json", "--write-port-file", portFile], { cwd: root, env: { ...process.env, RESUME_SKILLS_NO_UPDATE_CHECK: "1" } });
+  child.stdout.setEncoding("utf8");
+  const [output] = await once(child.stdout, "data");
+
+  try {
+    const parsed = JSON.parse(output.trim());
+    assert.equal(parsed.event, "server_started");
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const written = JSON.parse(await readFile(portFile, "utf8"));
+    assert.equal(written.port, parsed.port);
+    assert.equal(written.url, parsed.url);
+    assert.equal(typeof written.pid, "number");
+  } finally {
+    child.kill();
+    await once(child, "exit");
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+async function makeTempHtml(html) {
+  const directory = await mkdtemp(join(tmpdir(), "resume-skills-cli-field-"));
+  const sourcePath = join(directory, "resume.html");
+  await writeFile(sourcePath, html);
+  return { directory, sourcePath };
+}
 
 async function withEditorFixture(run) {
   const directory = await mkdtemp(join(tmpdir(), "resume-skills-editor-"));

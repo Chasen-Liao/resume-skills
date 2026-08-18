@@ -2,6 +2,21 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### Added
+
+- 新增 `resume-skills validate <resume.html>` 子命令：不启动服务，直接校验编辑协议（模板/版本属性、至少 1 个 `data-resume-editor-id`、ID 唯一、仅叶子文本字段），退出码 0=通过 / 1=失败，失败时在 stderr 给出 `rg -n` 定位指引。
+- `editor` 子命令启动前强制执行同一字段校验：0 字段或容器级/非叶子 ID 时直接报错退出、不启动服务，`--json` 模式下输出 `event: "error"` JSON 事件。
+- 新增 `--write-port-file <path>`：服务启动后写入 `{url, port, pid}` 端口文件（Jupyter 式），解决后台启动时 stdout 丢失拿不到地址的问题；服务器启动失败时也输出 JSON 错误事件。
+- Canvas 前端对“0 字段/容器级 ID”明确报错并禁用保存/打印（不再静默）；`img` 加载失败（跨目录资源被 403/404 拒绝）时给出明确提示。
+- 生成侧门禁：`resume-builder` / `jd-tailorer` / `resume-workflow` 的 Canvas 字段验收改为先运行 `resume-skills validate` 的可执行门禁，再辅以手检。
+- README/`--help` 推荐显式 npx 调用形式 `npx -p @chasen-liao/resume-skills resume-skills ...`（规避 Git Bash shim 对裸调用的拦截）。
+
+### Fixed
+
+- 修复内置示例模板中少数嵌套 `data-resume-editor-id`（联系方式行 `<a>`、课程标签 `<span>` 同时携带父级与子级 ID）导致的编辑字段边界模糊：校验器现仅允许“复合字段内单个行内叶子子字段”的嵌套，容器/块级/多子元素嵌套一律拒绝。
+
 ## [0.5.5] - 2026-08-16
 
 ### Fixed

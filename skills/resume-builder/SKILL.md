@@ -75,7 +75,8 @@ ATS-safe 模式：
 
 生成最终视觉 HTML 后，先做 Canvas 字段验收，再渲染 PDF：
 
-- 在最终 HTML（完成事实替换和定制后，不是只检查参考模板）统计 `data-resume-editor-id`，记录字段总数、重复 ID、容器误标 ID，以及 `profile-*` 和 `*-bullet-*` 字段是否存在。
+- 先运行可执行校验（失败即停止，严禁跳过）：`npx -p @chasen-liao/resume-skills resume-skills validate "<最终_visual.html路径>"`，重复直到输出“校验通过”。
+- 再按下列规则手工复核：在最终 HTML（完成事实替换和定制后，不是只检查参考模板）统计 `data-resume-editor-id`，记录字段总数、重复 ID、容器误标 ID，以及 `profile-*` 和 `*-bullet-*` 字段是否存在。
 - 字段总数必须大于 0，ID 必须唯一且符合小写语义化命名；`main/page/resume/section` 等整页或板块容器不得带 ID。
 - 每个 ID 节点的文本必须对应一个可独立编辑的字段；如果一个节点同时包含多个板块、列表或大量链接文本，必须拆分标记。
 - 任一检查失败都不得启动 Canvas、渲染 PDF 或交付；修正 HTML 或重新生成后从头复验。禁止用一个根容器 ID 代替字段标记。
