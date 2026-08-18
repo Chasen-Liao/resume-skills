@@ -62,6 +62,8 @@ CSS 文件包含 3 套配色变量 + 推荐字体 + 风格 CSS。`css/common.md`
 - 技能标签用 `<span class="skill-badge">` 排列，badge 样式由风格 CSS 定义（ATS 友好）
 - 不在简历模板中嵌入导出按钮；PDF 由浏览器打印或本地 Canvas 的“打印为 PDF”操作导出，避免遮挡简历内容
 - 使用任一内置风格时，生成的 `<html>` 必须包含对应的 `data-resume-editor-template`（`modern-minimal`、`classic-business`、`creative-bold`、`japanese-minimal`、`minimal-blue-business` 或 `tech-dark`）和 `data-resume-editor-version="1"`。每个需要 Canvas 微调的真实文本必须有稳定、唯一、语义化的 `data-resume-editor-id`；不要依赖运行时补齐。
+- `data-resume-editor-id` 只能标在一个具体的文本字段上，例如姓名、职位、日期、板块标题、单条 bullet 或单个技能标签；不要为了“通过协议检查”给整页或整块内容加一个兜底 ID。
+- **禁止把编辑 ID 放在** `<html>`、`<body>`、`<main>`、`.page`、`.resume`、`header`、`footer`、`section`、`ul`、`ol`、`figure` 或包含多个板块/多个字段的容器上。带链接的联系方式应把可编辑文本拆成独立字段，不能把整行联系方式作为一个可编辑容器。
 - 上述标记供 `npx @chasen-liao/resume-skills@latest editor <resume.html>` 的本地 Canvas 微调器识别；Canvas 可编辑已有字段的纯文本并保存受限排版覆盖，不允许插入 HTML 或新增字段。文字事实变更后必须重新确认事实并验证 PDF；不要将标记用于头像、布局容器、任意 HTML 或未经确认的字段。
 
 ATS-safe 模式：
@@ -70,6 +72,13 @@ ATS-safe 模式：
 - 同样只生成 HTML 与浏览器打印 PDF；仓库当前没有 DOCX 生成能力，不承诺 DOCX 产物。
 
 ### 第四步：按模式验证（强制执行，不可跳过）
+
+生成最终视觉 HTML 后，先做 Canvas 字段验收，再渲染 PDF：
+
+- 在最终 HTML（完成事实替换和定制后，不是只检查参考模板）统计 `data-resume-editor-id`，记录字段总数、重复 ID、容器误标 ID，以及 `profile-*` 和 `*-bullet-*` 字段是否存在。
+- 字段总数必须大于 0，ID 必须唯一且符合小写语义化命名；`main/page/resume/section` 等整页或板块容器不得带 ID。
+- 每个 ID 节点的文本必须对应一个可独立编辑的字段；如果一个节点同时包含多个板块、列表或大量链接文本，必须拆分标记。
+- 任一检查失败都不得启动 Canvas、渲染 PDF 或交付；修正 HTML 或重新生成后从头复验。禁止用一个根容器 ID 代替字段标记。
 
 视觉 HTML/PDF：导出 PDF 后同时检查结构、PDF 页数和可提取文本、页面密度和可打印安全区：
 

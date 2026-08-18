@@ -62,8 +62,11 @@ description: 根据职位描述(JD)定制简历的技能。当用户提到「JD�
 - `matching-analysis.md` 可包含匹配缺口、关键词来源和待确认字段；待确认字段不得复制到上述最终 HTML/PDF。
 - 仓库当前只生成 HTML 与浏览器打印 PDF，没有 DOCX 生成能力，不承诺 DOCX 产物。
 - 若沿用任一内置视觉样式，保留或生成对应的 `data-resume-editor-template`、`data-resume-editor-version="1"` 和稳定、唯一、语义化的 `data-resume-editor-id` 文字标记；不要依赖 Canvas 运行时补齐标记。
+- 编辑 ID 只能标在姓名、职位、日期、板块标题、单条 bullet、单个技能标签等独立文本字段上；禁止把编辑 ID 放在 `<html>`、`<body>`、`<main>`、`.page`、`.resume`、`header`、`footer`、`section`、`ul`、`ol`、`figure` 或包含多个字段的复合容器上。不要给整份定制简历添加一个兜底 ID。
 
 ### PDF 验证
+
+在 PDF 验证前，先对最终 `resume_visual.html` 做 Canvas 字段验收：统计字段总数，确认 ID 唯一，确认没有整页/板块容器 ID，并确认至少有可独立编辑的个人信息字段和经历 bullet 字段。检查必须针对完成定制后的最终 HTML，而不是只检查基础模板。任一项失败时不得启动 Canvas 或交付，必须拆分字段、补齐稳定 ID 后重新验证。
 
 视觉模式使用 `render_resume.ps1` 渲染并生成同名前缀 `*.resume-manifest.json`。PDF 必须恰好 1 页，HTML 溢出直接失败；缺少 Playwright/Chromium 或 `pypdf` 时为不可交付的 `degraded`。`page fill` 低于 78% 或 `vertical balance` 有警告时，优先均匀调整已确认内容的板块间距、条目间距、行高和容器内边距；`bottom safety` 失败或页数大于 1 时必须回退排版。任何警告都要重新导出并复验，不能编造内容或用不可读字号填充。Canvas 保存后 manifest 会失效，必须重新 render + validate；ATS-safe 模式仍检查 HTML 单栏、标准标题、正文阅读顺序和纯文本可解析性，并验证 PDF 文本提取结果。
 

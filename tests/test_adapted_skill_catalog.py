@@ -29,6 +29,16 @@ class AdaptedSkillCatalogTests(unittest.TestCase):
         self.assertIn("data-resume-editor-template", content)
         self.assertIn("data-resume-editor-id", content)
 
+    def test_canvas_editor_ids_are_independent_text_targets(self):
+        for skill_name in ("resume-builder", "jd-tailorer", "resume-workflow"):
+            content = (SKILLS / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            self.assertIn("可独立编辑", content, skill_name)
+            self.assertIn("禁止把", content, skill_name)
+            self.assertIn("ID 放在", content, skill_name)
+            self.assertIn("容器", content, skill_name)
+            self.assertIn("字段总数", content, skill_name)
+            self.assertIn("唯一", content, skill_name)
+
     def test_visual_resume_entrypoints_launch_the_canvas_editor(self):
         command_pattern = re.compile(
             r'npx @chasen-liao/resume-skills@latest editor "<[^"\n]*visual\.html路径>"'
