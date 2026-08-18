@@ -1,6 +1,6 @@
 import { stripLegacyToolbar } from "/editor-toolbar.js";
 import { appendOverrideRule, computedControlValues, configureSelectionTarget, createDraftController, restoreSelectedDefaults, rovingSelectionTargets, selectFromPointer, setRovingTabStop, setSelectionPressed, upsertRootToken } from "/editor-controls.js";
-import { editorBlockChildTagNames, editorContainerClassNames, editorContainerTagNames } from "/editor-rules.js";
+import { editorBlockChildTagNames, editorContainerClassNames, editorContainerTagNames, editorRuntimeInjectedAttributeNames } from "/editor-rules.js";
 
 const frame = document.querySelector("#resume-frame");
 const status = document.querySelector("#save-status");
@@ -133,6 +133,7 @@ function moveFocus(nodes, current, direction) {
 const editorContainerTags = new Set(editorContainerTagNames);
 const editorContainerClasses = new Set(editorContainerClassNames);
 const editorBlockTags = new Set(editorBlockChildTagNames);
+const editorRuntimeInjectedAttrs = new Set(editorRuntimeInjectedAttributeNames);
 function containerFieldProblem(node) {
   const tag = node.tagName.toLowerCase();
   if (editorContainerTags.has(tag)) return `是容器 <${tag}>`;
@@ -262,15 +263,15 @@ function cleanForExport() {
   doc.querySelectorAll("[data-resume-editor-selected], #resume-editor-chrome").forEach((node) => {
     if (node.id === "resume-editor-chrome") node.remove(); else node.removeAttribute("data-resume-editor-selected");
   });
-  doc.querySelectorAll("[data-resume-editor-id]").forEach((node) => {
+  doc.querySelectorAll("[data-resume-editor-id], [data-resume-editor-img-hint]").forEach((node) => {
     node.removeAttribute("contenteditable");
     node.removeAttribute("data-resume-editor-original-html");
     node.removeAttribute("data-resume-editor-original-text");
     node.removeAttribute("tabindex");
     node.removeAttribute("role");
     node.removeAttribute("aria-pressed");
+    for (const name of editorRuntimeInjectedAttrs) node.removeAttribute(name);
   });
-  doc.querySelectorAll("[data-resume-editor-img-hint]").forEach((node) => node.removeAttribute("data-resume-editor-img-hint"));
   return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
 }
 function bindControl(control, handler) {

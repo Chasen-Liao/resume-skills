@@ -84,7 +84,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/script
 视觉版通过首轮渲染验证后，运行真实 CLI 命令：
 
 ```plaintext
-npx @chasen-liao/resume-skills@latest editor "<生成的_visual.html路径>"
+npx -p @chasen-liao/resume-skills@latest resume-skills editor "<生成的_visual.html路径>"
 ```
 
 Canvas 支持编辑已有字段的纯文本和受限排版，不允许新增字段、插入 HTML、改 DOM 结构或做 JD 匹配。文字修改后仍需回到 Agent 工作流确认事实并重新验证 PDF。

@@ -41,7 +41,7 @@ npx skills add Chasen-Liao/resume-skills --list
 
 ### npm 包：本地 Canvas 编辑器
 
-本仓库同时发布了 npm 包 [`@chasen-liao/resume-skills`](https://www.npmjs.com/package/@chasen-liao/resume-skills)，当前版本为 `0.5.5`。
+本仓库同时发布了 npm 包 [`@chasen-liao/resume-skills`](https://www.npmjs.com/package/@chasen-liao/resume-skills)，当前版本为 `0.5.6`。
 
 - GitHub 仓库中的 `SKILL.md`：提供简历采访、JD 定制、ATS 检查和版本管理流程
 - npm 包：提供 `resume-skills` CLI 和本地 Canvas 编辑器
@@ -161,7 +161,7 @@ resume-version-manager（记录确认后的版本与投递历史）
 </tr>
 </table>
 
-视觉版以 A4 单页为目标。`resume-builder`、`jd-tailorer` 或 `resume-workflow` 生成视觉母版或视觉定制版并完成 PDF 验证后，交付流程必须执行 `npx @chasen-liao/resume-skills@latest editor <实际生成的_visual.html路径> --manifest <实际_manifest路径>`，启动本地 Canvas 预览；若当前环境不能执行 `npx`，Agent 必须明确说明未启动并给出完整手动命令。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。最终 PDF 必须有 `*.resume-manifest.json`，其中 HTML/PDF hash、Playwright renderer 版本与验证结果都对应当前文件。
+视觉版以 A4 单页为目标。`resume-builder`、`jd-tailorer` 或 `resume-workflow` 生成视觉母版或视觉定制版并完成 PDF 验证后，交付流程必须执行 `npx -p @chasen-liao/resume-skills@latest resume-skills editor <实际生成的_visual.html路径> --manifest <实际_manifest路径>`，启动本地 Canvas 预览；若当前环境不能执行 `npx`，Agent 必须明确说明未启动并给出完整手动命令。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。最终 PDF 必须有 `*.resume-manifest.json`，其中 HTML/PDF hash、Playwright renderer 版本与验证结果都对应当前文件。
 
 ### ATS-safe HTML/PDF
 
@@ -173,7 +173,7 @@ ATS-safe 只是降低解析风险，不代表一定通过任何 ATS，也不代�
 
 Canvas 只负责已生成视觉简历的最后排版微调，不负责采访、文字改写、JD 匹配或重新设计结构。文字事实必须通过 Agent 工作流确认，并重新生成 HTML。
 
-下面是通过 `npx @chasen-liao/resume-skills@latest editor <生成的_visual.html>` 打开的实际网页界面：
+下面是通过 `npx -p @chasen-liao/resume-skills@latest resume-skills editor <生成的_visual.html>` 打开的实际网页界面：
 
 <p align="center">
   <img src="assets/canvas-editor-preview.jpg" width="1100" alt="ResumeSkills Canvas 本地网页编辑器预览">
@@ -184,7 +184,7 @@ Canvas 只负责已生成视觉简历的最后排版微调，不负责采访、�
 1. **打开视觉版 HTML**：在简历文件所在目录执行下面的命令。编辑器会启动本机服务，并尝试自动打开浏览器。
 
    ```bash
-   npx @chasen-liao/resume-skills@latest editor resume_visual.html
+   npx -p @chasen-liao/resume-skills@latest resume-skills editor resume_visual.html
    ```
 
 2. **选择与编辑文字**：在中间的 A4 画布上单击文字即选中并可输入（仅纯文本，中文输入法可用）；双击同样进入编辑。Tab/方向键移动焦点，Enter/空格进入编辑，Ctrl/Cmd+Enter 或点击别处完成，Escape 撤销本次修改。

@@ -537,6 +537,27 @@ test("saving after a broken image strips the temporary img-hint attribute", { sk
   }
 });
 
+test("a browser-injected spellcheck attribute never reaches the saved file", { skip: !chromiumAvailable }, async () => {
+  const r = await openEditableCanvas(chromium, sampleHtml);
+  try {
+    const field = r.frame.locator('[data-resume-editor-id="profile-name"]');
+    await field.click();
+    await r.page.waitForFunction(() => document.querySelector("#selection-name")?.textContent.includes("张小明"));
+    // 全选替换字段文字，保存前显式模拟 Chromium 向 contenteditable 字段注入 spellcheck="true"
+    const textEditor = r.page.locator("#selected-text");
+    await textEditor.fill("张小明的简历");
+    await r.page.waitForFunction(() => document.querySelector("#selected-text")?.value === "张小明的简历");
+    await r.frame.evaluate(() => document.querySelector('[data-resume-editor-id="profile-name"]').setAttribute("spellcheck", "true"));
+    await r.page.locator("#save-html").click();
+    await r.page.waitForFunction(() => document.querySelector("#save-status")?.textContent.includes("已成功保存"));
+    const onDisk = await readFile(r.sourcePath, "utf8");
+    assert.doesNotMatch(onDisk, /spellcheck/, "a browser-injected spellcheck attribute must not persist into the saved HTML");
+    assert.match(onDisk, /张小明的简历/, "edited text must persist after saving");
+  } finally {
+    await closeEditableCanvas(r);
+  }
+});
+
 test("the canvas recovers when an external fix turns a bad file into a good one", { skip: !chromiumAvailable }, async () => {
   const zeroField = '<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><meta charset="UTF-8"></head><body><div class="resume"><h1>张小明</h1></div></body></html>';
   const valid = zeroField.replace("<h1>张小明</h1>", '<h1 data-resume-editor-id="profile-name">张小明</h1>');

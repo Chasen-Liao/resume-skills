@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [0.5.6] - 2026-08-18
+
 ### Added
 
 - 新增 `resume-skills validate <resume.html>` 子命令：不启动服务，直接校验编辑协议（模板/版本属性、至少 1 个 `data-resume-editor-id`、ID 唯一、仅叶子文本字段），退出码 0=通过 / 1=失败，失败时在 stderr 给出 `rg -n` 定位指引。
@@ -23,6 +25,7 @@
 - 修复端口回退后 `server_started` 重复输出（listen 回调在重试时被调用两次）；改为挂 `listening` 事件。
 - 端口占用等启动失败不再以退出码 0 挂起；关闭 watcher 并置 `process.exitCode = 1`。
 - 热重载对 0 字段/容器级 ID 文件拒收并提示；保存时剥离 canvas 临时 `data-resume-editor-img-hint` 属性。
+- 修复保存校验把浏览器运行时注入的属性误判为「修改 HTML 属性」：`cleanForExport` 剥离 Chromium 注入的 `spellcheck`；服务端属性比对改为差异化判定（`spellcheck` / `data-resume-editor-img-hint` 完全忽略、`style` 去空白按值比较且容忍单侧出现），属性真实不一致时报错指出具体元素与差异属性（增/删/改 + 两侧取值）。
 
 ## [0.5.5] - 2026-08-16
 

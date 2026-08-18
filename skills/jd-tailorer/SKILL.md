@@ -69,7 +69,7 @@ description: 根据职位描述(JD)定制简历的技能。当用户提到「JD�
 在 PDF 验证前，先对最终 `resume_visual.html` 做可执行的 Canvas 字段验收，再手动核对：
 
 ```bash
-npx -p @chasen-liao/resume-skills resume-skills validate "<tailored目录中的resume_visual.html路径>"
+npx -p @chasen-liao/resume-skills@latest resume-skills validate "<tailored目录中的resume_visual.html路径>"
 ```
 
 重复执行直到输出“校验通过”。该命令会统计字段总数、确认 ID 唯一、确认没有整页/板块容器 ID，并确认至少有可独立编辑的个人信息字段和经历 bullet 字段。检查必须针对完成定制后的最终 HTML，而不是只检查基础模板。任一项失败时不得启动 Canvas 或交付，必须拆分字段、补齐稳定 ID 后重新验证。
@@ -81,11 +81,11 @@ npx -p @chasen-liao/resume-skills resume-skills validate "<tailored目录中的r
 视觉模式完成 PDF 验证和必要修正后，必须启动定制版的本地 Canvas 预览：
 
 ```bash
-npx @chasen-liao/resume-skills@latest editor "<tailored目录中的resume_visual.html路径>"
+npx -p @chasen-liao/resume-skills@latest resume-skills editor "<tailored目录中的resume_visual.html路径>"
 ```
 
 高级 CLI 参数说明（适用于 Agent 自动化或无 GUI 容器环境）：
-- `--json`：以 JSON 格式输出一次服务启动信息（如 URL、端口和源 HTML 路径）；服务会继续运行，供 Agent 连接该地址。
+- `--json`：以 NDJSON 逐行输出事件（`server_started` / `error` / `update_available` / `validation_passed`）；协议/参数/端口失败均输出 `event: "error"`。服务继续运行，脚本逐行 `JSON.parse`。
 - `--no-open`：禁用自动打开系统浏览器（适合控制台或集成环境）。
 - `--port <number>`：指定监听端口。
 - **Live Preview**：编辑器建立连接后支持 SSE 热刷新。当 Agent 重新写入或修改该 HTML 时，页面将自动重载展示最新效果。

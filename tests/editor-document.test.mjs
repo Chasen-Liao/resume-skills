@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { prepareEditorDocument, stripLegacyToolbar } from "../lib/editor-document.mjs";
+import { prepareEditorDocument, stripLegacyToolbar, validateEditorSave } from "../lib/editor-document.mjs";
 
 const modernResume = `<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><style>:root { --fs-body: 10px; }</style></head><body><div class="resume"><h1 data-resume-editor-id="profile-name">张小明</h1></div></body></html>`;
 
@@ -123,4 +123,60 @@ test("strips the legacy toolbar from a browser-restored draft", () => {
   const draft = '<div class="no-print-toolbar"><button>导出 PDF</button><div>提示</div></div><div class="resume">内容</div>';
 
   assert.equal(stripLegacyToolbar(draft), '<div class="resume">内容</div>');
+});
+
+const editableSaveSource = `<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><style></style></head><body><div class="resume"><h1 data-resume-editor-id="profile-name" style="color: red">张小明</h1></div></body></html>`;
+const editableSaveSourceNoStyle = `<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><style></style></head><body><div class="resume"><h1 data-resume-editor-id="profile-name">张小明</h1></div></body></html>`;
+
+test("saves text edits while tolerating a Chromium-injected spellcheck attribute", () => {
+  const submitted = editableSaveSource.replace(
+    "<h1 data-resume-editor-id=\"profile-name\" style=\"color: red\">张小明</h1>",
+    '<h1 data-resume-editor-id="profile-name" spellcheck="true" style="color: red">张小强</h1>',
+  );
+
+  assert.equal(validateEditorSave(editableSaveSource, submitted), submitted);
+});
+
+test("accepts style values that differ only in whitespace", () => {
+  const submitted = editableSaveSource.replace('style="color: red"', 'style="color:red"');
+
+  assert.equal(validateEditorSave(editableSaveSource, submitted), submitted);
+});
+
+test("accepts a style attribute added by the canvas that the source field lacked", () => {
+  const submitted = editableSaveSourceNoStyle.replace(
+    "<h1 data-resume-editor-id=\"profile-name\">张小明</h1>",
+    '<h1 data-resume-editor-id="profile-name" style="color: red">张小明</h1>',
+  );
+
+  assert.equal(validateEditorSave(editableSaveSourceNoStyle, submitted), submitted);
+});
+
+test("accepts a submitted document that drops the source style attribute", () => {
+  const submitted = editableSaveSource.replace(' style="color: red"', "");
+
+  assert.equal(validateEditorSave(editableSaveSource, submitted), submitted);
+});
+
+test("rejects a real style change with the element and attribute named", () => {
+  const submitted = editableSaveSource.replace('style="color: red"', 'style="color: blue"');
+
+  assert.throws(
+    () => validateEditorSave(editableSaveSource, submitted),
+    /Canvas 只能编辑已有文字，不能修改 HTML 属性或结构.*元素 <h1>（文本"张小明"）.*属性 style 不一致/,
+  );
+});
+
+test("rejects a newly added unknown attribute with the element and attribute named", () => {
+  const withContentEditable = editableSaveSource.replace('style="color: red"', 'contenteditable="true" style="color: red"');
+  const withDataTypo = editableSaveSource.replace('style="color: red"', 'style="color: red" data-typo="1"');
+
+  assert.throws(
+    () => validateEditorSave(editableSaveSource, withContentEditable),
+    /Canvas 只能编辑已有文字，不能修改 HTML 属性或结构.*元素 <h1>.*属性 contenteditable 新增/,
+  );
+  assert.throws(
+    () => validateEditorSave(editableSaveSource, withDataTypo),
+    /Canvas 只能编辑已有文字，不能修改 HTML 属性或结构.*元素 <h1>.*属性 data-typo 新增/,
+  );
 });

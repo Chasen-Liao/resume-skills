@@ -41,7 +41,7 @@ class AdaptedSkillCatalogTests(unittest.TestCase):
 
     def test_visual_resume_entrypoints_launch_the_canvas_editor(self):
         command_pattern = re.compile(
-            r'npx @chasen-liao/resume-skills@latest editor "<[^"\n]*visual\.html路径>"'
+            r'npx -p @chasen-liao/resume-skills@latest resume-skills editor "<[^"\n]*visual\.html路径>"'
         )
 
         for skill_name in ("resume-builder", "jd-tailorer", "resume-workflow"):

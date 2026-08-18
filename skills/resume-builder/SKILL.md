@@ -64,7 +64,7 @@ CSS 文件包含 3 套配色变量 + 推荐字体 + 风格 CSS。`css/common.md`
 - 使用任一内置风格时，生成的 `<html>` 必须包含对应的 `data-resume-editor-template`（`modern-minimal`、`classic-business`、`creative-bold`、`japanese-minimal`、`minimal-blue-business` 或 `tech-dark`）和 `data-resume-editor-version="1"`。每个需要 Canvas 微调的真实文本必须有稳定、唯一、语义化的 `data-resume-editor-id`；不要依赖运行时补齐。
 - `data-resume-editor-id` 只能标在一个具体的文本字段上，例如姓名、职位、日期、板块标题、单条 bullet 或单个技能标签；不要为了“通过协议检查”给整页或整块内容加一个兜底 ID。
 - **禁止把编辑 ID 放在** `<html>`、`<body>`、`<main>`、`.page`、`.resume`、`header`、`footer`、`section`、`ul`、`ol`、`figure` 或包含多个板块/多个字段的容器上。带链接的联系方式应把可编辑文本拆成独立字段，不能把整行联系方式作为一个可编辑容器。
-- 上述标记供 `npx @chasen-liao/resume-skills@latest editor <resume.html>` 的本地 Canvas 微调器识别；Canvas 可编辑已有字段的纯文本并保存受限排版覆盖，不允许插入 HTML 或新增字段。文字事实变更后必须重新确认事实并验证 PDF；不要将标记用于头像、布局容器、任意 HTML 或未经确认的字段。
+- 上述标记供 `npx -p @chasen-liao/resume-skills@latest resume-skills editor <resume.html>` 的本地 Canvas 微调器识别；Canvas 可编辑已有字段的纯文本并保存受限排版覆盖，不允许插入 HTML 或新增字段。文字事实变更后必须重新确认事实并验证 PDF；不要将标记用于头像、布局容器、任意 HTML 或未经确认的字段。
 
 ATS-safe 模式：
 - 使用单栏、标准板块标题、普通可复制文本和稳定的正文阅读顺序；重要信息不依赖图片、文本框、复杂嵌套表格、页眉页脚或装饰字体。
@@ -75,7 +75,7 @@ ATS-safe 模式：
 
 生成最终视觉 HTML 后，先做 Canvas 字段验收，再渲染 PDF：
 
-- 先运行可执行校验（失败即停止，严禁跳过）：`npx -p @chasen-liao/resume-skills resume-skills validate "<最终_visual.html路径>"`，重复直到输出“校验通过”。
+- 先运行可执行校验（失败即停止，严禁跳过）：`npx -p @chasen-liao/resume-skills@latest resume-skills validate "<最终_visual.html路径>"`，重复直到输出“校验通过”。
 - 再按下列规则手工复核：在最终 HTML（完成事实替换和定制后，不是只检查参考模板）统计 `data-resume-editor-id`，记录字段总数、重复 ID、容器误标 ID，以及 `profile-*` 和 `*-bullet-*` 字段是否存在。
 - 字段总数必须大于 0，ID 必须唯一且符合小写语义化命名；`main/page/resume/section` 等整页或板块容器不得带 ID。
 - 每个 ID 节点的文本必须对应一个可独立编辑的字段；如果一个节点同时包含多个板块、列表或大量链接文本，必须拆分标记。
@@ -105,11 +105,11 @@ ATS-safe HTML/PDF：检查 DOM 是否单栏、标题和时间/组织/职位关�
 视觉模式完成 A4/PDF 验证后，必须启动本地 Canvas 预览，让用户先看到成品，再按需做受限排版微调：
 
 ```bash
-npx @chasen-liao/resume-skills@latest editor "<生成的_visual.html路径>"
+npx -p @chasen-liao/resume-skills@latest resume-skills editor "<生成的_visual.html路径>"
 ```
 
 高级 CLI 参数说明（适用于 Agent 自动化或无 GUI 容器环境）：
-- `--json`：以 JSON 格式输出一次服务启动信息（如 URL、端口和源 HTML 路径）；服务会继续运行，供 Agent 连接该地址。
+- `--json`：以 NDJSON 逐行输出事件（`server_started` / `error` / `update_available` / `validation_passed`）；协议/参数/端口失败均输出 `event: "error"`。服务继续运行，脚本逐行 `JSON.parse`。
 - `--no-open`：禁用自动打开系统浏览器（适合控制台或集成环境）。
 - `--port <number>`：指定监听端口。
 - **Live Preview**：编辑器建立连接后支持 SSE 热刷新。当 Agent 重新写入或修改该 HTML 时，页面将自动重载展示最新效果。

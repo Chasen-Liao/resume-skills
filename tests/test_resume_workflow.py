@@ -63,7 +63,7 @@ class ResumeWorkflowTests(unittest.TestCase):
         tutorial = (ROOT / "docs" / "tutorial.md").read_text(encoding="utf-8")
 
         self.assertIn("视觉母版或视觉定制版", readme)
-        self.assertIn("npx @chasen-liao/resume-skills@latest editor", readme)
+        self.assertIn("npx -p @chasen-liao/resume-skills@latest resume-skills editor", readme)
         self.assertIn("resume-facts.yaml", tutorial)
 
     def test_visual_delivery_command_renders_and_writes_a_reproducible_manifest(self):

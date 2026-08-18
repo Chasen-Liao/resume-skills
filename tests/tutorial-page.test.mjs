@@ -60,7 +60,7 @@ test("tutorial follows the current seven-skill delivery workflow", () => {
   assert.match(source, /\*_visual\.html/);
   assert.match(source, /\*_ats\.html/);
   assert.match(source, /npx skills add Chasen-Liao\/resume-skills --skill '\*' --agent codex --yes/);
-  assert.match(source, /npx @chasen-liao\/resume-skills@latest editor "<[^>]+_visual\.html路径>"/);
+  assert.match(source, /npx -p @chasen-liao\/resume-skills@latest resume-skills editor "<[^>]+_visual\.html路径>"/);
   assert.match(source, /Canvas[^\n]+(?:排版|文字内容)/);
   assert.match(source, /保存[^\n]+manifest[^\n]+失效/i);
   assert.doesNotMatch(source, /制作一份 resume\.html 文件/);

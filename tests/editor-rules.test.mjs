@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { editorBlockChildTagNames, editorContainerClassNames, editorContainerTagNames } from "../lib/editor-rules.mjs";
+import { editorBlockChildTagNames, editorContainerClassNames, editorContainerTagNames, editorRuntimeInjectedAttributeNames } from "../lib/editor-rules.mjs";
 
 test("editor rule sets match the documented protocol contract", () => {
   // 容器黑名单 = SKILL.md 全集（落地为规则的唯一权威处）
@@ -30,4 +30,20 @@ test("lib and canvas consume the shared rules module instead of redefining it", 
   assert.doesNotMatch(app, /const editorContainerTagNames = new Set\(\[/, "app.js must not inline the container list");
   assert.doesNotMatch(lib, /const editorContainerTagNames = new Set/, "lib must not redefine the container list");
   assert.doesNotMatch(lib, /const blockChildTagNames = new Set/, "lib must not redefine the block list");
+});
+
+test("runtime-injected attributes are owned by the shared rules module", () => {
+  // 前端剥离清单与服务端比对忽略清单互为镜像，必须同源：spellcheck 由浏览器编辑时注入，
+  // data-resume-editor-img-hint 为画布图片失败提示。
+  assert.deepEqual(new Set(editorRuntimeInjectedAttributeNames), new Set(["spellcheck", "data-resume-editor-img-hint"]));
+  const lib = readFileSync(new URL("../lib/editor-document.mjs", import.meta.url), "utf8");
+  const app = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");
+
+  assert.match(lib, /editorRuntimeInjectedAttributeNames/, "lib must import the shared runtime-injected list");
+  assert.match(app, /from "\/editor-rules\.js"/, "canvas must consume the shared list via the served rules module");
+  // tripwire：任何一侧把这套名字重新内联时，以下检查失败并提示收敛回 editor-rules（否则
+  // “前端剥离/服务端忽略”清单分歧会静默回归，再次复现 issue #5 型 bug）。
+  assert.doesNotMatch(app, /removeAttribute\("spellcheck"\)/, "app must strip from the shared list, not hardcode spellcheck");
+  assert.doesNotMatch(app, /removeAttribute\("data-resume-editor-img-hint"\)/, "app must strip from the shared list, not hardcode img-hint");
+  assert.doesNotMatch(lib, /name === "spellcheck"/, "lib must not re-inline the runtime-injected list");
 });
