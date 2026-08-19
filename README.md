@@ -171,6 +171,10 @@ ATS-safe 只是降低解析风险，不代表一定通过任何 ATS，也不代�
 
 ## 本地 Canvas 编辑器
 
+AI 生成简历 HTML 之后，常常只需要一些小修小补：改一个错别字、微调字号或对齐。不必为这些小事重走一遍 Agent 工作流——在终端打开本地 Web 预览端，改完直接保存回本地 HTML，再导出 PDF 即可。
+
+完整闭环：**AI 生成 HTML → 打开 Web 预览端 → 小修小补 → 保存到本地 → 导出 PDF**。分步实操见 [Canvas 预览端指南](docs/canvas-editor-guide.md)。
+
 Canvas 只负责已生成视觉简历的最后排版微调，不负责采访、文字改写、JD 匹配或重新设计结构。文字事实必须通过 Agent 工作流确认，并重新生成 HTML。
 
 下面是通过 `npx -p @chasen-liao/resume-skills@latest resume-skills editor <生成的_visual.html>` 打开的实际网页界面：

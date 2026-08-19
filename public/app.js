@@ -7,6 +7,9 @@ const status = document.querySelector("#save-status");
 const selectionName = document.querySelector("#selection-name");
 const selectedTextEditor = document.querySelector("#selected-text-editor");
 const selectedText = document.querySelector("#selected-text");
+const canvasArea = document.querySelector(".canvas");
+const resumeStage = document.querySelector("#resume-stage");
+const saveButton = document.querySelector("#save-html");
 const controls = Object.fromEntries(["font-size", "font-weight", "font-color", "text-align", "line-height", "margin-bottom", "page-margin", "accent-color"].map((id) => [id, document.querySelector(`#${id}`)]));
 let selected;
 let documentId;
@@ -28,6 +31,7 @@ function setRule(element, property, value, commit = false) {
   const doc = frame.contentDocument;
   const style = ensureRules(doc);
   style.textContent = appendOverrideRule(style.textContent, element.dataset.resumeEditorId, property, value);
+  if (commit) setStatus("排版已修改，尚未保存", "dirty");
   saveDraft(commit);
   updateOverflow();
 }
@@ -35,6 +39,7 @@ function setRootToken(token, value, commit = false) {
   const doc = frame.contentDocument;
   const style = ensureRules(doc);
   style.textContent = upsertRootToken(style.textContent, token, value);
+  if (commit) setStatus("排版已修改，尚未保存", "dirty");
   saveDraft(commit);
   updateOverflow();
 }
@@ -48,6 +53,24 @@ const drafts = createDraftController({
   remove: (id) => localStorage.removeItem(draftKey(id)),
 });
 function saveDraft(commit = false) { if (commit) drafts.commit(); else drafts.schedule(); }
+const statusKinds = new Set(["success", "dirty", "error"]);
+function setStatus(text, kind = "") {
+  status.textContent = text;
+  for (const name of statusKinds) status.classList.toggle(name, name === kind);
+}
+const framePaddingX = 72;
+function fitFrame() {
+  const naturalWidth = frame.offsetWidth;
+  const naturalHeight = frame.offsetHeight;
+  if (!naturalWidth || !naturalHeight) return;
+  const availableWidth = Math.max(0, canvasArea.clientWidth - framePaddingX);
+  const scale = Math.min(1, availableWidth / naturalWidth);
+  resumeStage.style.width = `${Math.round(naturalWidth * scale)}px`;
+  resumeStage.style.height = `${Math.round(naturalHeight * scale)}px`;
+  frame.style.transform = scale < 1 ? `scale(${scale})` : "";
+}
+window.addEventListener("resize", fitFrame);
+fitFrame();
 function setControlValue(id, value) {
   if (value === "" || value === undefined || value === "normal") return;
   controls[id].value = value;
@@ -93,7 +116,7 @@ selectedText.addEventListener("input", () => {
   if (!selected) return;
   selected.textContent = selectedText.value;
   selectionName.textContent = selectionLabel(selected);
-  status.textContent = "文字已修改；保存后请重新确认事实并验证 PDF。";
+  setStatus("文字已修改，尚未保存", "dirty");
   saveDraft();
   updateOverflow();
 });
@@ -103,7 +126,7 @@ function finishTextEdit(node, save = true) {
   node.removeAttribute("contenteditable");
   delete node.dataset.resumeEditorOriginalHtml;
   if (save && changed) {
-    status.textContent = "文字已修改；保存后请重新确认事实并验证 PDF。";
+    setStatus("文字已修改，尚未保存", "dirty");
     saveDraft(true);
   }
 }
@@ -120,7 +143,7 @@ function beginTextEdit(node) {
   if (!node.isContentEditable) node.dataset.resumeEditorOriginalHtml = node.innerHTML;
   node.setAttribute("contenteditable", plaintextOnlySupported ? "plaintext-only" : "true");
   node.focus({ preventScroll: true });
-  status.textContent = "正在编辑文字；仅允许纯文本，Ctrl/Cmd+Enter 完成。";
+  setStatus("正在编辑文字；仅允许纯文本，Ctrl/Cmd+Enter 完成。", "");
 }
 function moveFocus(nodes, current, direction) {
   const index = nodes.indexOf(current);
@@ -298,15 +321,27 @@ document.querySelectorAll(".sync-slider").forEach(slider => {
     });
   }
 });
-document.querySelector("#save-html").addEventListener("click", async () => {
-  const response = await fetch("/api/save", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ documentId, html: cleanForExport() }) });
-  const result = await response.json();
-  if (response.ok) {
-    drafts.clear();
-    documentId = result.documentId;
-    status.textContent = `已成功保存 ${result.outputName}`;
-  } else {
-    status.textContent = `保存失败：${result.error}`;
+saveButton.addEventListener("click", async () => {
+  saveButton.disabled = true;
+  saveButton.textContent = "保存中…";
+  try {
+    const response = await fetch("/api/save", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ documentId, html: cleanForExport() }) });
+    const result = await response.json();
+    if (response.ok) {
+      drafts.clear();
+      documentId = result.documentId;
+      setStatus("已成功保存 " + result.outputName, "success");
+      saveButton.textContent = "已保存";
+    } else {
+      setStatus(`保存失败：${result.error}`, "error");
+      saveButton.textContent = "保存失败";
+    }
+  } catch (error) {
+    setStatus(`保存失败：${error.message}`, "error");
+    saveButton.textContent = "保存失败";
+  } finally {
+    saveButton.disabled = false;
+    setTimeout(() => { saveButton.textContent = "保存修改"; }, 1600);
   }
 });
 document.querySelector("#reset-selected").addEventListener("click", () => {
@@ -314,6 +349,7 @@ document.querySelector("#reset-selected").addEventListener("click", () => {
   const style = frame.contentDocument.querySelector("#resume-editor-overrides");
   if (!style) return;
   style.textContent = restoreSelectedDefaults(style.textContent, selected.dataset.resumeEditorId);
+  setStatus("排版已修改，尚未保存", "dirty");
   saveDraft(true);
   syncControlsFromSelection(selected);
 });
@@ -338,10 +374,11 @@ frame.addEventListener("load", () => {
     // bindImageErrorHints 的预扫描可能在 load 回调前就报告了“图片加载失败”；
     // 只要画布内还有已标记失败的图，就保留该提示，不覆盖成“已加载”。
     if (!frame.contentDocument?.querySelector("img[data-resume-editor-img-hint]")) {
-      status.textContent = "已加载";
+      setStatus("已加载");
     }
     updateOverflow();
   }
+  fitFrame();
 });
 await reloadDocument();
 

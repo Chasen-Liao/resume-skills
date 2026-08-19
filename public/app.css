@@ -26,11 +26,13 @@ body { margin: 0; min-width: 960px; }
 .brand { display: inline-flex; align-items: center; gap: 8px; }
 .brand-mark { width: 24px; height: 24px; flex: 0 0 auto; stroke: var(--accent); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
 #source-name { max-width: 34ch; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; font-weight: 500;}
-#save-status { margin-left: auto; color: #10b981; font-size: 13px; font-weight: 500;}
+#save-status { margin-left: auto; color: var(--muted); font-size: 13px; font-weight: 500;}
+#save-status.success { color: #10b981; }
+#save-status.dirty { color: #d97706; }
 #save-status.error { color: #dc2626; }
 
 /* Layout */
-.layout { display: grid; grid-template-columns: 280px minmax(600px, 1fr) 300px; min-height: calc(100vh - 56px); }
+.layout { display: grid; grid-template-columns: 240px minmax(600px, 1fr) 264px; min-height: calc(100vh - 56px); }
 
 /* Glassmorphism Sidebars */
 .guide, .inspector {
@@ -54,7 +56,8 @@ body { margin: 0; min-width: 960px; }
 
 /* Canvas Area */
 .canvas { display: flex; align-items: flex-start; justify-content: center; overflow: auto; padding: 36px; }
-#resume-frame { width: 210mm; height: 297mm; flex: 0 0 auto; border: 1px solid rgba(0,0,0,0.05); border-radius: 4px; background: white; box-shadow: 0 20px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); transform-origin: top center; }
+#resume-stage { flex: 0 0 auto; }
+#resume-frame { display: block; width: 210mm; height: 297mm; border: 1px solid rgba(0,0,0,0.05); border-radius: 4px; background: white; box-shadow: 0 20px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); transform-origin: top left; }
 
 /* Labels & Optical Sizing for small text */
 label { display: flex; flex-direction: column; gap: 8px; margin: 18px 0; color: var(--ink); font-size: 12px; font-weight: 600; letter-spacing: 0.015em; }
@@ -93,6 +96,8 @@ button {
   transition: transform 100ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 150ms ease;
 }
 button:hover { background: var(--accent-dark); }
+button:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+button:disabled:hover { background: var(--accent); }
 /* Apple Design: Pure scale on press */
 button:active { transform: scale(0.97); }
 
