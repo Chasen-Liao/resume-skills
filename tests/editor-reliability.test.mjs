@@ -145,6 +145,27 @@ test("save writes text edits after removing an extension node outside the editab
   });
 });
 
+test("save normalizes translation artifacts and fallback line breaks through the API", async () => {
+  await withEditor(async (sourcePath, url) => {
+    const before = await (await fetch(`${url}/api/document`)).json();
+    const submittedHtml = sourceHtml
+      .replace("<head></head>", '<head><meta name="plugin" content="1"></head>')
+      .replace("<body>", '<body lang="zh-CN" class="extension-page">')
+      .replace("安全内容", "已编辑<br>内容")
+      .replace("</body>", '<div class="extension-toolbar">辅助</div></body>');
+    const response = await fetch(`${url}/api/save`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ documentId: before.documentId, html: submittedHtml }),
+    });
+
+    assert.equal(response.status, 200);
+    const savedHtml = await readFile(sourcePath, "utf8");
+    assert.match(savedHtml, /已编辑\n内容/);
+    assert.doesNotMatch(savedHtml, /plugin|extension-page|extension-toolbar|<br/);
+  });
+});
+
 test("save invalidates an explicitly associated manifest in another directory with another stem", async () => {
   const directory = await mkdtemp(join(tmpdir(), "resume-skills-manifest-"));
   const sourcePath = join(directory, "input", "resume.html");

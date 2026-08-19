@@ -184,6 +184,42 @@ test("removes translation attributes and font wrappers from a text edit", () => 
   assert.doesNotMatch(saved, /data-immersive|vertical-align|translate=|<font/);
 });
 
+test("removes non-semantic extension attributes from the document and editable field", () => {
+  const submitted = editableSaveSource
+    .replace("<body>", '<body lang="zh-CN" dir="ltr" class="extension-page">')
+    .replace(
+      '<h1 data-resume-editor-id="profile-name" style="color: red">',
+      '<h1 data-resume-editor-id="profile-name" style="color: red" class="plugin-field" aria-label="辅助标签">',
+    )
+    .replace("张小明", "张小强");
+
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /张小强/);
+  assert.doesNotMatch(saved, /lang=|dir=|extension-page|plugin-field|aria-label/);
+});
+
+test("removes extension nodes injected into head and body", () => {
+  const submitted = editableSaveSource
+    .replace("张小明", "张小强")
+    .replace("<head><style></style>", '<head><style></style><meta name="plugin" content="1"><style id="extension-style">.plugin{}</style>')
+    .replace("</body>", '<div class="extension-toolbar">插件建议</div><plugin-overlay>辅助</plugin-overlay></body>');
+
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /张小强/);
+  assert.doesNotMatch(saved, /plugin|extension|插件建议|辅助/);
+});
+
+test("normalizes a fallback br inside an editable field to a text newline", () => {
+  const browserSubmitted = editableSaveSource.replace(">张小明</h1>", ">张小<br>明</h1>");
+
+  const saved = validateEditorSave(editableSaveSource, browserSubmitted);
+
+  assert.match(saved, /张小\n明/);
+  assert.doesNotMatch(saved, /<br/);
+});
+
 test("accepts style values that differ only in whitespace", () => {
   const submitted = editableSaveSource.replace('style="color: red"', 'style="color:red"');
 
@@ -250,13 +286,13 @@ test("removes newly injected hidden text while preserving visible text", () => {
   assert.doesNotMatch(saved, /插件建议|aria-hidden/);
 });
 
-test("rejects a newly added semantic attribute with the element and attribute named", () => {
+test("cleans a newly injected aria attribute from an editable field", () => {
   const submitted = editableSaveSource.replace('style="color: red"', 'aria-label="姓名" style="color: red"');
 
-  assert.throws(
-    () => validateEditorSave(editableSaveSource, submitted),
-    /Canvas 只能编辑已有文字，不能修改 HTML 属性或结构.*元素 <h1>.*属性 aria-label 新增/,
-  );
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /张小明/);
+  assert.doesNotMatch(saved, /aria-label/);
 });
 
 test("rejects newly added or removed editor ids before cleanup", () => {

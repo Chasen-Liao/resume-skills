@@ -2,6 +2,12 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.4] - 2026-08-19
+
+### Fixed
+
+- 进一步放宽 Canvas 插件兼容：清理新增的非语义属性、带插件特征的 head/body 节点，并将已有编辑字段中的 fallback `<br>` 归一化为纯文本换行。
+
 ## [0.6.3] - 2026-08-19
 
 ### Fixed
