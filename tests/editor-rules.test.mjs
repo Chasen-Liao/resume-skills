@@ -45,6 +45,7 @@ test("runtime-injected attributes are owned by the shared rules module", () => {
     "tabindex",
     "role",
     "aria-pressed",
+    "translate",
   ]));
   const lib = readFileSync(new URL("../lib/editor-document.mjs", import.meta.url), "utf8");
   const app = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");

@@ -126,6 +126,25 @@ test("save writes text edits after normalizing plugin markup in an editable fiel
   });
 });
 
+test("save writes text edits after removing an extension node outside the editable field", async () => {
+  await withEditor(async (sourcePath, url) => {
+    const before = await (await fetch(`${url}/api/document`)).json();
+    const submittedHtml = sourceHtml
+      .replace("安全内容", "已编辑内容")
+      .replace("</body>", '<grammarly-extension data-grammarly-shadow-root="true" style="position:fixed;top:0;left:0"></grammarly-extension></body>');
+    const response = await fetch(`${url}/api/save`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ documentId: before.documentId, html: submittedHtml }),
+    });
+
+    assert.equal(response.status, 200);
+    const savedHtml = await readFile(sourcePath, "utf8");
+    assert.match(savedHtml, /已编辑内容/);
+    assert.doesNotMatch(savedHtml, /grammarly-extension|data-grammarly|position:fixed/);
+  });
+});
+
 test("save invalidates an explicitly associated manifest in another directory with another stem", async () => {
   const directory = await mkdtemp(join(tmpdir(), "resume-skills-manifest-"));
   const sourcePath = join(directory, "input", "resume.html");

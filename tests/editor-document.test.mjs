@@ -151,6 +151,39 @@ test("tolerates and removes browser-extension data attributes added to the html 
   assert.doesNotMatch(saved, /data-immersive-translate-page-theme/);
 });
 
+test("saves text edits when an extension adds a custom element outside the editable field", () => {
+  const submitted = editableSaveSource
+    .replace("张小明", "张小强")
+    .replace("</body>", '<grammarly-extension data-grammarly-shadow-root="true" style="position:fixed;top:0;left:0"></grammarly-extension></body>');
+
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /张小强/);
+  assert.doesNotMatch(saved, /grammarly-extension|data-grammarly|position:fixed/);
+});
+
+test("removes a hidden extension node outside the editable field", () => {
+  const submitted = editableSaveSource
+    .replace("张小明", "张小强")
+    .replace("</body>", '<span aria-hidden="true" style="display:none">扩展辅助内容</span></body>');
+
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /张小强/);
+  assert.doesNotMatch(saved, /扩展辅助内容|aria-hidden|display:none/);
+});
+
+test("removes translation attributes and font wrappers from a text edit", () => {
+  const submitted = editableSaveSource
+    .replace("<body>", '<body data-immersive-translate-page-theme="dark">')
+    .replace(">张小明</h1>", '><font style="vertical-align: inherit;" translate="no">张小强</font></h1>');
+
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /张小强/);
+  assert.doesNotMatch(saved, /data-immersive|vertical-align|translate=|<font/);
+});
+
 test("accepts style values that differ only in whitespace", () => {
   const submitted = editableSaveSource.replace('style="color: red"', 'style="color:red"');
 
