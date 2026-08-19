@@ -175,7 +175,7 @@ AI 生成简历 HTML 之后，常常只需要一些小修小补：改一个错�
 
 完整闭环：**AI 生成 HTML → 打开 Web 预览端 → 小修小补 → 保存到本地 → 导出 PDF**。分步实操见 [Canvas 预览端指南](docs/canvas-editor-guide.md)。
 
-Canvas 只负责已生成视觉简历的最后排版微调，不负责采访、文字改写、JD 匹配或重新设计结构。文字事实必须通过 Agent 工作流确认，并重新生成 HTML。
+Canvas 只负责已生成视觉简历的最后文字与排版微调，不负责采访、AI 改写、JD 匹配或重新设计结构。文字修改后必须回到 Agent 工作流重新确认事实并验证 PDF。
 
 下面是通过 `npx -p @chasen-liao/resume-skills@latest resume-skills editor <生成的_visual.html>` 打开的实际网页界面：
 
@@ -240,7 +240,7 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor resume_visual.html
 
 编辑器建立连接后支持 **Live Preview 实时热重载**：当源 HTML 文件在外部或由 Agent 更新时，预览与 Canvas 编辑器会自动拉取并刷新最新页面内容。
 
-点击“保存修改”后，排版覆盖会原子写回原始 HTML；关联的 `*.resume-manifest.json` 会立即失效，防止旧 PDF 被误认为仍对应当前 HTML。若 manifest 不在同目录或文件名不同，请用 `--manifest <path>` 显式关联。
+点击“保存修改”后，文字修改和排版覆盖会原子写回原始 HTML；关联的 `*.resume-manifest.json` 会立即失效，防止旧 PDF 被误认为仍对应当前 HTML。若 manifest 不在同目录或文件名不同，请用 `--manifest <path>` 显式关联。
 
 点击“打印为 PDF”后，在浏览器打印面板中选择 A4 并保存 PDF。若浏览器没有自动打开，请直接打开终端中显示的本地地址。
 

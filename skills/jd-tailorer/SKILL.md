@@ -90,7 +90,7 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor "<tailored目录�
 - `--port <number>`：指定监听端口。
 - **Live Preview**：编辑器建立连接后支持 SSE 热刷新。当 Agent 重新写入或修改该 HTML 时，页面将自动重载展示最新效果。
 
-命令会启动本地服务并尝试打开浏览器。告知用户定制版 HTML/PDF 与匹配报告的位置；Canvas 保存时会直接覆盖定制版 HTML 的排版覆盖，使其成为最新排版版本。Canvas 不保存文字事实；任何内容变更必须回到 Agent 工作流确认后重新生成 HTML。若当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
+命令会启动本地服务并尝试打开浏览器。告知用户定制版 HTML/PDF 与匹配报告的位置；Canvas 保存时会直接覆盖定制版 HTML，保存文字与排版修改后的最新版本。Canvas 不负责事实采访或 AI 改写；任何文字变更必须回到 Agent 工作流重新确认事实并验证 PDF。若当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
 
 ## 硬约束
 

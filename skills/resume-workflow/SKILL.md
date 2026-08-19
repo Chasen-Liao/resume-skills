@@ -49,7 +49,7 @@ description: 编排从导入已有简历或采访开始，到母版、JD 定制�
   npx -p @chasen-liao/resume-skills@latest resume-skills editor "<最终_visual.html路径>" --manifest "<交付目录/自定义文件名.resume-manifest.json>"
   ```
 
-  Canvas 只保存排版覆盖，并直接写回该 HTML；文字事实修改必须回到 Agent 工作流确认后重新生成 HTML。高级选项：支持 `--json`（NDJSON 逐行输出 `server_started` / `error` / `update_available` / `validation_passed` 事件，脚本逐行 `JSON.parse`）、`--no-open`（无 GUI 环境）和 Live Preview 热刷新。命令应指向实际生成的母版或 `tailored/` 定制版。若当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令；不得声称已打开 Web 预览。ATS-safe 模式不启动 Canvas。
+  Canvas 可保存已有编辑字段的纯文本和受限排版覆盖，并直接写回该 HTML；文字修改后必须回到 Agent 工作流重新确认事实并验证 PDF。高级选项：支持 `--json`（NDJSON 逐行输出 `server_started` / `error` / `update_available` / `validation_passed` 事件，脚本逐行 `JSON.parse`）、`--no-open`（无 GUI 环境）和 Live Preview 热刷新。命令应指向实际生成的母版或 `tailored/` 定制版。若当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令；不得声称已打开 Web 预览。ATS-safe 模式不启动 Canvas。
 - 调用 `resume-version-manager` 记录母版或定制版的父版本、事实文件、JD 和变更摘要。若用户明确要求 Git 提交，再记录提交 ID。
 
 ## 不要做
