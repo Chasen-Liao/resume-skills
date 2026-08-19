@@ -2,6 +2,12 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.1] - 2026-08-19
+
+### Fixed
+
+- 修复浏览器翻译等扩展向 `<html>` 根节点注入 `data-*` 属性后 Canvas 保存失败的问题；保存时会移除未存在于源文件中的根级扩展属性。
+
 ## [0.6.0] - 2026-08-19
 
 ### Added

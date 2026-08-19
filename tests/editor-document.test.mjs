@@ -137,6 +137,17 @@ test("saves text edits while tolerating a Chromium-injected spellcheck attribute
   assert.equal(validateEditorSave(editableSaveSource, submitted), submitted);
 });
 
+test("tolerates and removes browser-extension data attributes added to the html root", () => {
+  const submitted = editableSaveSource
+    .replace("<html ", '<html data-immersive-translate-page-theme="light" ')
+    .replace("张小明", "张小强");
+
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /张小强/);
+  assert.doesNotMatch(saved, /data-immersive-translate-page-theme/);
+});
+
 test("accepts style values that differ only in whitespace", () => {
   const submitted = editableSaveSource.replace('style="color: red"', 'style="color:red"');
 
