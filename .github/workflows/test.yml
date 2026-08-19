@@ -21,6 +21,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: requirements-test.txt
       - run: npm ci
       - run: python -m pip install -r requirements-test.txt
       - run: npm test
@@ -38,6 +39,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: requirements-test.txt
       - run: npm ci
       - run: python -m pip install -r requirements-test.txt
       - run: npx playwright install chromium firefox
