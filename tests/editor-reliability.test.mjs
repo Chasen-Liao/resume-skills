@@ -166,6 +166,30 @@ test("save normalizes translation artifacts and fallback line breaks through the
   });
 });
 
+test("save tolerates a browser outerHTML snapshot with Canvas chrome and no doctype", async () => {
+  await withEditor(async (sourcePath, url) => {
+    const before = await (await fetch(`${url}/api/document`)).json();
+    const submittedHtml = sourceHtml
+      .replace("<!DOCTYPE html>", "")
+      .replace("</head>", '<style id="resume-editor-chrome">[data-resume-editor-id]{cursor:pointer}</style></head>')
+      .replace(
+        '<h1 data-resume-editor-id="profile-name">',
+        '<h1 data-resume-editor-id="profile-name" tabindex="0" role="button" aria-pressed="false">',
+      )
+      .replace("安全内容", "已编辑内容");
+    const response = await fetch(`${url}/api/save`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ documentId: before.documentId, html: submittedHtml }),
+    });
+
+    assert.equal(response.status, 200);
+    const savedHtml = await readFile(sourcePath, "utf8");
+    assert.match(savedHtml, /已编辑内容/);
+    assert.doesNotMatch(savedHtml, /resume-editor-chrome|tabindex=|role=|aria-pressed=/);
+  });
+});
+
 test("save invalidates an explicitly associated manifest in another directory with another stem", async () => {
   const directory = await mkdtemp(join(tmpdir(), "resume-skills-manifest-"));
   const sourcePath = join(directory, "input", "resume.html");

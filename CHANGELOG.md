@@ -2,6 +2,12 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.5] - 2026-08-19
+
+### Fixed
+
+- Canvas 保存现在兼容浏览器 `document.documentElement.outerHTML` 快照：忽略内部编辑器 chrome、运行时字段属性和缺失的文档类型声明。
+
 ## [0.6.4] - 2026-08-19
 
 ### Fixed

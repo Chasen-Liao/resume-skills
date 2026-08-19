@@ -128,6 +128,22 @@ test("strips the legacy toolbar from a browser-restored draft", () => {
 const editableSaveSource = `<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><style></style></head><body><div class="resume"><h1 data-resume-editor-id="profile-name" style="color: red">张小明</h1></div></body></html>`;
 const editableSaveSourceNoStyle = `<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><style></style></head><body><div class="resume"><h1 data-resume-editor-id="profile-name">张小明</h1></div></body></html>`;
 
+test("accepts a browser outerHTML snapshot with Canvas chrome and no doctype", () => {
+  const browserDom = editableSaveSource
+    .replace("<!DOCTYPE html>", "")
+    .replace("</head>", '<style id="resume-editor-chrome">[data-resume-editor-id]{cursor:pointer}</style></head>')
+    .replace(
+      '<h1 data-resume-editor-id="profile-name" style="color: red">',
+      '<h1 data-resume-editor-id="profile-name" style="color: red" tabindex="0" role="button" aria-pressed="false">',
+    )
+    .replace("张小明", "张小强");
+
+  const saved = validateEditorSave(editableSaveSource, browserDom);
+
+  assert.match(saved, /张小强/);
+  assert.doesNotMatch(saved, /resume-editor-chrome|tabindex=|role=|aria-pressed=/);
+});
+
 test("saves text edits while tolerating a Chromium-injected spellcheck attribute", () => {
   const submitted = editableSaveSource.replace(
     "<h1 data-resume-editor-id=\"profile-name\" style=\"color: red\">张小明</h1>",
