@@ -134,7 +134,10 @@ test("saves text edits while tolerating a Chromium-injected spellcheck attribute
     '<h1 data-resume-editor-id="profile-name" spellcheck="true" style="color: red">张小强</h1>',
   );
 
-  assert.equal(validateEditorSave(editableSaveSource, submitted), submitted);
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /张小强/);
+  assert.doesNotMatch(saved, /spellcheck/);
 });
 
 test("tolerates and removes browser-extension data attributes added to the html root", () => {
@@ -178,16 +181,55 @@ test("rejects a real style change with the element and attribute named", () => {
   );
 });
 
-test("rejects a newly added unknown attribute with the element and attribute named", () => {
-  const withContentEditable = editableSaveSource.replace('style="color: red"', 'contenteditable="true" style="color: red"');
-  const withDataTypo = editableSaveSource.replace('style="color: red"', 'style="color: red" data-typo="1"');
+test("cleans runtime and extension data attributes from an editable field", () => {
+  const submitted = editableSaveSource.replace(
+    'style="color: red">张小明',
+    'style="color: red" contenteditable="true" data-typo="1">张小强',
+  );
+
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /张小强/);
+  assert.doesNotMatch(saved, /contenteditable|data-typo/);
+});
+
+test("unwraps a semantically neutral plugin span in an editable field", () => {
+  const submitted = editableSaveSource.replace(
+    ">张小明</h1>",
+    '><span data-grammarly-shadow-root="true">张小强</span></h1>',
+  );
+
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /<h1[^>]*>张小强<\/h1>/);
+  assert.doesNotMatch(saved, /data-grammarly|<span/);
+});
+
+test("removes newly injected hidden text while preserving visible text", () => {
+  const submitted = editableSaveSource.replace(
+    ">张小明</h1>",
+    '>张小强<span aria-hidden="true">插件建议</span></h1>',
+  );
+
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /张小强/);
+  assert.doesNotMatch(saved, /插件建议|aria-hidden/);
+});
+
+test("rejects a newly added semantic attribute with the element and attribute named", () => {
+  const submitted = editableSaveSource.replace('style="color: red"', 'aria-label="姓名" style="color: red"');
 
   assert.throws(
-    () => validateEditorSave(editableSaveSource, withContentEditable),
-    /Canvas 只能编辑已有文字，不能修改 HTML 属性或结构.*元素 <h1>.*属性 contenteditable 新增/,
+    () => validateEditorSave(editableSaveSource, submitted),
+    /Canvas 只能编辑已有文字，不能修改 HTML 属性或结构.*元素 <h1>.*属性 aria-label 新增/,
   );
-  assert.throws(
-    () => validateEditorSave(editableSaveSource, withDataTypo),
-    /Canvas 只能编辑已有文字，不能修改 HTML 属性或结构.*元素 <h1>.*属性 data-typo 新增/,
-  );
+});
+
+test("rejects newly added or removed editor ids before cleanup", () => {
+  const added = editableSaveSource.replace("</h1>", '<span data-resume-editor-id="extra">新增</span></h1>');
+  const removed = editableSaveSource.replace(' data-resume-editor-id="profile-name"', "");
+
+  assert.throws(() => validateEditorSave(editableSaveSource, added), /不能新增、删除或重复编辑字段/);
+  assert.throws(() => validateEditorSave(editableSaveSource, removed), /不能新增、删除或重复编辑字段/);
 });

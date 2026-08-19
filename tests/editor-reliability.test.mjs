@@ -106,6 +106,26 @@ test("save atomically replaces the resume, keeps one backup, and returns a new d
   });
 });
 
+test("save writes text edits after normalizing plugin markup in an editable field", async () => {
+  await withEditor(async (sourcePath, url) => {
+    const before = await (await fetch(`${url}/api/document`)).json();
+    const submittedHtml = sourceHtml.replace(
+      "安全内容",
+      '<span data-plugin="suggestion">已编辑内容</span><span aria-hidden="true">隐藏建议</span>',
+    );
+    const response = await fetch(`${url}/api/save`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ documentId: before.documentId, html: submittedHtml }),
+    });
+
+    assert.equal(response.status, 200);
+    const savedHtml = await readFile(sourcePath, "utf8");
+    assert.match(savedHtml, /已编辑内容/);
+    assert.doesNotMatch(savedHtml, /data-plugin|隐藏建议|aria-hidden|<span/);
+  });
+});
+
 test("save invalidates an explicitly associated manifest in another directory with another stem", async () => {
   const directory = await mkdtemp(join(tmpdir(), "resume-skills-manifest-"));
   const sourcePath = join(directory, "input", "resume.html");

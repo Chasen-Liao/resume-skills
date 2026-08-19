@@ -33,9 +33,19 @@ test("lib and canvas consume the shared rules module instead of redefining it", 
 });
 
 test("runtime-injected attributes are owned by the shared rules module", () => {
-  // 前端剥离清单与服务端比对忽略清单互为镜像，必须同源：spellcheck 由浏览器编辑时注入，
-  // data-resume-editor-img-hint 为画布图片失败提示。
-  assert.deepEqual(new Set(editorRuntimeInjectedAttributeNames), new Set(["spellcheck", "data-resume-editor-img-hint"]));
+  // 前端剥离清单与服务端比对忽略清单互为镜像，必须同源：包括浏览器编辑、Canvas
+  // contenteditable 和选择状态产生的运行时属性。
+  assert.deepEqual(new Set(editorRuntimeInjectedAttributeNames), new Set([
+    "spellcheck",
+    "data-resume-editor-img-hint",
+    "data-resume-editor-selected",
+    "data-resume-editor-original-html",
+    "data-resume-editor-original-text",
+    "contenteditable",
+    "tabindex",
+    "role",
+    "aria-pressed",
+  ]));
   const lib = readFileSync(new URL("../lib/editor-document.mjs", import.meta.url), "utf8");
   const app = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");
 
