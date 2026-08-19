@@ -34,7 +34,7 @@ description: 编排从导入已有简历或采访开始，到母版、JD 定制�
 - 调用 `resume-ats-optimizer` 作为生成后的质量关卡。报告可直接修复的呈现问题与不能伪造的事实缺口；修复前取得用户确认。
 - 母版或 JD 定制流程生成视觉 HTML 后，必须先完成 **PDF 验证**：用 `resume-builder` 的渲染脚本完成溢出、PDF 单页/页面密度验证并生成 hash manifest，再启动最终视觉文件的本地 Canvas 预览。Canvas 保存会让 manifest 失效，保存后必须重新渲染与验证：
 
-  在 PDF 验证和 Canvas 启动前，先验收最终 HTML 的编辑字段协议：`data-resume-editor-template` 与 `data-resume-editor-version="1"` 必须位于 `<html>`；`data-resume-editor-id` 必须数量大于 0、唯一、语义化，并分别标在可独立编辑的文本元素上。禁止把 ID 放在 `<main>`、`.page`、`.resume`、`section`、`header`、`footer`、`ul`、`ol` 或其他包含多个板块的容器上，也禁止用一个根容器 ID 代表整份简历。先运行可执行校验（失败即停止交付）：`npx -p @chasen-liao/resume-skills@latest resume-skills validate "<最终_visual.html路径>"`，重复直到输出“校验通过”。记录字段总数、重复 ID、容器误标 ID，以及个人信息 / 经历 bullet 字段检查结果；任何失败都必须停止交付并重新生成或拆分标记。
+  在 PDF 验证和 Canvas 启动前，先验收最终 HTML 的编辑字段协议：`data-resume-editor-template` 与 `data-resume-editor-version="1"` 必须位于 `<html>`；`data-resume-editor-id` 必须数量大于 0、唯一、语义化，并分别标在可独立编辑的文本元素上。禁止把编辑 ID 放在 `<html>`、`<body>`、`<main>`、`.page`、`.resume`、`header`、`footer`、`section`、`ul`、`ol`、`figure` 或包含多个板块/多个字段的容器上，也禁止用一个根容器 ID 代表整份简历。先运行可执行校验（失败即停止交付）：`npx -p @chasen-liao/resume-skills@latest resume-skills validate "<最终_visual.html路径>"`，重复直到输出“校验通过”。记录字段总数、重复 ID、容器误标 ID，以及个人信息 / 经历 bullet 字段检查结果；任何失败都必须停止交付并重新生成或拆分标记。
 
   ```bash
   powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<最终_visual.html路径>" -OutputPdf "<交付目录/自定义文件名.pdf>"

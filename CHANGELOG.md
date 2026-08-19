@@ -2,7 +2,19 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
-## [Unreleased]
+## [0.6.0] - 2026-08-19
+
+### Added
+
+- 编辑器画布新增 A4 自适应缩放：任意窗口宽度下整页简历完整可见，不再需要横向滚动；左右侧栏压缩（280/300 → 240/264）为画布让出空间。
+- 编辑器交互反馈：保存按钮显示“保存中… / 已保存 / 保存失败”状态，顶部状态栏新增未保存修改（dirty）提示，成功/未保存/失败用红绿橙区分。
+- 状态栏与次要文本颜色提升至 WCAG AA 对比度（保存成功 #047857、未保存 #b45309、失败 #b91c1c、次要文本 #4b5563）；inspector 标题旁装饰性 SVG 加 `aria-hidden`。
+- 新增 `docs/canvas-editor-guide.md`：AI 生成 HTML 后，在本地 Web 预览端做小修小补（改文字/调排版）、保存到本地再导出 PDF 的分步操作指南；README 补充“AI 生成 → 预览端微调 → 保存到本地 → 导出 PDF”闭环说明并链接该指南（指南文档已加入 npm 发布白名单）。
+
+### Changed
+
+- `resume-ats-optimizer` 脚本说明补充：`validate_resume.py` 随 npm 包发布、在包目录需加 `node_modules/@chasen-liao/resume-skills/` 前缀；`npx skills add` 仅装 SKILL.md 的环境无这些脚本。
+- `resume-workflow` 的编辑字段容器黑名单补 `<html>` / `<body>` / `<figure>`，与编辑器实际校验逻辑对齐。
 
 ## [0.5.6] - 2026-08-18
 

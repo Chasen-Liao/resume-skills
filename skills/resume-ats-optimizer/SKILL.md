@@ -9,14 +9,14 @@ description: 审计简历的 ATS 可解析性、检查 JD 关键词覆盖和生�
 
 ## 先读
 
-读取 [简历事实契约](../resume-builder/references/resume-contract.md) 与 [写作规范中的 ATS 输出规则](../resume-builder/references/content-writing.md)。如果已有 HTML 或 PDF，优先运行：
+读取 [简历事实契约](../resume-builder/references/resume-contract.md) 与 [写作规范中的 ATS 输出规则](../resume-builder/references/content-writing.md)。若当前环境是源码仓库或已安装完整 npm 包 `@chasen-liao/resume-skills`，可用包内脚本自动检查：
 
 ```powershell
 python skills/resume-builder/scripts/validate_resume.py --html <resume.html> --mode ats
 python skills/resume-builder/scripts/validate_resume.py --pdf <resume.pdf>
 ```
 
-> 上述命令使用仓库相对路径，需在 `resume-skills` 仓库根目录下运行。
+> 以上脚本随 npm 包发布（`skills/resume-builder/scripts/`）。在包目录下运行时用 `node_modules/@chasen-liao/resume-skills/` 前缀替换 `skills/`；通过 `npx skills add` 仅安装 SKILL.md 的环境没有这些脚本，此时按下方工作流做结构化检查即可，不要把脚本路径当作必需步骤。
 
 ## 协作入口
 
