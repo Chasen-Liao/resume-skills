@@ -2,6 +2,12 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.6] - 2026-08-19
+
+### Fixed
+
+- 修复 Windows/Linux CI 对测试依赖路径和 Unicode 输出的兼容问题；版本检查超时在无其他事件循环引用时也能可靠收敛。
+
 ## [0.6.5] - 2026-08-19
 
 ### Fixed

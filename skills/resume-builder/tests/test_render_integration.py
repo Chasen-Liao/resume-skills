@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -11,13 +12,18 @@ RENDERER = ROOT / "skills" / "resume-builder" / "scripts" / "render_resume.ps1"
 
 
 def render(html: Path, pdf: Path):
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
     return subprocess.run(
         [
             "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(RENDERER),
             "-HTML", str(html), "-OutputPdf", str(pdf),
         ],
         cwd=ROOT,
+        env=env,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
         timeout=120,
     )

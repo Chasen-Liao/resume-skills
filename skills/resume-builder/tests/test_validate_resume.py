@@ -21,6 +21,8 @@ def run_validator(*args):
         [sys.executable, str(SCRIPT), *map(str, args)],
         cwd=ROOT,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
     )
 
@@ -157,6 +159,8 @@ class ValidateResumeTests(unittest.TestCase):
                 [sys.executable, "-S", str(SCRIPT), "--pdf", str(pdf), "--check-layout", "--json"],
                 cwd=ROOT,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 capture_output=True,
             )
 
