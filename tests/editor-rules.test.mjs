@@ -41,6 +41,7 @@ test("runtime-injected attributes are owned by the shared rules module", () => {
     "data-resume-editor-selected",
     "data-resume-editor-original-html",
     "data-resume-editor-original-text",
+    "data-resume-editor-original-src",
     "contenteditable",
     "tabindex",
     "role",

@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { prepareEditorDocument, validateEditorFields, validateEditorSave } from "../lib/editor-document.mjs";
 import { invalidateArtifactManifest } from "../lib/artifact-manifest.mjs";
-import { resolveSourceAsset } from "../lib/source-asset.mjs";
+import { collectLocalImageSources, resolveReferencedSourceAsset, resolveSourceAsset } from "../lib/source-asset.mjs";
 import { fetchLatestVersion, formatUpdateNotice, isUpdateAvailable, resolveCliVersion } from "../lib/version-check.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -114,6 +114,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, por
 
   let original = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
   let documentId = documentVersion(sourcePath, original);
+  let assetReferences = collectLocalImageSources(original);
   let latestVersion = null;
   const sseClients = new Set();
 
@@ -136,6 +137,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, por
       if (updated === original) return; // 磁盘内容与当前服务一致（如编辑器自己的保存回显），无需 reload；外部修改仍会触发
       original = updated;
       documentId = documentVersion(sourcePath, original);
+      assetReferences = collectLocalImageSources(original);
       sendEvent("reload");
     } catch (error) {
       sendEvent("status", { level: "error", message: `无法读取简历文件：${error.message}` });
@@ -177,6 +179,20 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, por
     }
     if (request.method === "GET" && request.url === "/api/version") {
       return send(response, 200, "application/json; charset=utf-8", JSON.stringify({ name: "resume-skills", version: cliVersion, latest: latestVersion, updateAvailable: cliVersion ? isUpdateAvailable(cliVersion, latestVersion) : false }));
+    }
+    if (request.method === "GET") {
+      const url = new URL(request.url, "http://127.0.0.1");
+      if (url.pathname === "/api/asset") {
+        try {
+          const assetPath = resolveReferencedSourceAsset(sourcePath, url.searchParams.get("src") || "", assetReferences);
+          if (existsSync(assetPath) && statSync(assetPath).isFile()) {
+            return send(response, 200, assetContentType(assetPath), readFileSync(assetPath));
+          }
+          return send(response, 404, "text/plain; charset=utf-8", "Not found");
+        } catch {
+          return send(response, 403, "text/plain; charset=utf-8", "Asset is not referenced by the resume HTML");
+        }
+      }
     }
     if (request.method === "GET" && request.url === "/api/events") {
       response.writeHead(200, {
@@ -222,6 +238,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, por
           const diskDocumentId = documentVersion(sourcePath, diskOriginal);
           original = diskOriginal;
           documentId = diskDocumentId;
+          assetReferences = collectLocalImageSources(original);
           if (!submittedDocumentId || submittedDocumentId !== diskDocumentId) {
             return send(response, 409, "application/json; charset=utf-8", JSON.stringify({ error: "文档版本已过期，请先重新加载后再保存。", documentId }));
           }
@@ -238,6 +255,7 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, por
           writeAtomically(sourcePath, exportHtml);
           original = exportHtml;
           documentId = documentVersion(sourcePath, original);
+          assetReferences = collectLocalImageSources(original);
           send(response, 200, "application/json; charset=utf-8", JSON.stringify({ outputName: basename(sourcePath), documentId }));
         } catch (error) {
           send(response, 500, "application/json; charset=utf-8", JSON.stringify({ error: `保存失败：${error.message}` }));

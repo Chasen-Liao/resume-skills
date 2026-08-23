@@ -175,7 +175,7 @@ AI 生成简历 HTML 之后，常常只需要一些小修小补：改一个错�
 
 完整闭环：**AI 生成 HTML → 打开 Web 预览端 → 小修小补 → 保存到本地 → 导出 PDF**。分步实操见 [Canvas 预览端指南](docs/canvas-editor-guide.md)。
 
-Canvas 只负责已生成视觉简历的最后文字与排版微调，不负责采访、AI 改写、JD 匹配或重新设计结构。文字修改后必须回到 Agent 工作流重新确认事实并验证 PDF。
+Canvas 只负责已生成视觉简历的最后文字与排版微调，不负责采访、AI 改写、JD 匹配或重新设计结构。文字修改后必须回到 Agent 工作流重新确认事实并验证 PDF。HTML 中已有的本地相对图片路径（例如 `../证件照/证件照-new.png`）可在预览中显示；保存时仍保留原始 `src`，不会把图片内嵌为 base64。
 
 下面是通过 `npx -p @chasen-liao/resume-skills@latest resume-skills editor <生成的_visual.html>` 打开的实际网页界面：
 

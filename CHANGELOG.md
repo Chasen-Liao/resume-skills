@@ -2,6 +2,12 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.7] - 2026-08-23
+
+### Fixed
+
+- Canvas 编辑器支持预览 HTML 中声明的本地相对图片路径（包括 `../证件照/证件照-new.png` 这类同工作区兄弟目录资源），无需 base64 内嵌；保存时恢复并保留原始 `src`，避免触发 HTML 保存大小限制。
+
 ## [0.6.6] - 2026-08-19
 
 ### Fixed

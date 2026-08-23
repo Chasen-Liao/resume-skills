@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { once } from "node:events";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -429,6 +429,44 @@ test("a broken cross-directory image surfaces a clear failure hint", { skip: !ch
   assert.deepEqual(r.pageErrors, [], "no page errors for a broken image");
   assert.match(r.status, /missing\.png/);
   assert.equal(r.saveDisabled, false, "normal fields must stay editable when only the image fails");
+});
+
+test("a sibling-directory image previews without base64 and saves the original relative src", { skip: !chromiumAvailable }, async () => {
+  const workspace = await mkdtemp(join(tmpdir(), "resume-skills-sibling-image-"));
+  const resumeDirectory = join(workspace, "resume");
+  const imageDirectory = join(workspace, "证件照");
+  const sourcePath = join(resumeDirectory, "resume.html");
+  const onePixelPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64");
+  await mkdir(resumeDirectory);
+  await mkdir(imageDirectory);
+  await writeFile(join(imageDirectory, "证件照-new.png"), onePixelPng);
+  await writeFile(sourcePath, '<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><meta charset="UTF-8"></head><body><div class="resume"><img src="../证件照/证件照-new.png" alt="证件照"><h1 data-resume-editor-id="profile-name">张小明</h1></div></body></html>');
+  const server = startEditor(sourcePath, { open: false, log: false });
+  await once(server, "listening");
+  const browser = await chromium.launch();
+  try {
+    const { port } = server.address();
+    const page = await browser.newPage();
+    const pageErrors = [];
+    page.on("pageerror", (error) => pageErrors.push(String(error)));
+    await page.goto(`http://127.0.0.1:${port}`);
+    const frame = page.frames().find((candidate) => candidate !== page.mainFrame());
+    assert.ok(frame, "resume iframe must be present");
+    await frame.waitForFunction(() => document.querySelector("img")?.naturalWidth > 0);
+    assert.deepEqual(pageErrors, [], "no page errors for a sibling-directory image");
+    assert.doesNotMatch(await page.locator("#save-status").textContent(), /图片加载失败/);
+
+    await page.locator("#save-html").click();
+    await page.waitForFunction(() => document.querySelector("#save-status")?.textContent.includes("已成功保存"));
+    const onDisk = await readFile(sourcePath, "utf8");
+    assert.match(onDisk, /src="\.\.\/证件照\/证件照-new\.png"/, "saved HTML must keep the original relative image path");
+    assert.doesNotMatch(onDisk, /\/api\/asset|data-resume-editor-original-src/, "preview-only asset URL must not persist");
+  } finally {
+    await browser.close();
+    server.close();
+    await once(server, "close");
+    await rm(workspace, { recursive: true, force: true });
+  }
 });
 
 const nestedContactHtml = '<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head><meta charset="UTF-8"></head><body><div class="resume"><h1 data-resume-editor-id="profile-name">张小明</h1><div data-resume-editor-id="profile-contact-phone-label">TEL: 135-9999-9999 | MAIL: <a href="mailto:x@y.com" data-resume-editor-id="profile-email">x@y.com</a></div></div></body></html>';

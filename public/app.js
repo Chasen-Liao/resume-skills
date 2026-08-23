@@ -157,6 +157,26 @@ const editorContainerTags = new Set(editorContainerTagNames);
 const editorContainerClasses = new Set(editorContainerClassNames);
 const editorBlockTags = new Set(editorBlockChildTagNames);
 const editorRuntimeInjectedAttrs = new Set(editorRuntimeInjectedAttributeNames);
+const runtimeAttributeSelector = editorRuntimeInjectedAttributeNames.map((name) => `[${name}]`).join(",");
+function isLocalAssetReference(reference) {
+  if (typeof reference !== "string" || !reference.trim()) return false;
+  const value = reference.trim();
+  if (value.startsWith("#") || value.startsWith("//")) return false;
+  return !/^[a-z][a-z0-9+.-]*:/i.test(value);
+}
+function previewAssetUrl(src) {
+  return `/api/asset?src=${encodeURIComponent(src)}`;
+}
+function prepareHtmlForPreview(html) {
+  const parsed = new DOMParser().parseFromString(stripLegacyToolbar(html), "text/html");
+  parsed.querySelectorAll("img[src]").forEach((image) => {
+    const originalSrc = image.getAttribute("src") || "";
+    if (!isLocalAssetReference(originalSrc)) return;
+    image.setAttribute("data-resume-editor-original-src", originalSrc);
+    image.setAttribute("src", previewAssetUrl(originalSrc));
+  });
+  return `<!DOCTYPE html>\n${parsed.documentElement.outerHTML}`;
+}
 function containerFieldProblem(node) {
   const tag = node.tagName.toLowerCase();
   if (editorContainerTags.has(tag)) return `是容器 <${tag}>`;
@@ -201,7 +221,7 @@ function bindImageErrorHints(doc) {
   const markFailed = (target) => {
     if (!target || target.tagName !== "IMG" || target.hasAttribute("data-resume-editor-img-hint")) return;
     target.setAttribute("data-resume-editor-img-hint", "true");
-    status.textContent = `图片加载失败：${target.getAttribute("src") || ""}。图片不在简历目录内或文件不存在（跨目录资源被安全边界拒绝）；请把图片放入简历同目录后刷新。`;
+    status.textContent = `图片加载失败：${target.getAttribute("data-resume-editor-original-src") || target.getAttribute("src") || ""}。请确认图片路径相对于 HTML 文件成立，且文件仍存在。`;
   };
   doc.querySelectorAll("img").forEach((image) => {
     if (image.complete && image.naturalWidth === 0) markFailed(image);
@@ -283,16 +303,13 @@ function updateOverflow() {
 }
 function cleanForExport() {
   const doc = frame.contentDocument.cloneNode(true);
+  doc.querySelectorAll("img[data-resume-editor-original-src]").forEach((image) => {
+    image.setAttribute("src", image.getAttribute("data-resume-editor-original-src") || "");
+  });
   doc.querySelectorAll("[data-resume-editor-selected], #resume-editor-chrome").forEach((node) => {
     if (node.id === "resume-editor-chrome") node.remove(); else node.removeAttribute("data-resume-editor-selected");
   });
-  doc.querySelectorAll("[data-resume-editor-id], [data-resume-editor-img-hint]").forEach((node) => {
-    node.removeAttribute("contenteditable");
-    node.removeAttribute("data-resume-editor-original-html");
-    node.removeAttribute("data-resume-editor-original-text");
-    node.removeAttribute("tabindex");
-    node.removeAttribute("role");
-    node.removeAttribute("aria-pressed");
+  doc.querySelectorAll(runtimeAttributeSelector).forEach((node) => {
     for (const name of editorRuntimeInjectedAttrs) node.removeAttribute(name);
   });
   return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
@@ -365,7 +382,7 @@ async function reloadDocument({ isHotReload = false } = {}) {
   if (isHotReload) {
     drafts.clear(previousDocumentId);
   }
-  frame.srcdoc = stripLegacyToolbar(localStorage.getItem(draftKey()) || html);
+  frame.srcdoc = prepareHtmlForPreview(localStorage.getItem(draftKey()) || html);
 }
 
 frame.addEventListener("load", () => {

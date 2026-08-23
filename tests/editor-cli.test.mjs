@@ -539,6 +539,56 @@ test("editor serves a percent-encoded asset path from a Chinese directory", asyn
   });
 });
 
+test("editor serves a declared image whose relative path leaves the resume directory", async () => {
+  const workspace = await mkdtemp(join(tmpdir(), "resume-skills-cross-asset-"));
+  const resumeDirectory = join(workspace, "resume");
+  const imageDirectory = join(workspace, "证件照");
+  const asset = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+  await mkdir(resumeDirectory);
+  await mkdir(imageDirectory);
+  const sourcePath = join(resumeDirectory, "resume.html");
+  await writeFile(join(imageDirectory, "证件照-new.png"), asset);
+  await writeFile(sourcePath, '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body><img src="../证件照/证件照-new.png" alt="证件照"><h1 data-resume-editor-id="profile-name">张小明</h1></body></html>');
+
+  const server = startEditor(sourcePath, { open: false, log: false });
+  await once(server, "listening");
+  try {
+    const { port } = server.address();
+    const response = await fetch(`http://127.0.0.1:${port}/api/asset?src=${encodeURIComponent("../证件照/证件照-new.png")}`);
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(Buffer.from(await response.arrayBuffer()), asset);
+  } finally {
+    server.close();
+    await once(server, "close");
+    await rm(workspace, { recursive: true, force: true });
+  }
+});
+
+test("editor does not expose undeclared cross-directory asset paths", async () => {
+  const workspace = await mkdtemp(join(tmpdir(), "resume-skills-cross-asset-"));
+  const resumeDirectory = join(workspace, "resume");
+  const imageDirectory = join(workspace, "证件照");
+  await mkdir(resumeDirectory);
+  await mkdir(imageDirectory);
+  const sourcePath = join(resumeDirectory, "resume.html");
+  await writeFile(join(imageDirectory, "secret.png"), "private");
+  await writeFile(sourcePath, '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><body><h1 data-resume-editor-id="profile-name">张小明</h1></body></html>');
+
+  const server = startEditor(sourcePath, { open: false, log: false });
+  await once(server, "listening");
+  try {
+    const { port } = server.address();
+    const response = await fetch(`http://127.0.0.1:${port}/api/asset?src=${encodeURIComponent("../证件照/secret.png")}`);
+
+    assert.equal(response.status, 403);
+  } finally {
+    server.close();
+    await once(server, "close");
+    await rm(workspace, { recursive: true, force: true });
+  }
+});
+
 test("editor rejects encoded directory traversal in asset paths", async () => {
   await withEditorFixture(async (directory, sourcePath) => {
     await writeFile(join(directory, "..%2Fsecret.txt"), "decoy");

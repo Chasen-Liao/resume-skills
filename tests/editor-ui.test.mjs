@@ -24,8 +24,9 @@ test("editor provides a simple SVG favicon for browser tabs", () => {
   assert.doesNotMatch(favicon, /<text\b/);
 });
 
-test("save export strips every editor-only attribute including the original-text marker", () => {
-  assert.match(app, /removeAttribute\("data-resume-editor-original-text"\)/);
+test("save export strips every editor-only attribute from the shared runtime list", () => {
+  assert.match(app, /editorRuntimeInjectedAttributeNames\.map/);
+  assert.match(app, /for \(const name of editorRuntimeInjectedAttrs\) node\.removeAttribute\(name\)/);
 });
 
 test("editor shows a version chip in the bottom-left project meta", () => {
