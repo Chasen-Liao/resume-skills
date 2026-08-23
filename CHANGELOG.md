@@ -2,6 +2,12 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.8] - 2026-08-23
+
+### Fixed
+
+- 修正 npm README 中过期的当前版本说明，改为以 npm `latest` 页面为准；同步规范 `package.json` 的 repository 元数据，消除发布时的 npm 自动修正警告。
+
 ## [0.6.7] - 2026-08-23
 
 ### Fixed

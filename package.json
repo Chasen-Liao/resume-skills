@@ -1,6 +1,6 @@
 {
   "name": "@chasen-liao/resume-skills",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "description": "Agent skills and a local canvas editor for generated HTML resumes",
   "type": "module",
   "bin": {
@@ -37,7 +37,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Chasen-Liao/resume-skills.git"
+    "url": "git+https://github.com/Chasen-Liao/resume-skills.git"
   },
   "homepage": "https://chasen-liao.github.io/resume-skills/",
   "bugs": {
