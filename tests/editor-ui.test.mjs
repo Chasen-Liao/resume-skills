@@ -61,3 +61,16 @@ test("resume templates do not include deprecated export toolbars", () => {
     assert.doesNotMatch(html, /no-print-toolbar|btn-export|toolbar-tip/);
   }
 });
+
+test("preview iframe sandbox allows the print dialog the export button opens", () => {
+  // window.print() 属于 modal API：沙箱缺少 allow-modals 时浏览器会静默忽略调用，
+  // “打印为 PDF” 点击后只在控制台留下 Ignored call to 'print()'。
+  const sandbox = editorHtml.match(/<iframe id="resume-frame"[^>]*sandbox="([^"]*)"/)?.[1];
+  assert.ok(sandbox, "预览 iframe 必须显式声明 sandbox");
+
+  const tokens = sandbox.split(/\s+/).filter(Boolean);
+  assert.ok(tokens.includes("allow-same-origin"), "父页面需要同源访问 contentDocument 才能编辑画布");
+  assert.ok(tokens.includes("allow-modals"), "缺少 allow-modals 时打印为 PDF 会被浏览器忽略");
+  assert.ok(!tokens.includes("allow-scripts"), "预览内容不可执行脚本，避免 allow-modals 被滥用弹窗");
+  assert.match(app, /#print-pdf"\)\.addEventListener\("click", \(\) => frame\.contentWindow\.print\(\)\)/);
+});
