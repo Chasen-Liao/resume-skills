@@ -275,9 +275,17 @@ function updateReadingProgress() {
 window.addEventListener("scroll", updateReadingProgress, { passive: true });
 window.addEventListener("resize", updateReadingProgress);
 
+function resolveContentSource(value) {
+  const url = new URL(value, window.location.href);
+  if (url.origin !== window.location.origin || !["http:", "https:"].includes(url.protocol)) {
+    throw new Error("Invalid contentSource: cross-origin or unsupported protocol");
+  }
+  return url.href;
+}
+
 async function loadTutorial() {
   try {
-    const response = await fetch(content.dataset.contentSource, { cache: "no-cache" });
+    const response = await fetch(resolveContentSource(content.dataset.contentSource), { cache: "no-cache" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const tutorial = renderMarkdown(await response.text());
     content.innerHTML = `${renderArticleHeader(tutorial.metadata)}${tutorial.html}`;
