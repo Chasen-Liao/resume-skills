@@ -300,7 +300,7 @@ async function loadTutorial() {
     updateReadingProgress();
   } catch (error) {
     content.setAttribute("aria-busy", "false");
-    content.innerHTML = `<div class="error-state" role="alert"><h1>教程暂时无法加载</h1><p>请确认 <code>${escapeHtml(content.dataset.contentSource)}</code> 与本页面一起部署，或直接打开 Markdown 原文。</p><a href="${escapeHtml(content.dataset.contentSource)}">打开 Markdown 原文</a></div>`;
+    content.innerHTML = `<div class="error-state" role="alert"><h1>教程暂时无法加载</h1><p>请确认 <code>${escapeHtml(content.dataset.contentSource)}</code> 与本页面一起部署，或直接打开 Markdown 原文。</p></div>`;
     navContainer.innerHTML = '<span class="nav-loading">目录加载失败</span>';
     console.error("Unable to load tutorial markdown", error);
   }
