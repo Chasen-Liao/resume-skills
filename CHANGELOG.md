@@ -2,6 +2,12 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.9] - 2026-09-07
+
+### Fixed
+
+- 修复 Canvas 编辑器「打印为 PDF」按钮在预览 iframe 沙箱下被静默拦截的问题：浏览器把 `window.print()` 归类为 modal API，沙箱缺少 `allow-modals` 时调用会被忽略，按钮看似无响应；现已在 `sandbox` 列表中追加 `allow-modals`，仍保留 `allow-scripts` 禁用以阻止预览内容执行脚本，并新增回归测试固化沙箱 token 集合。
+
 ## [0.6.8] - 2026-08-23
 
 ### Fixed
