@@ -102,7 +102,7 @@ ATS-safe HTML/PDF：检查 DOM 是否单栏、标题和时间/组织/职位关�
 
 ### 第五步：交付
 
-视觉模式完成 A4/PDF 验证后，必须启动本地 Canvas 预览，让用户先看到成品，再按需做受限排版微调：
+视觉模式完成 A4/PDF 验证后，先询问用户是否需要打开本地 Canvas 预览。Canvas 是视觉版的可选微调工具，不是 Skills、HTML 或 PDF 交付的前置条件：用户选择需要时才执行下面的命令；用户暂时不需要时直接交付已验证的 HTML/PDF，并说明之后可按需启用。
 
 ```bash
 npx -p @chasen-liao/resume-skills@latest resume-skills editor "<生成的_visual.html路径>"
@@ -114,7 +114,7 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor "<生成的_visual
 - `--port <number>`：指定监听端口。
 - **Live Preview**：编辑器建立连接后支持 SSE 热刷新。当 Agent 重新写入或修改该 HTML 时，页面将自动重载展示最新效果。
 
-命令会在本机启动服务并打开浏览器。告知用户原始 HTML 和 PDF 的位置；Canvas 保存时会直接覆盖该 HTML，并将关联 PDF manifest 标为失效。保存后必须重新运行渲染脚本，只有新 manifest 的 hash 和验证结果有效才可交付。Canvas 只允许编辑已有字段的纯文本和受限排版，不能插入 HTML、做 JD 匹配或调整结构。如当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已启动。
+用户选择 Canvas 后，命令会在本机启动服务并打开浏览器。告知用户原始 HTML 和 PDF 的位置；Canvas 保存时会直接覆盖该 HTML，并将关联 PDF manifest 标为失效。保存后必须重新运行渲染脚本，只有新 manifest 的 hash 和验证结果有效才可交付。Canvas 只允许编辑已有字段的纯文本和受限排版，不能插入 HTML、做 JD 匹配或调整结构。如用户选择 Canvas 但当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已启动。
 
 ATS-safe 模式不使用 Canvas（其单栏 HTML 不属于 Canvas 支持的视觉模板）；告知文件位置与浏览器打印 PDF 方法。两种模式都可在后续使用 `jd-tailorer` 针对 JD 定制。
 

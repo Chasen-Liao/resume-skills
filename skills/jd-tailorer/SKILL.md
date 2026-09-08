@@ -78,7 +78,7 @@ npx -p @chasen-liao/resume-skills@latest resume-skills validate "<tailored目录
 
 ### 交付与 Canvas 预览
 
-视觉模式完成 PDF 验证和必要修正后，必须启动定制版的本地 Canvas 预览：
+视觉模式完成 PDF 验证和必要修正后，先询问用户是否需要定制版的本地 Canvas 预览。Canvas 是可选微调步骤；用户选择需要时才执行下面的命令，暂时不需要时直接交付已验证的 HTML/PDF：
 
 ```bash
 npx -p @chasen-liao/resume-skills@latest resume-skills editor "<tailored目录中的resume_visual.html路径>"
@@ -90,7 +90,7 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor "<tailored目录�
 - `--port <number>`：指定监听端口。
 - **Live Preview**：编辑器建立连接后支持 SSE 热刷新。当 Agent 重新写入或修改该 HTML 时，页面将自动重载展示最新效果。
 
-命令会启动本地服务并尝试打开浏览器。告知用户定制版 HTML/PDF 与匹配报告的位置；Canvas 保存时会直接覆盖定制版 HTML，保存文字与排版修改后的最新版本。Canvas 不负责事实采访或 AI 改写；任何文字变更必须回到 Agent 工作流重新确认事实并验证 PDF。若当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
+用户选择 Canvas 后，命令会启动本地服务并尝试打开浏览器。告知用户定制版 HTML/PDF 与匹配报告的位置；Canvas 保存时会直接覆盖定制版 HTML，保存文字与排版修改后的最新版本。Canvas 不负责事实采访或 AI 改写；任何文字变更必须回到 Agent 工作流重新确认事实并验证 PDF。若用户选择 Canvas 但当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
 
 ## 硬约束
 

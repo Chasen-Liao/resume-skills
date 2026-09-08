@@ -24,9 +24,9 @@ AI 生成 HTML → 打开 Web 预览端 → 小修小补 → 保存到本地 →
 - 本机已安装 Node.js 20 或更高版本
 - ATS-safe 单栏版、外部模板和手写 HTML 不一定能被预览端打开
 
-## 1. 启动预览端
+## 1. 需要时启动预览端
 
-在简历文件所在目录执行：
+Canvas 是可选的。本地 HTML/PDF 已经可以在不启动 Canvas 的情况下交付；只有需要文字或排版微调时，才在简历文件所在目录执行：
 
 ```bash
 npx -p @chasen-liao/resume-skills@latest resume-skills editor resume_visual.html

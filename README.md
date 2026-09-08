@@ -161,7 +161,7 @@ resume-version-manager（记录确认后的版本与投递历史）
 </tr>
 </table>
 
-视觉版以 A4 单页为目标。`resume-builder`、`jd-tailorer` 或 `resume-workflow` 生成视觉母版或视觉定制版并完成 PDF 验证后，交付流程必须执行 `npx -p @chasen-liao/resume-skills@latest resume-skills editor <实际生成的_visual.html路径> --manifest <实际_manifest路径>`，启动本地 Canvas 预览；若当前环境不能执行 `npx`，Agent 必须明确说明未启动并给出完整手动命令。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。最终 PDF 必须有 `*.resume-manifest.json`，其中 HTML/PDF hash、Playwright renderer 版本与验证结果都对应当前文件。
+视觉版以 A4 单页为目标。`resume-builder`、`jd-tailorer` 或 `resume-workflow` 生成视觉母版或视觉定制版并完成 PDF 验证后，应先询问用户是否需要 Canvas 预览：用户选择需要时，再执行 `npx -p @chasen-liao/resume-skills@latest resume-skills editor <实际生成的_visual.html路径> --manifest <实际_manifest路径>`；用户暂时不需要时不启动 Canvas，也不阻塞 HTML/PDF 交付。若用户选择 Canvas 但当前环境不能执行 `npx`，Agent 必须明确说明未启动并给出完整手动命令。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。最终 PDF 必须有 `*.resume-manifest.json`，其中 HTML/PDF hash、Playwright renderer 版本与验证结果都对应当前文件。
 
 ### ATS-safe HTML/PDF
 

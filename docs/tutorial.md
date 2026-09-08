@@ -79,9 +79,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/script
 
 脚本用固定的 Playwright 生成 A4 PDF，并运行 HTML 溢出、PDF 页数、可提取文本和版面检查。成功时会在旁边写出 `*.resume-manifest.json`，记录 HTML/PDF SHA-256、renderer 版本和验证结果。缺少 Playwright、Chromium 或 `pypdf` 时状态为不可交付，不能把人工目测当作自动验证通过。
 
-## 5. 打开本地 Canvas
+## 5. 需要时打开本地 Canvas
 
-视觉版通过首轮渲染验证后，运行真实 CLI 命令：
+视觉版通过首轮渲染验证后，先询问是否需要微调。用户选择需要时，再运行真实 CLI 命令；不需要时可直接交付已经验证的 HTML/PDF：
 
 ```plaintext
 npx -p @chasen-liao/resume-skills@latest resume-skills editor "<生成的_visual.html路径>"
@@ -91,7 +91,7 @@ Canvas 支持编辑已有字段的纯文本和受限排版，不允许新增字�
 
 Canvas 保存会覆盖当前 HTML，并让关联的 PDF manifest 立即失效；因此保存后必须重新运行渲染脚本，直到新 manifest 的 HTML hash、PDF hash 和验证结果全部有效，才能交付或记录版本。
 
-ATS-safe 版不使用 Canvas，直接在生成后检查单栏阅读顺序、复制文本和 PDF 文本提取。
+ATS-safe 版不使用 Canvas，直接在生成后检查单栏阅读顺序、复制文本和 PDF 文本提取。Canvas 启动失败也不应阻塞 Skills 的其他功能；应报告具体错误，并给出 Node/npm/npx、网络、权限或证书的手动处理步骤。
 
 ## 6. 处理溢出
 

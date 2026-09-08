@@ -2,6 +2,17 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.7.0] - 2026-09-08
+
+### Changed
+
+- 视觉版交付流程改为**可选 Canvas**：生成并完成 PDF 验证后，先询问用户是否需要本地 Canvas；用户选择需要时再启动编辑器，暂时不需要时不阻塞 HTML/PDF 交付。
+- 同步更新 `resume-builder`、`jd-tailorer`、`resume-workflow`、README、教程与 Canvas 指南，明确区分「安装 Skills」与「按需运行/全局安装 npm Canvas CLI」。
+
+### Added
+
+- 新增 `docs/canvas-installation-guide.md`：记录两条安装路径、Node.js 20+ 前置条件，以及权限/网络/证书/Shell 等安装失败时的处理顺序；已加入 npm 发布白名单。
+
 ## [0.6.9] - 2026-09-07
 
 ### Fixed
