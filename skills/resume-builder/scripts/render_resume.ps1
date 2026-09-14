@@ -18,24 +18,9 @@ try {
         New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
     }
 
-    $pdfHelp = (& npx --no-install playwright pdf --help 2>&1 | Out-String)
-    if ($LASTEXITCODE -ne 0) {
-        throw "Unable to run 'npx --no-install playwright pdf --help'."
-    }
-
-    $arguments = @('--no-install', 'playwright', 'pdf', '--paper-format', 'A4')
-    if ($pdfHelp -match '--print-background') {
-        $arguments += '--print-background'
-    } else {
-        Write-Warning 'This Playwright CLI has no --print-background flag; its PDF defaults are used.'
-    }
-    if ($pdfHelp -match '--prefer-css-page-size') {
-        $arguments += '--prefer-css-page-size'
-    } else {
-        Write-Warning 'This Playwright CLI has no --prefer-css-page-size flag; --paper-format A4 is used.'
-    }
-    $arguments += @((New-Object System.Uri($htmlPath)).AbsoluteUri, $outputPath)
-    & npx @arguments
+    $previewPath = Join-Path $outputDirectory "$([System.IO.Path]::GetFileNameWithoutExtension($outputPath)).preview.png"
+    $rendererScript = Join-Path $PSScriptRoot 'render_resume.mjs'
+    & node $rendererScript --html $htmlPath --pdf $outputPath --preview $previewPath --json
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
     }
@@ -43,14 +28,14 @@ try {
         throw "Playwright completed without creating '$outputPath'."
     }
 
-    $versionOutput = (& npx --no-install playwright --version 2>&1 | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0 -or $versionOutput -notmatch '(\d+\.\d+\.\d+)') {
+    $versionOutput = (& node -e "console.log(require('playwright/package.json').version)" 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or $versionOutput -notmatch '^(\d+\.\d+\.\d+)$') {
         throw "Unable to determine the installed Playwright version."
     }
-    $renderer = "playwright@$($Matches[1])"
+    $renderer = "playwright@$versionOutput"
     $manifestPath = Join-Path $outputDirectory "$([System.IO.Path]::GetFileNameWithoutExtension($outputPath)).resume-manifest.json"
     $validator = Join-Path $PSScriptRoot 'validate_resume.py'
-    & python $validator --html $htmlPath --pdf $outputPath --mode visual --check-overflow --check-layout --manifest $manifestPath --renderer $renderer --json
+    & python $validator --html $htmlPath --pdf $outputPath --mode visual --check-overflow --check-layout --min-fill-ratio 0.98 --preview $previewPath --manifest $manifestPath --renderer $renderer --json
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
     }

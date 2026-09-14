@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import re
+import struct
 import subprocess
 import sys
 from html.parser import HTMLParser
@@ -86,6 +87,29 @@ def add(checks: list[Check], name: str, status: str, message: str) -> None:
 
 def file_hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def preview_metadata(path: Path) -> dict[str, Any] | None:
+    """Validate a low-resolution PNG preview without requiring Pillow."""
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return None
+    if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n" or data[12:16] != b"IHDR":
+        return None
+    width, height = struct.unpack(">II", data[16:24])
+    if not width or not height or width > 1600 or height > 1600:
+        return None
+    return {"path": str(path.resolve()), "sha256": file_hash(path), "width": width, "height": height}
+
+
+def validate_preview(path: Path, checks: list[Check]) -> dict[str, Any] | None:
+    metadata = preview_metadata(path)
+    if metadata is None:
+        add(checks, "preview", "fail", "低分辨率预览不存在、不是有效 PNG，或尺寸超过 1600px")
+    else:
+        add(checks, "preview", "pass", f"低分辨率预览 {metadata['width']}×{metadata['height']}px")
+    return metadata
 
 
 def parse_renderer(value: str) -> dict[str, str]:
@@ -168,6 +192,20 @@ def verify_manifest_record(
         checks, "manifest PDF hash", "pass" if pdf_matches else "fail",
         "PDF path and hash match the validated manifest" if pdf_matches else "PDF path or hash does not match the validated manifest",
     )
+    preview_record = manifest.get("preview")
+    if preview_record is not None:
+        preview_record = preview_record if isinstance(preview_record, dict) else {}
+        preview_path = Path(preview_record.get("path", ""))
+        preview_matches = bool(
+            preview_path.is_file()
+            and preview_record.get("path")
+            and preview_record.get("sha256") == file_hash(preview_path)
+            and preview_metadata(preview_path) is not None
+        )
+        add(
+            checks, "manifest preview hash", "pass" if preview_matches else "fail",
+            "preview path and hash match the validated manifest" if preview_matches else "preview path or hash does not match the validated manifest",
+        )
 
 
 def check_html_overflow(path: Path, layout_script: Path, checks: list[Check]) -> None:
@@ -326,7 +364,7 @@ def validate_pdf(
     required: list[str],
     checks: list[Check],
     check_layout: bool = False,
-    min_fill_ratio: float = 0.78,
+    min_fill_ratio: float = 0.98,
     page_margin_pt: float = 28.35,
     bottom_safe_pt: float = 12.0,
 ) -> None:
@@ -390,9 +428,13 @@ def validate_pdf(
             else:
                 top_y, bottom_y = bounds
                 page_height = float(reader.pages[0].mediabox.height)
-                printable_height = page_height - (2 * page_margin_pt)
-                occupied_height = (page_height - page_margin_pt) - bottom_y
-                fill_ratio = occupied_height / printable_height if printable_height > 0 else 0
+                # The effective area ends at the required bottom safety line.
+                # Extra whitespace inside that line is still safe, but should
+                # count against the 98% visual-fill target.
+                effective_bottom = page_margin_pt + bottom_safe_pt
+                printable_height = page_height - (2 * page_margin_pt) - bottom_safe_pt
+                unused_bottom = max(bottom_y - effective_bottom, 0)
+                fill_ratio = 1 - (unused_bottom / printable_height) if printable_height > 0 else 0
                 top_space = max((page_height - page_margin_pt) - top_y, 0)
                 bottom_space = max(bottom_y - page_margin_pt, 0)
                 imbalance = abs(top_space - bottom_space)
@@ -418,11 +460,12 @@ def validate_pdf(
                         f"内容已超出可打印底部安全区（bottom={bottom_y:.1f}pt）",
                     )
                 elif (bottom_y - page_margin_pt) < bottom_safe_pt:
+                    safety_status = "fail" if min_fill_ratio >= 0.98 else "warn"
                     add(
                         checks,
                         "bottom safety",
-                        "warn",
-                        f"底部安全余量仅 {bottom_y - page_margin_pt:.1f}pt",
+                        safety_status,
+                        f"底部安全余量仅 {bottom_y - page_margin_pt:.1f}pt；视觉版交付至少需要 {bottom_safe_pt:.1f}pt",
                     )
                 else:
                     add(
@@ -433,7 +476,8 @@ def validate_pdf(
                     )
                 fill_message = f"页面占用率 {fill_ratio:.0%}（目标 ≥ {min_fill_ratio:.0%}）"
                 if fill_ratio < min_fill_ratio:
-                    add(checks, "page fill", "warn", f"{fill_message}，页面偏空")
+                    fill_status = "fail" if min_fill_ratio >= 0.98 else "warn"
+                    add(checks, "page fill", fill_status, f"{fill_message}，页面偏空；请调整布局密度、间距或垂直分布")
                 else:
                     add(checks, "page fill", "pass", fill_message)
 
@@ -460,9 +504,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--min-fill-ratio",
         type=float,
-        default=0.78,
-        help="warn when measurable PDF text occupies less than this ratio of the printable height",
+        default=0.98,
+        help="fail visual delivery when measurable PDF text occupies less than this ratio (default: 0.98)",
     )
+    parser.add_argument("--preview", type=Path, help="low-resolution PNG preview produced alongside the PDF")
     parser.add_argument("--manifest", type=Path, help="write an HTML/PDF delivery manifest")
     parser.add_argument("--verify-manifest", type=Path, help="verify hashes in an existing delivery manifest")
     parser.add_argument("--renderer", help="renderer identity in NAME@VERSION form")
@@ -488,6 +533,7 @@ def main(argv: list[str] | None = None) -> int:
             check_layout=args.check_layout,
             min_fill_ratio=args.min_fill_ratio,
         )
+    preview = validate_preview(args.preview, checks) if args.preview else None
 
     if args.verify_manifest:
         try:
@@ -539,6 +585,7 @@ def main(argv: list[str] | None = None) -> int:
             "status": "valid" if deliverable else "invalid",
             "html": {"path": str(args.html.resolve()), "sha256": file_hash(args.html)} if args.html else None,
             "pdf": {"path": str(args.pdf.resolve()), "sha256": file_hash(args.pdf)} if args.pdf else None,
+            "preview": preview,
             "renderer": renderer,
             "validation": report,
         }

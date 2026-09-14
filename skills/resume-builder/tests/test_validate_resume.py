@@ -307,11 +307,22 @@ class ValidateResumeTests(unittest.TestCase):
             self.assertEqual(layout[0]["status"], "warn")
             self.assertIn("占用率", layout[0]["message"])
 
+    def test_pdf_layout_default_98_percent_threshold_is_a_delivery_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pdf = Path(directory) / "sparse-default.pdf"
+            write_layout_pdf(pdf, y=500)
+            result = run_validator("--pdf", pdf, "--check-layout", "--json")
+            self.assertNotEqual(result.returncode, 0)
+            report = json.loads(result.stdout)
+            layout = [item for item in report["checks"] if item["name"] == "page fill"]
+            self.assertEqual(layout[0]["status"], "fail")
+            self.assertIn("布局密度", layout[0]["message"])
+
     def test_pdf_layout_passes_when_content_nearly_fills_one_page(self):
         with tempfile.TemporaryDirectory() as directory:
             pdf = Path(directory) / "full.pdf"
             write_layout_pdf(pdf, y=100)
-            result = run_validator("--pdf", pdf, "--check-layout")
+            result = run_validator("--pdf", pdf, "--check-layout", "--min-fill-ratio", "0.78")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("[PASS] page fill", result.stdout)
 
@@ -319,7 +330,7 @@ class ValidateResumeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             pdf = Path(directory) / "overflow.pdf"
             write_two_page_mock_pdf(pdf)
-            result = run_validator("--pdf", pdf, "--check-layout")
+            result = run_validator("--pdf", pdf, "--check-layout", "--min-fill-ratio", "0.78")
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("PDF page count", result.stdout)
 
@@ -335,7 +346,7 @@ class ValidateResumeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             pdf = Path(directory) / "unbalanced.pdf"
             write_layout_pdf(pdf, y=[720, 300])
-            result = run_validator("--pdf", pdf, "--check-layout")
+            result = run_validator("--pdf", pdf, "--check-layout", "--min-fill-ratio", "0.78")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("[WARN] vertical balance", result.stdout)
 

@@ -29,21 +29,28 @@
   --page-margin: 10mm;          /* ≤12mm */
   --content-width: 190mm;       /* 210 - 2*10 */
 
+  /* === 视觉 A4 全页契约 === */
+  --resume-layout: full-page;
+  --resume-density: 1;
+  --resume-density-min: 0.84;
+  --resume-fill-target: 0.98;
+  --resume-bottom-safe: 4.5mm;  /* 约 12.8pt，给打印留出底部安全余量 */
+
   /* 字号 */
-  --fs-name: 24px;              /* 22-26px */
-  --fs-section-title: 14px;     /* 13-15px */
-  --fs-body: 10.5px;            /* 9.5-11px，部分风格可微调 */
-  --fs-meta: 9.5px;             /* 9-9.5px，辅助信息 */
+  --fs-name: calc(24px * var(--resume-density));              /* 22-26px */
+  --fs-section-title: calc(14px * var(--resume-density));     /* 13-15px */
+  --fs-body: calc(10.5px * var(--resume-density));            /* 9.5-11px，部分风格可微调 */
+  --fs-meta: calc(9.5px * var(--resume-density));             /* 9-9.5px，辅助信息 */
 
   /* 间距 */
-  --gap-section: 8mm;           /* ≤10mm 板块间距 */
-  --gap-item: 3mm;              /* ≤4mm 条目间距 */
-  --gap-inline: 6mm;            /* 行内间距 */
+  --gap-section: calc(8mm * var(--resume-density));           /* ≤10mm 板块间距 */
+  --gap-item: calc(3mm * var(--resume-density));              /* ≤4mm 条目间距 */
+  --gap-inline: calc(6mm * var(--resume-density));            /* 行内间距 */
 
   /* 行高 */
-  --lh-heading: 1.2;
-  --lh-body: 1.35;              /* 1.25-1.4 */
-  --lh-meta: 1.3;
+  --lh-heading: calc(1 + 0.2 * var(--resume-density));
+  --lh-body: calc(1 + 0.35 * var(--resume-density));              /* 1.25-1.4 */
+  --lh-meta: calc(1 + 0.3 * var(--resume-density));
 
   /* === 颜色由风格文件提供 === */
 }
@@ -96,6 +103,51 @@
   gap: 6mm;
 }
 
+/* === 全页自动分布与打印安全区 === */
+html[data-resume-layout="full-page"] .resume {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: var(--page-height);
+  padding-bottom: calc(var(--page-margin) + var(--resume-bottom-safe));
+}
+
+html[data-resume-layout="full-page"] .resume > .resume-header,
+html[data-resume-layout="full-page"] .resume > .section,
+html[data-resume-layout="full-page"] .resume > .layout-grid,
+html[data-resume-layout="full-page"] .resume > .footer-layout {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+html[data-resume-layout="full-page"] .resume > :last-child,
+html[data-resume-layout="full-page"] .resume > .footer-layout > :last-child,
+html[data-resume-layout="full-page"] .resume > .layout-grid > :last-child,
+html[data-resume-layout="full-page"] .resume > .layout-grid > :last-child > :last-child,
+html[data-resume-layout="full-page"] .resume > .layout-grid > .left-col > :last-child,
+html[data-resume-layout="full-page"] .resume > .layout-grid > .right-col > :last-child {
+  margin-bottom: 0;
+}
+
+html[data-resume-layout="full-page"] .resume > .layout-grid {
+  align-content: stretch;
+}
+
+html[data-resume-layout="full-page"] .resume > .layout-grid > .left-col,
+html[data-resume-layout="full-page"] .resume > .layout-grid > .right-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  min-height: 0;
+}
+
+@media print {
+  html[data-resume-layout="full-page"] .resume {
+    padding-bottom: calc(var(--page-margin) + var(--resume-bottom-safe));
+  }
+}
+
 /* === 防止内容断裂 === */
 .section {
   break-inside: avoid;
@@ -115,10 +167,11 @@ p, li {
 生成后必须对实际导出的 PDF 运行：
 
 ```bash
-python skills/resume-builder/scripts/validate_resume.py --html <resume.html> --pdf <resume.pdf> --check-layout --min-fill-ratio 0.78 --json
+python skills/resume-builder/scripts/validate_resume.py --html <resume.html> --pdf <resume.pdf> --check-layout --min-fill-ratio 0.98 --json
 ```
 
-- 目标是 1 页、页面占用率至少 78%，并让顶部和底部留白接近；`page fill` 和 `vertical balance` 是版式警告，不是补写事实的理由。
-- 页面偏空时，使用已有内容均匀增加 `--gap-section`、`--gap-item`、行高或容器内边距；避免只把所有内容堆在顶部，也避免设置未经复验的固定最小高度。
+- 目标是 1 页、页面占用率至少 98%，并让顶部和底部留白接近；渲染脚本会在 `--resume-density-min` 之上自动压缩长内容，短内容由 `space-between` 均匀分布到有效区域。
+- 页面偏空时，优先依靠全页契约的垂直分布；页面溢出时自动迭代 `--resume-density`，再使用已有内容均匀调整 `--gap-section`、`--gap-item`、行高或容器内边距。
+- 自动调整达到密度下限仍无法满足 98% 或安全区要求时，校验会明确失败并提示用户；不得补写经历、指标、技能或重复文案。
 - 页面溢出时，先缩小页边距（不低于 8mm），再压缩间距和行高（不低于 1.25），最后才考虑正文缩小（不低于 9.5px）或精简低相关内容。每次调整后重新导出和验证。
 - `bottom safety` 失败或 PDF 页数大于 1 时，输出不可交付；必须修复后再进入 Canvas 预览或交付。

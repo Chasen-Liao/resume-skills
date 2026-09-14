@@ -74,7 +74,7 @@ npx -p @chasen-liao/resume-skills@latest resume-skills validate "<tailored目录
 
 重复执行直到输出“校验通过”。该命令只校验编辑协议：`<html>` 带 `data-resume-editor-template` / `data-resume-editor-version="1"`、至少 1 个 `data-resume-editor-id` 位于可独立编辑的叶子文本字段、ID 唯一、无整页/板块容器 ID；它不统计字段总数、也不按命名检查个人信息或经历 bullet。字段总数、重复 ID、容器误标以及个人信息/经历 bullet 是否齐全，需对最终 HTML 手工复核（与 resume-builder 的验收口径一致）。检查必须针对完成定制后的最终 HTML，而不是只检查基础模板。任一项失败时不得启动 Canvas 或交付，必须拆分字段、补齐稳定 ID 后重新验证。
 
-视觉模式使用 `render_resume.ps1` 渲染并生成同名前缀 `*.resume-manifest.json`。PDF 必须恰好 1 页，HTML 溢出直接失败；缺少 Playwright/Chromium 或 `pypdf` 时为不可交付的 `degraded`。`page fill` 低于 78% 或 `vertical balance` 有警告时，优先均匀调整已确认内容的板块间距、条目间距、行高和容器内边距；`bottom safety` 失败或页数大于 1 时必须回退排版。任何警告都要重新导出并复验，不能编造内容或用不可读字号填充。Canvas 保存后 manifest 会失效，必须重新 render + validate；ATS-safe 模式仍检查 HTML 单栏、标准标题、正文阅读顺序和纯文本可解析性，并验证 PDF 文本提取结果。
+视觉模式使用 `render_resume.ps1` 渲染：视觉根 `<html>` 必须声明 `data-resume-layout="full-page"`，并继承 `resume-builder` 的 density/full-page 契约。脚本会在检测到溢出时自动压缩密度，在内容不足时用垂直分布撑满有效区域，并生成低分辨率 `*.preview.png`。PDF 必须恰好 1 页、有效页面占用率默认 `≥98%` 且保留底部安全余量；任一条件失败，或缺少 Playwright/Chromium 或 `pypdf` 时为不可交付的 `degraded`/`fail`。不得用虚构文案、无意义重复或隐藏溢出填充。Canvas 保存后 manifest 会失效，必须重新 render + validate；ATS-safe 模式仍检查 HTML 单栏、标准标题、正文阅读顺序和纯文本可解析性，并验证 PDF 文本提取结果。
 
 ### 交付与 Canvas 预览
 

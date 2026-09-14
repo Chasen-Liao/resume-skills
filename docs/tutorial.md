@@ -77,7 +77,7 @@ JD 关键词只是岗位要求，不是候选人事实。若缺少某项要求�
 powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<生成的_visual.html路径>" -OutputPdf "<生成的_visual.pdf路径>"
 ```
 
-脚本用固定的 Playwright 生成 A4 PDF，并运行 HTML 溢出、PDF 页数、可提取文本和版面检查。成功时会在旁边写出 `*.resume-manifest.json`，记录 HTML/PDF SHA-256、renderer 版本和验证结果。缺少 Playwright、Chromium 或 `pypdf` 时状态为不可交付，不能把人工目测当作自动验证通过。
+脚本用 Playwright 生成 A4 PDF：对声明 `data-resume-layout="full-page"` 的视觉 HTML，短内容自动垂直分布，长内容在安全密度下限之上自动压缩；随后运行 HTML 溢出、PDF 页数、可提取文本、98% 有效页面占用率和底部安全区检查，并生成低分辨率 `*.preview.png`。成功时会在旁边写出 `*.resume-manifest.json`，记录 HTML/PDF/preview SHA-256、renderer 版本和验证结果。缺少 Playwright、Chromium 或 `pypdf` 时状态为不可交付，不能把人工目测当作自动验证通过。
 
 ## 5. 需要时打开本地 Canvas
 
@@ -119,9 +119,9 @@ ATS-safe 版不使用 Canvas，直接在生成后检查单栏阅读顺序、复�
 # 投递前检查清单
 
 - 联系方式、时间、数字、链接均来自已确认事实；
-- 视觉 PDF 恰好一页，HTML 无溢出，文字可复制；
+- 视觉 PDF 恰好一页，有效页面占用率 ≥98%，底部安全余量充足，HTML 无溢出，文字可复制；
 - ATS-safe 版保持单栏、标准标题和稳定阅读顺序；
-- 当前 `*.resume-manifest.json` 为 valid，且 hash 对应当前 HTML/PDF；
+- 当前 `*.resume-manifest.json` 为 valid，且 hash 对应当前 HTML/PDF/preview；
 - Canvas 保存后已经重新渲染与验证；
 - 私人简历仓库没有推送到公开远程。
 

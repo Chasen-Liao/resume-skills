@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-resume-editor-template="creative-bold" data-resume-editor-version="1" data-resume-demo="true">
+<html lang="zh-CN" data-resume-editor-template="creative-bold" data-resume-editor-version="1" data-resume-layout="full-page" data-resume-demo="true">
 <head>
   <meta charset="UTF-8">
   <title>简历 - 创意个性风格</title>
@@ -9,26 +9,31 @@
 
     /* === 创意个性风格配置 (基于 creative-bold.md 整合与微调) === */
     :root {
+      --resume-layout: full-page;
+      --resume-density: 1;
+      --resume-density-min: 0.84;
+      --resume-fill-target: 0.98;
+      --resume-bottom-safe: 4.5mm;
       --page-width: 210mm;
       --page-height: 297mm;
       --page-margin: 10mm;
       --content-width: 190mm;
 
       /* 字号 */
-      --fs-name: 26px;
-      --fs-section-title: 15px;
-      --fs-body: 10.5px;
-      --fs-meta: 9.5px;
+      --fs-name: calc(26px * var(--resume-density));
+      --fs-section-title: calc(15px * var(--resume-density));
+      --fs-body: calc(10.5px * var(--resume-density));
+      --fs-meta: calc(9.5px * var(--resume-density));
 
       /* 间距 */
-      --gap-section: 6mm;
-      --gap-item: 3mm;
-      --gap-inline: 6mm;
+      --gap-section: calc(6mm * var(--resume-density));
+      --gap-item: calc(3mm * var(--resume-density));
+      --gap-inline: calc(6mm * var(--resume-density));
 
       /* 行高 */
-      --lh-heading: 1.1;
-      --lh-body: 1.35;
-      --lh-meta: 1.3;
+      --lh-heading: calc(1 + 0.1 * var(--resume-density));
+      --lh-body: calc(1 + 0.35 * var(--resume-density));
+      --lh-meta: calc(1 + 0.3 * var(--resume-density));
 
       /* === 创意个性配色 A: 黑白 + 粉 === */
       --color-primary: #18181B;
@@ -310,6 +315,36 @@
       * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+      }
+    }
+  </style>
+  <style data-resume-layout-contract="full-page">
+    html[data-resume-layout="full-page"] .resume {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: var(--page-height);
+      padding-bottom: calc(var(--page-margin) + var(--resume-bottom-safe));
+    }
+    html[data-resume-layout="full-page"] .resume > :last-child,
+    html[data-resume-layout="full-page"] .resume > .footer-layout > :last-child,
+    html[data-resume-layout="full-page"] .resume > .layout-grid > :last-child,
+    html[data-resume-layout="full-page"] .resume > .layout-grid > .left-col > :last-child,
+    html[data-resume-layout="full-page"] .resume > .layout-grid > .right-col > :last-child {
+      margin-bottom: 0;
+    }
+    html[data-resume-layout="full-page"] .resume > .layout-grid {
+      align-content: stretch;
+    }
+    html[data-resume-layout="full-page"] .resume > .layout-grid > .left-col,
+    html[data-resume-layout="full-page"] .resume > .layout-grid > .right-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    @media print {
+      html[data-resume-layout="full-page"] .resume {
+        padding-bottom: calc(var(--page-margin) + var(--resume-bottom-safe));
       }
     }
   </style>

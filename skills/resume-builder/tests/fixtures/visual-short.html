@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN" data-resume-layout="full-page">
+<head>
+  <meta charset="utf-8">
+  <title>Short visual layout fixture</title>
+  <style>
+    :root {
+      --page-width: 210mm;
+      --page-height: 297mm;
+      --page-margin: 10mm;
+      --resume-density: 1;
+      --resume-density-min: 0.84;
+      --resume-fill-target: 0.98;
+      --resume-bottom-safe: 4.5mm;
+      --fs-name: calc(24px * var(--resume-density));
+      --fs-body: calc(10px * var(--resume-density));
+      --gap-section: calc(8mm * var(--resume-density));
+      --lh-body: calc(1 + 0.35 * var(--resume-density));
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body { display: flex; justify-content: center; background: #e2e8f0; font: var(--fs-body)/var(--lh-body) Arial, sans-serif; }
+    .resume { width: var(--page-width); height: var(--page-height); padding: var(--page-margin) var(--page-margin) calc(var(--page-margin) + var(--resume-bottom-safe)); background: white; display: flex; flex-direction: column; justify-content: space-between; }
+    .resume-header { border-bottom: 2px solid #172033; padding-bottom: 8px; }
+    h1 { font-size: var(--fs-name); color: #172033; }
+    .section { margin-bottom: var(--gap-section); }
+    .section:last-child { margin-bottom: 0; }
+    h2 { font-size: 14px; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px; margin-bottom: 8px; }
+    p { color: #334155; }
+    @page { size: A4; margin: 0; }
+    @media print { body { background: white; } }
+  </style>
+</head>
+<body>
+  <main class="resume">
+    <header class="resume-header"><h1>短内容布局样例</h1><p>用于验证 full-page 垂直分布。</p></header>
+    <section class="section"><h2>核心能力</h2><p>把有限的已确认事实清晰呈现，不用额外文案填白。</p></section>
+    <section class="section"><h2>项目经验</h2><p>完成一个可验证的端到端项目交付。</p></section>
+  </main>
+</body>
+</html>

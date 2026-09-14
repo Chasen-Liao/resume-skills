@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN" data-resume-layout="full-page">
+<head>
+  <meta charset="utf-8">
+  <title>Long visual layout fixture</title>
+  <style>
+    :root { --page-width: 210mm; --page-height: 297mm; --page-margin: 10mm; --resume-density: 1; --resume-density-min: 0.84; --resume-fill-target: 0.98; --resume-bottom-safe: 4.5mm; --fs-name: calc(24px * var(--resume-density)); --fs-body: calc(10px * var(--resume-density)); --gap-section: calc(4mm * var(--resume-density)); --gap-item: calc(1.5mm * var(--resume-density)); --lh-body: calc(1 + 0.35 * var(--resume-density)); }
+    * { box-sizing: border-box; margin: 0; }
+    body { display: flex; justify-content: center; background: #e2e8f0; font: var(--fs-body)/var(--lh-body) Arial, sans-serif; }
+    .resume { width: var(--page-width); height: var(--page-height); padding: var(--page-margin) var(--page-margin) calc(var(--page-margin) + var(--resume-bottom-safe)); background: white; display: flex; flex-direction: column; justify-content: space-between; }
+    .resume-header { border-bottom: 2px solid #172033; padding-bottom: 6px; } h1 { font-size: var(--fs-name); color: #172033; }
+    .section { margin-bottom: var(--gap-section); } .section:last-child { margin-bottom: 0; } h2 { font-size: 13px; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px; margin-bottom: 4px; } ul { padding-left: 18px; } li { margin-bottom: var(--gap-item); color: #334155; }
+    @page { size: A4; margin: 0; } @media print { body { background: white; } }
+  </style>
+</head>
+<body>
+  <main class="resume">
+    <header class="resume-header"><h1>长内容布局样例</h1><p>用于验证内容接近上限时自动降低 density，而不是裁切或生成第二页。</p></header>
+    <section class="section"><h2>工作经历</h2><ul>
+      <li>梳理业务目标、用户路径和验收条件，拆分为可以独立验证的交付任务。</li>
+      <li>实现前端交互和后端接口，处理异常状态、空状态以及不同屏幕尺寸下的展示。</li>
+      <li>建立开发、测试、发布和回滚记录，保证问题出现时能够快速定位影响范围。</li>
+      <li>与产品、设计、测试和运营保持同步，在约束条件变化时及时调整实施顺序。</li>
+      <li>分析用户反馈和运行数据，识别高频问题，并将修复结果纳入回归检查。</li>
+      <li>把重复的人工操作整理成脚本和检查清单，减少发布前的遗漏。</li>
+      <li>维护组件、样式和文档的一致性，让新成员可以沿着说明完成本地验证。</li>
+      <li>对关键流程增加边界条件测试，覆盖网络异常、权限变化和数据为空等情况。</li>
+      <li>协助评审技术方案，说明实现成本、可维护性和对现有功能的兼容影响。</li>
+      <li>在版本发布后跟踪错误日志和用户行为，按优先级安排修复和后续优化。</li>
+      <li>把阶段成果整理为可复现的演示，向相关成员说明使用方式和已知限制。</li>
+      <li>为重要数据保留来源和处理过程，避免在展示层引入未经确认的结论。</li>
+      <li>参与性能检查，关注首屏加载、长列表渲染和资源请求对体验的影响。</li>
+      <li>完善交接材料，记录决策背景、未完成事项以及下一步可验证的改进方向。</li>
+    </ul></section>
+    <section class="section"><h2>项目经验</h2><ul>
+      <li>从需求和真实素材出发搭建项目骨架，先完成一个小而完整的可运行版本。</li>
+      <li>使用自动化测试检查核心契约，确保重构后输出结构和关键行为保持稳定。</li>
+      <li>将构建产物、预览图和验证结果关联起来，便于复查当前文件是否仍然有效。</li>
+      <li>根据不同内容量测试短、中、长三条路径，记录布局扩张、正常和压缩结果。</li>
+      <li>在可读性、安全边距和单页约束之间做取舍，遇到不可满足时明确报告原因。</li>
+      <li>编写使用指南和排错说明，帮助后续使用者复现问题并选择安全的修复方式。</li>
+      <li>记录接口输入输出和错误处理约定，避免不同模块对同一状态产生不一致解释。</li>
+      <li>检查页面在窄屏和打印媒体下的布局，修复文字换行和卡片边界问题。</li>
+      <li>为外部资源提供系统字体和缺失状态，保证离线环境仍能阅读主要内容。</li>
+      <li>梳理文件命名、目录结构和产物关系，降低交付时查找文件的成本。</li>
+      <li>在修改前确认现有测试和工作区状态，只触碰当前任务范围内的文件。</li>
+      <li>为关键配置保留默认值和可覆盖入口，便于不同岗位版本使用同一套流程。</li>
+      <li>比较浏览器预览和打印结果，确认颜色、背景、文字和链接没有意外丢失。</li>
+      <li>针对长文本检查断行、孤行和段落间距，避免卡片内容被截断。</li>
+      <li>在自动检查失败时输出具体指标、文件位置和下一步建议，而不是只报告失败。</li>
+      <li>把人工检查保留为自动化之后的最后环节，用于发现截图无法表达的视觉问题。</li>
+      <li>验证图片尺寸和加载结果，保证照片存在时正常显示，缺失时有明确反馈。</li>
+      <li>对生成后的 HTML 和 PDF 建立 hash 关联，防止旧产物被误当作当前版本。</li>
+      <li>用同一份事实数据生成不同视觉版本，确保改变布局不会增加未经确认的经历。</li>
+      <li>把短内容、中等内容和长内容分别纳入回归路径，记录每条路径的布局状态。</li>
+      <li>检查一页 PDF 的页面尺寸和页数，发现第二页时回到布局参数处理。</li>
+      <li>确认底部打印安全区，给文字字形和不同字体回退留出稳定余量。</li>
+      <li>在密度调整前后比较可读性，避免为了单页目标把正文压缩到不易阅读。</li>
+      <li>为页面级主题色和排版覆盖保留边界，避免编辑功能改变文档结构。</li>
+      <li>复查生成命令在 Windows 路径和中文文件名下的行为，确保资源可以定位。</li>
+      <li>为测试依赖缺失保留 degraded 状态，区分环境不可用和真实布局失败。</li>
+      <li>在交付说明中列出 HTML、PDF、预览图和 manifest，方便用户逐项复核。</li>
+      <li>遇到无法满足的内容量时保留真实缺口，提示用户删减低相关内容或调整目标。</li>
+      <li>最终检查源文件、生成物和验证记录之间的对应关系，完成可追溯交付。</li>
+      <li>把页面测量结果和 PDF 检查结果并列保存，便于区分浏览器溢出与打印排版问题。</li>
+      <li>检查不同字体加载状态下的文本边界，确保安全余量不会因字体回退而消失。</li>
+      <li>在模板变更后重新运行全部 fixture，确认短内容和长内容都没有回归。</li>
+      <li>对自动布局参数设置合理的上下限，避免无限迭代或产生不可读的极端结果。</li>
+      <li>使用明确的状态值区分通过、警告、失败和环境降级，方便脚本消费输出。</li>
+      <li>记录自动布局使用的密度和迭代次数，为后续的视觉复查提供依据。</li>
+      <li>确认 PDF 页面背景和装饰元素在打印媒体中保持一致，不依赖屏幕预览。</li>
+      <li>保证链接文本仍然可提取，视觉布局变化不应破坏可访问的联系方式。</li>
+    </ul></section>
+    <section class="section"><h2>技能与工具</h2><p>JavaScript · Python · HTML/CSS · Playwright · PDF 校验 · 自动化测试 · 技术文档</p></section>
+  </main>
+</body>
+</html>

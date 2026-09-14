@@ -25,7 +25,9 @@ test("npm dry-run package contains the README hero and delivery runtime", () => 
   assert.ok(files.includes("image.png"));
   assert.ok(files.includes("requirements-test.txt"));
   assert.ok(files.includes("lib/artifact-manifest.mjs"));
+  assert.ok(files.includes("lib/resume-layout.mjs"));
   assert.ok(files.includes("skills/resume-builder/scripts/measure_resume_layout.mjs"));
+  assert.ok(files.includes("skills/resume-builder/scripts/render_resume.mjs"));
   assert.equal(files.some((path) => /(?:^|\/)__pycache__(?:\/|$)|\.pyc$/i.test(path)), false);
 });
 
@@ -40,6 +42,21 @@ test("built-in examples are visibly marked as fictional demos", () => {
     const root = document.childNodes.find((node) => node.tagName === "html");
     assert.ok(root.attrs.some(({ name, value }) => name === "data-resume-demo" && value === "true"), name);
     assert.match(html, /DEMO[^<]*(?:虚构|示例)|(?:虚构|示例)[^<]*DEMO/i, name);
+  }
+});
+
+test("built-in visual templates carry the full-page density contract", () => {
+  const examples = [
+    "classic-business", "creative-bold", "japanese-minimal",
+    "minimal-blue-business", "modern-minimal", "tech-dark",
+  ];
+  for (const name of examples) {
+    const html = readFileSync(`skills/resume-builder/references/examples/${name}.html`, "utf8");
+    assert.match(html, /data-resume-layout="full-page"/, name);
+    assert.match(html, /--resume-density-min:\s*0\.84/, name);
+    assert.match(html, /--resume-fill-target:\s*0\.98/, name);
+    assert.match(html, /data-resume-layout-contract="full-page"/, name);
+    assert.match(html, /justify-content:\s*space-between/, name);
   }
 });
 

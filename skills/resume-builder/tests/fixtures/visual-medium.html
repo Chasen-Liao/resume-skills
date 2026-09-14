@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN" data-resume-layout="full-page">
+<head>
+  <meta charset="utf-8">
+  <title>Medium visual layout fixture</title>
+  <style>
+    :root { --page-width: 210mm; --page-height: 297mm; --page-margin: 10mm; --resume-density: 1; --resume-density-min: 0.84; --resume-fill-target: 0.98; --resume-bottom-safe: 4.5mm; --fs-name: calc(24px * var(--resume-density)); --fs-body: calc(10px * var(--resume-density)); --gap-section: calc(6mm * var(--resume-density)); --gap-item: calc(2.5mm * var(--resume-density)); --lh-body: calc(1 + 0.35 * var(--resume-density)); }
+    * { box-sizing: border-box; margin: 0; }
+    body { display: flex; justify-content: center; background: #e2e8f0; font: var(--fs-body)/var(--lh-body) Arial, sans-serif; }
+    .resume { width: var(--page-width); height: var(--page-height); padding: var(--page-margin) var(--page-margin) calc(var(--page-margin) + var(--resume-bottom-safe)); background: white; display: flex; flex-direction: column; justify-content: space-between; }
+    .resume-header { border-bottom: 2px solid #172033; padding-bottom: 8px; } h1 { font-size: var(--fs-name); color: #172033; }
+    .section { margin-bottom: var(--gap-section); } .section:last-child { margin-bottom: 0; } h2 { font-size: 14px; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px; margin-bottom: 7px; } ul { padding-left: 18px; } li { margin-bottom: var(--gap-item); color: #334155; }
+    @page { size: A4; margin: 0; } @media print { body { background: white; } }
+  </style>
+</head>
+<body>
+  <main class="resume">
+    <header class="resume-header"><h1>中等内容布局样例</h1><p>用于验证正常内容量下的单页排版和垂直平衡。</p></header>
+    <section class="section"><h2>教育背景</h2><p>计算机相关专业，持续学习工程实践与产品交付。</p></section>
+    <section class="section"><h2>工作经历</h2><ul><li>负责需求拆解、实现和发布后的问题跟踪，形成可复用的交付流程。</li><li>与设计、测试和业务协作，围绕真实用户反馈迭代功能。</li><li>通过自动化检查减少重复的人工验收工作，并保留可追溯记录。</li></ul></section>
+    <section class="section"><h2>项目经验</h2><ul><li>独立完成一个从数据准备到展示验证的完整项目。</li><li>整理项目文档和使用说明，让其他成员可以复现关键步骤。</li></ul></section>
+    <section class="section"><h2>技能</h2><p>JavaScript · Python · HTML/CSS · 自动化测试 · 文档写作</p></section>
+  </main>
+</body>
+</html>

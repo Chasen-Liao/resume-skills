@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 EXAMPLES = ROOT / "skills" / "resume-builder" / "references" / "examples"
+FIXTURES = ROOT / "skills" / "resume-builder" / "tests" / "fixtures"
 RENDERER = ROOT / "skills" / "resume-builder" / "scripts" / "render_resume.ps1"
 
 
@@ -44,6 +45,25 @@ class RenderIntegrationTests(unittest.TestCase):
                     self.assertTrue(record["validation"]["deliverable"])
                     self.assertEqual(Path(record["html"]["path"]), html.resolve())
                     self.assertEqual(Path(record["pdf"]["path"]), pdf.resolve())
+                    preview = record["preview"]
+                    self.assertTrue(Path(preview["path"]).is_file())
+                    self.assertLessEqual(preview["width"], 1600)
+                    self.assertLessEqual(preview["height"], 1600)
+
+    def test_short_medium_and_long_visual_fixtures_stay_on_one_safe_page(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output_dir = Path(directory)
+            for html in sorted(FIXTURES.glob("visual-*.html")):
+                with self.subTest(fixture=html.name):
+                    pdf = output_dir / f"delivery-{html.stem}.pdf"
+                    result = render(html, pdf)
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    manifest = json.loads((output_dir / f"delivery-{html.stem}.resume-manifest.json").read_text(encoding="utf-8"))
+                    self.assertEqual(manifest["status"], "valid")
+                    checks = {item["name"]: item for item in manifest["validation"]["checks"]}
+                    self.assertEqual(checks["PDF page count"]["message"], "1 page")
+                    self.assertEqual(checks["page fill"]["status"], "pass")
+                    self.assertEqual(checks["bottom safety"]["status"], "pass")
 
     def test_deliberately_overflowing_visual_resume_is_not_deliverable(self):
         with tempfile.TemporaryDirectory() as directory:

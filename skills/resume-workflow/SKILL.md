@@ -38,12 +38,12 @@ description: 编排从导入已有简历或采访开始，到母版、JD 定制�
 
   ```bash
   powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<最终_visual.html路径>" -OutputPdf "<交付目录/自定义文件名.pdf>"
-  python skills/resume-builder/scripts/validate_resume.py --html "<最终_visual.html路径>" --pdf "<交付目录/自定义文件名.pdf>" --mode visual --check-overflow --check-layout --min-fill-ratio 0.78 --manifest "<交付目录/自定义文件名.resume-manifest.json>" --renderer "playwright@1.62.1" --json
+  python skills/resume-builder/scripts/validate_resume.py --html "<最终_visual.html路径>" --pdf "<交付目录/自定义文件名.pdf>" --mode visual --check-overflow --check-layout --min-fill-ratio 0.98 --preview "<交付目录/自定义文件名.preview.png>" --manifest "<交付目录/自定义文件名.resume-manifest.json>" --renderer "playwright@1.62.1" --json
   ```
 
-  `render_resume.ps1` 会完成真实 PDF 渲染并自动执行同等交付验证；第二条命令明确展示并可重复执行完整验证契约。manifest 以其中规范化的 `html.path` 绑定源 HTML，不要求 HTML、PDF 和 manifest 位于同一目录或使用相同 stem。
+  `render_resume.ps1` 会完成 full-page 自动布局、真实 PDF 渲染、低分辨率预览生成并自动执行同等交付验证；第二条命令明确展示并可重复执行完整验证契约。manifest 以其中规范化的 `html.path` 绑定源 HTML，并同时绑定 PDF 和 preview，不要求三者与 manifest 使用相同 stem。
 
-  PDF 页数必须为 1；页面偏空或上下留白不均的警告应在不改变事实的前提下通过均匀间距调整处理，底部安全区失败必须修复。
+  PDF 页数必须为 1，有效页面占用率至少 98%；页面偏空或上下留白不均应在不改变事实的前提下通过 full-page 垂直分布、密度和均匀间距处理，底部安全区失败必须修复。自动密度下限仍无法满足时要明确报告用户，不得静默交付大面积空白版本。
 
   ```bash
   用户选择需要 Canvas 时，执行：

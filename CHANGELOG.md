@@ -2,6 +2,19 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.8.0] - 2026-09-14
+
+### Added
+
+- 为视觉版新增 `full-page` 自动布局契约：短内容在有效区域内垂直分布，长内容在安全密度下限之上自动压缩。
+- 渲染流程新增低分辨率 PNG 预览、预览图校验和 HTML/PDF/preview manifest hash。
+- 新增 short/medium/long 视觉布局夹具与浏览器/PDF 集成回归测试。
+
+### Changed
+
+- 视觉 PDF 的默认交付门槛提升为单页、有效区域占用率至少 98% 且保留底部打印安全区。
+- 六套内置视觉模板及 `resume-builder`、`jd-tailorer`、`resume-workflow` 文档统一采用 density/full-page 契约。
+
 ## [0.7.0] - 2026-09-08
 
 ### Changed
