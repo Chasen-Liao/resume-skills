@@ -51,3 +51,10 @@ python skills/resume-builder/scripts/validate_resume.py --pdf <resume.pdf>
 - “ATS-safe”表示降低已知解析风险，不代表任何具体系统一定读取正确。
 - 不使用图片、图表或视觉布局承载关键信息；不改变 claim 内容与证据状态。
 - 不以关键词堆砌替代可读的自然表达。
+
+## 协作出口与下游路由
+
+- **审计完成后的流转**：
+  - 呈现与结构修复建议需用户确认后，交还 **`resume-builder`**（母版）或 **`jd-tailorer`**（定制版）完成修改；
+  - 修改后若为视觉版且需要微调排版，可按需**路由至 `resume-canvas`**；
+  - 最终确定交付的版本交由 **`resume-version-manager`** 归档记录。

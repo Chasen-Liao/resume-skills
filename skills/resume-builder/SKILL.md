@@ -21,7 +21,14 @@ description: 通过对话式采访构建精美简历的技能。当用户提到�
 
 这是创建和更新母版的主入口。若用户提供**已有简历**，先提取为待确认 claim，展示已识别内容、模糊项和疑似过期项；用户确认后只做**增量追问**，优先询问最近变化、缺失证据和低置信度字段。不要将解析文本直接当作最终事实，也不要重新进行完整采访。
 
-若用户没有已有简历，按下面的信息收集流程采访。将用户确认的 claim 保存到项目目录外的私有 `resume-facts.yaml`，其结构使用 `references/resume-facts.example.yaml`；它是后续母版和 JD 定制的事实源。事实确认完成后，才选择输出模式与六个视觉模板。发现某条经历职责化、缺少具体贡献或证据不足时，可建议用户调用 `resume-bullet-writer`；它不是生成母版的必经步骤。
+若用户没有已有简历，按下面的信息收集流程采访。将用户确认的 claim 保存到项目目录外的私有 `resume-facts.yaml`，其结构使用 `references/resume-facts.example.yaml`；它是后续母版和 JD 定制的事实源。事实确认完成后，才选择输出模式与六个视觉模板。
+
+**技能协作流转**：
+- **经历打磨**：发现某条经历职责化、缺少具体贡献或证据不足时，建议调用 `resume-bullet-writer`（条件触发助手）；
+- **质量审计**：母版生成后，建议通过 `resume-ats-optimizer` 检查 ATS 风险与关键词结构；
+- **排版微调**：视觉母版生成并完成 PDF 验证后，若用户需要交互式微调，**路由至 `resume-canvas`**；
+- **岗位定制**：母版确认后若需投递具体岗位，**路由至 `job-description-analyzer` 和 `jd-tailorer`**；
+- **版本归档**：母版定稿后，**路由至 `resume-version-manager`** 进行版本记录或 Git 提交。
 
 ## 工作流程
 
@@ -109,13 +116,9 @@ ATS-safe HTML/PDF：检查 DOM 是否单栏、标题和时间/组织/职位关�
 npx -p @chasen-liao/resume-skills@latest resume-skills editor "<生成的_visual.html路径>"
 ```
 
-高级 CLI 参数说明（适用于 Agent 自动化或无 GUI 容器环境）：
-- `--json`：以 NDJSON 逐行输出事件（`server_started` / `error` / `update_available` / `validation_passed`）；协议/参数/端口失败均输出 `event: "error"`。服务继续运行，脚本逐行 `JSON.parse`。
-- `--no-open`：禁用自动打开系统浏览器（适合控制台或集成环境）。
-- `--port <number>`：指定监听端口。
-- **Live Preview**：编辑器建立连接后支持 SSE 热刷新。当 Agent 重新写入或修改该 HTML 时，页面将自动重载展示最新效果。
-
 用户选择 Canvas 后，命令会在本机启动服务并打开浏览器。告知用户原始 HTML 和 PDF 的位置；Canvas 保存时会直接覆盖该 HTML，并将关联 PDF manifest 标为失效。保存后必须重新运行渲染脚本，只有新 manifest 的 hash 和验证结果有效才可交付。Canvas 只允许编辑已有字段的纯文本和受限排版，不能插入 HTML、做 JD 匹配或调整结构。如用户选择 Canvas 但当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已启动。
+
+若用户需要深入排版微调（字号/间距/颜色/页边距）、利用 Live Preview 热重载协同或需要高级 CLI 自动化（`--json` / `--no-open` / `--port`），**路由至 `resume-canvas` 技能**。
 
 ATS-safe 模式不使用 Canvas（其单栏 HTML 不属于 Canvas 支持的视觉模板）；告知文件位置与浏览器打印 PDF 方法。两种模式都可在后续使用 `jd-tailorer` 针对 JD 定制。
 

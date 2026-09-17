@@ -1,0 +1,7 @@
+interface:
+  display_name: "Resume Canvas"
+  short_description: "Fine-tune visual HTML resume layout and text locally"
+  default_prompt: "Use $resume-canvas to open the local canvas editor, fine-tune text or styling, and re-validate."
+
+policy:
+  allow_implicit_invocation: true

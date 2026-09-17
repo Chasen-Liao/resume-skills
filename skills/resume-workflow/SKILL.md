@@ -5,7 +5,20 @@ description: 编排从导入已有简历或采访开始，到母版、JD 定制�
 
 # 简历工作流
 
-将 `resume-builder`、JD 分析、定制、ATS 审计和版本管理串成一个流程；用户只需确认事实、改写和版本操作。
+将 `resume-builder`、JD 分析、经历改写、定制、ATS 审计、Canvas 微调和版本管理串成一个完整流程；用户只需确认事实、改写和版本操作。
+
+## 技能协作总览与路由
+
+| 阶段 | 责任 Skill | 输入 | 输出 / 交付 | 协作流转与路由条件 |
+|---|---|---|---|---|
+| 0. 私有事实库 | `resume-workflow` | 用户已有简历或经历描述 | `resume-facts.yaml` | 初始化唯一事实源，全程不将未确认事实写回 |
+| 1. 母版生成 | `resume-builder` | 事实库 / 用户采访 | 母版 HTML/PDF | 经历模糊或职责化时触发经历打磨；排版前选模板 |
+| 1.5 经历打磨 | `resume-bullet-writer` | 弱经历 / 弱项目 bullet | 有证据支持的改写建议 | 条件触发：改写须用户确认后写回事实库或母版 |
+| 2. JD 分析 | `job-description-analyzer` | 目标 JD + 事实库 | 要求地图、真实缺口 | 分析后将结构化结果交接给 `jd-tailorer` |
+| 3. 岗位定制 | `jd-tailorer` | 母版 + JD 分析报告 | 定制版 HTML/PDF | 定制版保存于 `tailored/` 目录，不覆盖母版 |
+| 4. 质量审计 | `resume-ats-optimizer` | HTML / PDF 交付物 | ATS 风险与关键词报告 | 质量门禁；修复呈现问题须用户确认 |
+| 5. 可视化微调 | `resume-canvas` | 已验证的视觉 HTML | 微调后 HTML + 重验 PDF | 仅视觉模式：排版微调、文字修正与重验闭环 |
+| 6. 版本追踪 | `resume-version-manager` | 当前交付物 + 事实库 | 版本目录与 Git 提交 | 记录版本变更、父版本及关联 manifest |
 
 ## 先读
 
@@ -45,14 +58,13 @@ description: 编排从导入已有简历或采访开始，到母版、JD 定制�
 
   PDF 页数必须为 1，有效页面占用率至少 98%；页面偏空或上下留白不均应在不改变事实的前提下通过 full-page 垂直分布、密度和均匀间距处理，底部安全区失败必须修复。自动密度下限仍无法满足时要明确报告用户，不得静默交付大面积空白版本。
 
-  ```bash
-  用户选择需要 Canvas 时，执行：
+  若用户选择需要本地可视化微调，**路由至 `resume-canvas` 技能**执行协议检查、编辑器启动与保存重验闭环：
 
   ```bash
   npx -p @chasen-liao/resume-skills@latest resume-skills editor "<最终_visual.html路径>" --manifest "<交付目录/自定义文件名.resume-manifest.json>"
   ```
 
-  Canvas 可保存已有编辑字段的纯文本和受限排版覆盖，并直接写回该 HTML；文字修改后必须回到 Agent 工作流重新确认事实并验证 PDF。高级选项：支持 `--json`（NDJSON 逐行输出 `server_started` / `error` / `update_available` / `validation_passed` 事件，脚本逐行 `JSON.parse`）、`--no-open`（无 GUI 环境）和 Live Preview 热刷新。命令应指向实际生成的母版或 `tailored/` 定制版。若用户选择 Canvas 但当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令；不得声称已打开 Web 预览。用户暂时不需要 Canvas 时直接交付已验证的视觉 HTML/PDF。ATS-safe 模式不启动 Canvas。
+  若用户选择 Canvas 但当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令；不得声称已打开 Web 预览。用户暂时不需要 Canvas 时直接交付已验证的视觉 HTML/PDF。ATS-safe 模式不启动 Canvas。详细的 Live Preview 热刷新、CLI 选项与编辑排障见 `resume-canvas`。
 - 调用 `resume-version-manager` 记录母版或定制版的父版本、事实文件、JD 和变更摘要。若用户明确要求 Git 提交，再记录提交 ID。
 
 ## 不要做

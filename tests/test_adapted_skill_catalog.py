@@ -71,6 +71,37 @@ class AdaptedSkillCatalogTests(unittest.TestCase):
         self.assertIn("data URL", content)
         self.assertIn("系统字体回退", content)
 
+    def test_resume_canvas_documents_editor_protocol_and_lifecycle(self):
+        canvas_file = SKILLS / "resume-canvas" / "SKILL.md"
+        self.assertTrue(canvas_file.is_file(), f"missing {canvas_file}")
+        content = canvas_file.read_text(encoding="utf-8")
+
+        self.assertRegex(content, r"^---\nname: resume-canvas\n")
+        self.assertIn("description:", content)
+        self.assertIn("data-resume-editor-template", content)
+        self.assertIn("data-resume-editor-version=\"1\"", content)
+        self.assertIn("data-resume-editor-id", content)
+        self.assertIn("可独立编辑", content)
+        self.assertIn("禁止把", content)
+        self.assertIn("容器", content)
+        self.assertIn("resume-skills validate", content)
+        self.assertIn("resume-skills editor", content)
+        self.assertIn("--manifest", content)
+        self.assertIn("--json", content)
+        self.assertIn("--no-open", content)
+        self.assertIn("--port", content)
+        self.assertIn("Live Preview", content)
+        self.assertIn("重新渲染", content)
+        self.assertIn("render_resume.ps1", content)
+        self.assertIn("明确报告未启动", content)
+        self.assertRegex(content, r"ATS-safe 模式不(?:使用|启动) Canvas")
+
+    def test_workflow_skills_route_to_resume_canvas(self):
+        for skill_name in ("resume-builder", "jd-tailorer", "resume-workflow"):
+            content = (SKILLS / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            self.assertIn("resume-canvas", content, f"{skill_name} should route to resume-canvas")
+
 
 if __name__ == "__main__":
     unittest.main()
+

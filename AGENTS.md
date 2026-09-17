@@ -27,6 +27,7 @@ skills/                         Agent Skills：工作流与参考资料
   resume-bullet-writer/         经历 bullet 诊断与改写
   job-description-analyzer/     JD 结构化分析
   resume-ats-optimizer/         ATS 可读性与关键词诊断
+  resume-canvas/                本地 Canvas 可视化微调与重验闭环
   resume-version-manager/       简历版本策略与维护
   resume-workflow/              完整流程编排（默认入口）
 bin/resume-skills.mjs           npx CLI 与本地 HTTP 服务

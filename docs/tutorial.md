@@ -17,7 +17,7 @@ tags:
 
 `resume-skills` 是一套以候选人已确认事实为边界的简历工作流。它不会把 JD、模板示例或 Agent 的推断当成你的经历，也不会承诺通过 ATS 或获得面试。
 
-## 安装全部 7 个 Skill
+## 安装全部 8 个 Skill
 
 在准备存放私有简历资料的工作区中运行：
 
@@ -27,7 +27,7 @@ npx skills add Chasen-Liao/resume-skills --skill '*' --agent codex --yes
 
 如果使用其他 Agent，可去掉 `--agent codex --yes`，在交互界面选择目标 Agent 和安装范围。建议把包含个人信息的简历工作区放在本项目目录外，并使用本地私有 Git 历史；不要推送到公开仓库。
 
-当前工作流包含 7 个 Skill：
+当前工作流包含 8 个 Skill：
 
 1. `resume-workflow`：判断从零创建、导入旧简历还是针对 JD 定制，并编排后续步骤。
 2. `resume-builder`：采访或解析已有简历，确认事实后生成母版。
@@ -35,7 +35,8 @@ npx skills add Chasen-Liao/resume-skills --skill '*' --agent codex --yes
 4. `resume-bullet-writer`：在证据不足或表达职责化时，提出可确认的 bullet 改写。
 5. `jd-tailorer`：只基于已确认事实重排和对齐 JD，不制造缺失经验。
 6. `resume-ats-optimizer`：检查结构、文本提取和关键词呈现风险。
-7. `resume-version-manager`：记录母版、定制版、验证结果与版本关系。
+7. `resume-canvas`：指导并驱动已生成视觉简历的本地可视化微调、协议校验排障与重验闭环。
+8. `resume-version-manager`：记录母版、定制版、验证结果与版本关系。
 
 # 从事实开始，而不是从模板开始
 

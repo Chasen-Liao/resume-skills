@@ -87,7 +87,7 @@ resume-skills editor resume_visual.html
 
 `jd-tailorer` 会输出岗位定制版和匹配分析，不会覆盖你的母版。
 
-## 你可以使用的 7 个 Skills
+## 你可以使用的 8 个 Skills
 
 | Skill | 什么时候用 | 主要输入 | 主要输出 |
 |---|---|---|---|
@@ -97,6 +97,7 @@ resume-skills editor resume_visual.html
 | `jd-tailorer` | 为一个具体公司和岗位定制简历 | 简历母版 + JD 分析 | 变更预览确认后的定制 HTML/PDF + `matching-analysis.md` |
 | `resume-bullet-writer` | 条件触发：经历描述职责化、贡献不清或证据不足时 | 原始描述、真实职责/结果，可附目标 JD | 有证据支持的改写候选、诊断与待确认问题 |
 | `resume-ats-optimizer` | 母版或定制版生成后的质量关卡 | HTML、PDF、文本，可附 JD | ATS 风险清单、关键词与结构优化建议 |
+| `resume-canvas` | 视觉版生成并验证后，进行本地可视化微调与重验闭环 | 已验证的视觉 HTML；可附带 manifest | 微调后 HTML、重新验证的 PDF 与 manifest |
 | `resume-version-manager` | 在确认节点保存母版、定制版和投递记录 | 现有文件、目标岗位、版本记录 | 版本命名、目录结构、变更摘要与 Git 维护策略 |
 
 ### 推荐工作流
@@ -114,6 +115,8 @@ resume-skills editor resume_visual.html
 jd-tailorer → 变更预览 → 用户确认 → 岗位定制版
     ↓
 resume-ats-optimizer（质量关卡：报告风险，不静默改写）
+    ↓
+（可选微调）resume-canvas → 本地排版微调与文字修正 → 保存后重验
     ↓
 resume-version-manager（记录确认后的版本与投递历史）
 ```

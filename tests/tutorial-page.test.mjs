@@ -49,11 +49,12 @@ test("Markdown source preserves front matter and article content", () => {
   assert.match(source, /pbs\.twimg\.com\/media/);
 });
 
-test("tutorial follows the current seven-skill delivery workflow", () => {
+test("tutorial follows the current eight-skill delivery workflow", () => {
   const source = readRequired(markdown);
   const skills = [
     "resume-workflow", "resume-builder", "job-description-analyzer",
     "resume-bullet-writer", "jd-tailorer", "resume-ats-optimizer",
+    "resume-canvas",
     "resume-version-manager",
   ];
   for (const skill of skills) assert.match(source, new RegExp(`\\b${skill}\\b`), skill);

@@ -13,9 +13,12 @@ description: 根据职位描述(JD)定制简历的技能。当用户提到「JD�
 
 ## 协作入口
 
-优先接收 `job-description-analyzer` 基于 `resume-facts.yaml` 生成的要求地图与匹配证据；若没有，先在本 skill 内完成同等分析。生成前必须向用户展示**变更预览**：哪些已确认经历会前置、哪些措辞会对齐 JD、哪些要求仍是缺口；用户确认后才生成定制版。
+优先接收 `job-description-analyzer` 基于 `resume-facts.yaml` 生成的要求地图与匹配证据；若没有，先在本 skill 内完成同等分析。生成前必须向用户展示**变更预览**：哪些已确认经历会前置、哪些措辞会对齐 JD、哪些要求仍是缺口；用户确认后才生成定制版。经历描述若需重点强化可条件调用 `resume-bullet-writer`。
 
-生成后可调用 `resume-ats-optimizer` 作为质量关卡，并将确认的版本交给 `resume-version-manager` 记录；两者都不得静默改写或覆盖定制版。
+**协作流转与出口**：
+- **排版微调**：视觉定制版生成并完成 PDF 验证后，若用户需要交互式微调，**路由至 `resume-canvas`**；
+- **质量关卡**：定制完成后可调用 `resume-ats-optimizer` 进行 ATS 风险审计；
+- **版本归档**：最终交付时将定制文件交由 `resume-version-manager` 记录版本与变更；上述技能都不得静默改写或覆盖定制版。
 
 ## 参考文件解析
 
@@ -84,13 +87,11 @@ npx -p @chasen-liao/resume-skills@latest resume-skills validate "<tailored目录
 npx -p @chasen-liao/resume-skills@latest resume-skills editor "<tailored目录中的resume_visual.html路径>"
 ```
 
-高级 CLI 参数说明（适用于 Agent 自动化或无 GUI 容器环境）：
-- `--json`：以 NDJSON 逐行输出事件（`server_started` / `error` / `update_available` / `validation_passed`）；协议/参数/端口失败均输出 `event: "error"`。服务继续运行，脚本逐行 `JSON.parse`。
-- `--no-open`：禁用自动打开系统浏览器（适合控制台或集成环境）。
-- `--port <number>`：指定监听端口。
-- **Live Preview**：编辑器建立连接后支持 SSE 热刷新。当 Agent 重新写入或修改该 HTML 时，页面将自动重载展示最新效果。
+用户选择 Canvas 后，命令会启动本地服务并尝试打开浏览器。告知用户定制版 HTML/PDF 与匹配报告的位置；Canvas 保存时会直接覆盖定制版 HTML，保存文字与排版修改后的最新版本。Canvas 不负责事实采访或 AI 改写；任何文字变更必须回到 Agent 工作流重新确认事实并验证 PDF。若用户选择 Canvas 但当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。
 
-用户选择 Canvas 后，命令会启动本地服务并尝试打开浏览器。告知用户定制版 HTML/PDF 与匹配报告的位置；Canvas 保存时会直接覆盖定制版 HTML，保存文字与排版修改后的最新版本。Canvas 不负责事实采访或 AI 改写；任何文字变更必须回到 Agent 工作流重新确认事实并验证 PDF。若用户选择 Canvas 但当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
+若用户需要深入微调排版（字号/间距/颜色/页边距）、利用 Live Preview 热重载协同或需要高级 CLI 自动化（`--json` / `--no-open` / `--port`），**路由至 `resume-canvas` 技能**。
+
+ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
 
 ## 硬约束
 
