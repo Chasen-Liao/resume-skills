@@ -19,6 +19,7 @@
 - `resume-builder` 必须先完成信息采访，再让用户选择视觉风格，最后生成简历。
 - `jd-tailorer` 仅在已有简历事实和 JD 的基础上定制；JD 关键词不是候选人事实。
 - Canvas 支持编辑已有字段的纯文本，以及字号、字重、颜色、对齐、行高、段后距、页边距、主题色等排版项；不支持插入 HTML、AI 改写、JD 匹配、结构重排、自由拖拽或图片编辑。
+- Canvas 保存时以源文件为白名单自动过滤日常浏览器插件（如翻译、深色模式等）向 `<head>` 和 `<body>` 注入的外部样式、脚本及挂件，确保写回 HTML 纯净无污染。
 - 内置模板必须带 `data-resume-editor-template`、`data-resume-editor-version="1"` 和唯一稳定的 `data-resume-editor-id`；不再依赖运行时 fallback ID。
 
 ## 目录说明

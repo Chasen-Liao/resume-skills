@@ -246,7 +246,7 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor resume_visual.html
 
 编辑器建立连接后支持 **Live Preview 实时热重载**：当源 HTML 文件在外部或由 Agent 更新时，预览与 Canvas 编辑器会自动拉取并刷新最新页面内容。
 
-点击“保存修改”后，文字修改和排版覆盖会原子写回原始 HTML；关联的 `*.resume-manifest.json` 会立即失效，防止旧 PDF 被误认为仍对应当前 HTML。若 manifest 不在同目录或文件名不同，请用 `--manifest <path>` 显式关联。
+点击“保存修改”后，文字修改和排版覆盖会原子写回原始 HTML（内置浏览器扩展免疫机制，保存时基于源文件白名单自动剔除沉浸式翻译、Dark Reader 等插件向页面注入的外部样式与脚本，确保落盘文件纯净）；关联的 `*.resume-manifest.json` 会立即失效，防止旧 PDF 被误认为仍对应当前 HTML。若 manifest 不在同目录或文件名不同，请用 `--manifest <path>` 显式关联。
 
 点击“打印为 PDF”后，在浏览器打印面板中选择 A4 并保存 PDF。若浏览器没有自动打开，请直接打开终端中显示的本地地址。
 
