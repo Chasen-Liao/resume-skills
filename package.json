@@ -1,6 +1,6 @@
 {
   "name": "@chasen-liao/resume-skills",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Agent skills and a local canvas editor for generated HTML resumes",
   "type": "module",
   "bin": {
@@ -13,18 +13,12 @@
     "CHANGELOG.md",
     "README.md",
     "requirements-test.txt",
-    "AGENTS.md",
-    "assets",
-    "image.png",
-    "builder.png",
     "skills/*/SKILL.md",
     "skills/*/agents/*.yaml",
     "skills/*/references/**/*",
     "skills/resume-builder/scripts/*.mjs",
     "skills/resume-builder/scripts/*.ps1",
-    "skills/resume-builder/scripts/*.py",
-    "docs/canvas-editor-guide.md",
-    "docs/canvas-installation-guide.md"
+    "skills/resume-builder/scripts/*.py"
   ],
   "scripts": {
     "test": "npm run test:node && npm run test:python",

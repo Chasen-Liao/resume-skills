@@ -5,7 +5,7 @@ author:
   - "[[@chasen_liao]]"
 published: 2026-07-16
 updated: 2026-08-01
-description: "使用 7 个 resume-skills 建立事实库、生成视觉版与 ATS-safe 版、按 JD 定制，并用 manifest 验证最终 HTML/PDF。"
+description: "使用 4 个核心 resume-skills 建立事实库、生成视觉版与 ATS-safe 版、按 JD 定制，并用 manifest 验证最终 HTML/PDF。"
 tags:
   - "resume"
   - "agent-skills"
@@ -17,7 +17,7 @@ tags:
 
 `resume-skills` 是一套以候选人已确认事实为边界的简历工作流。它不会把 JD、模板示例或 Agent 的推断当成你的经历，也不会承诺通过 ATS 或获得面试。
 
-## 安装全部 8 个 Skill
+## 安装全部 4 个核心 Skill
 
 在准备存放私有简历资料的工作区中运行：
 
@@ -27,16 +27,12 @@ npx skills add Chasen-Liao/resume-skills --skill '*' --agent codex --yes
 
 如果使用其他 Agent，可去掉 `--agent codex --yes`，在交互界面选择目标 Agent 和安装范围。建议把包含个人信息的简历工作区放在本项目目录外，并使用本地私有 Git 历史；不要推送到公开仓库。
 
-当前工作流包含 8 个 Skill：
+当前工作流包含 4 个核心 Skill（1 个总入口 + 3 个专业站）：
 
-1. `resume-workflow`：判断从零创建、导入旧简历还是针对 JD 定制，并编排后续步骤。
-2. `resume-builder`：采访或解析已有简历，确认事实后生成母版。
-3. `job-description-analyzer`：拆解 JD 的硬性要求、加分项和关键词来源。
-4. `resume-bullet-writer`：在证据不足或表达职责化时，提出可确认的 bullet 改写。
-5. `jd-tailorer`：只基于已确认事实重排和对齐 JD，不制造缺失经验。
-6. `resume-ats-optimizer`：检查结构、文本提取和关键词呈现风险。
-7. `resume-canvas`：指导并驱动已生成视觉简历的本地可视化微调、协议校验排障与重验闭环。
-8. `resume-version-manager`：记录母版、定制版、验证结果与版本关系。
+1. `resume-workflow`：总流程编排，统一串联母版生命周期与针对 JD 的定制生命周期。
+2. `resume-builder`：母版工作站，采访或解析已有简历，就地打磨经历，确认事实后生成视觉/ATS母版。
+3. `jd-tailorer`：岗位定制工作站，一站式完成 JD 分析、匹配度评估、变更预览、定向定制、ATS 门禁与版本归档。
+4. `resume-canvas`：本地微调工作站，指导并驱动已生成视觉简历的本地可视化微调、协议校验排障与重验闭环。
 
 # 从事实开始，而不是从模板开始
 
@@ -44,7 +40,7 @@ npx skills add Chasen-Liao/resume-skills --skill '*' --agent codex --yes
 
 - 空工作区：调用 `resume-workflow`，让 Agent 逐步采访。
 - 已有 PDF/HTML 简历：交给 `resume-builder` 解析；解析结果先进入待确认清单，不能直接进入成稿。
-- 已有母版和 `resume-facts.yaml`：提供 JD，进入 `job-description-analyzer` 与 `jd-tailorer`。
+- 已有母版和 `resume-facts.yaml`：提供 JD，进入 `jd-tailorer`。
 
 可直接这样提问：
 
@@ -107,15 +103,15 @@ ATS-safe 版不使用 Canvas，直接在生成后检查单栏阅读顺序、复�
 
 # 针对 JD 生成定制版
 
-先让 `job-description-analyzer` 输出要求地图，再由 `jd-tailorer` 展示变更预览：哪些已确认经历会前置、哪些措辞会对齐 JD、哪些要求仍是缺口。用户确认后再生成岗位目录中的视觉版和按需的 ATS-safe 版。
+由 `jd-tailorer` 一站式完成 JD 结构化解构、匹配度诊断并展示变更预览：哪些已确认经历会前置、哪些措辞会对齐 JD、哪些要求仍是缺口。用户确认后再生成专用岗位目录 `tailored/<公司名>-<岗位>/` 中的定制版及匹配分析报告。
 
 ```text
 使用 jd-tailorer 根据下面的 JD 定制我的简历。先展示变更预览和事实来源，
 不要把 JD 关键词写成我的技能；确认后生成 *_visual.html 和 *_ats.html，
-再调用 resume-ats-optimizer 做质量关卡。
+并在交付前执行 ATS 质量门禁。
 ```
 
-最终由 `resume-version-manager` 记录母版来源、JD 来源、变更摘要、未匹配要求和当前有效 manifest。HTML/PDF 是事实库生成的交付物，不替代 `resume-facts.yaml`。
+定制版文件统一隔离保存于 `tailored/<公司名>-<岗位>/` 目录中，自动生成 `matching-analysis.md` 与 `version-notes.md`，记录母版来源、JD 来源、变更摘要、未匹配要求和当前有效 manifest，并提供本地 Git 提交建议。HTML/PDF 是事实库生成的交付物，不替代 `resume-facts.yaml`。
 
 # 投递前检查清单
 

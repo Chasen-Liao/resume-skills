@@ -1,24 +1,20 @@
 ---
 name: resume-workflow
-description: 编排从导入已有简历或采访开始，到母版、JD 定制、ATS 审计和版本记录的完整简历流程。当用户想创建、更新、投递或持续维护简历，但不想自己选择多个简历 Skill 时使用。只基于用户确认的事实，不自动提交、推送或覆盖版本历史。
+description: 编排从导入已有简历或采访开始，到母版制作、针对 JD 定制、质量审计与本地排版微调的完整简历流程。当用户想创建、更新、投递或持续维护简历，但不想自己选择多个简历 Skill 时使用。只基于用户确认的事实，不自动提交、推送或覆盖版本历史。
 ---
 
-# 简历工作流
+# 简历工作流 (Resume Workflow)
 
-将 `resume-builder`、JD 分析、经历改写、定制、ATS 审计、Canvas 微调和版本管理串成一个完整流程；用户只需确认事实、改写和版本操作。
+将 `resume-builder`（母版构建与事实确权）、`jd-tailorer`（JD分析与定向定制）、`resume-canvas`（本地可视化微调）串成一条连贯、无缝的主干工作流。
 
-## 技能协作总览与路由
+## 技能协作总览（双主阶段）
 
 | 阶段 | 责任 Skill | 输入 | 输出 / 交付 | 协作流转与路由条件 |
 |---|---|---|---|---|
-| 0. 私有事实库 | `resume-workflow` | 用户已有简历或经历描述 | `resume-facts.yaml` | 初始化唯一事实源，全程不将未确认事实写回 |
-| 1. 母版生成 | `resume-builder` | 事实库 / 用户采访 | 母版 HTML/PDF | 经历模糊或职责化时触发经历打磨；排版前选模板 |
-| 1.5 经历打磨 | `resume-bullet-writer` | 弱经历 / 弱项目 bullet | 有证据支持的改写建议 | 条件触发：改写须用户确认后写回事实库或母版 |
-| 2. JD 分析 | `job-description-analyzer` | 目标 JD + 事实库 | 要求地图、真实缺口 | 分析后将结构化结果交接给 `jd-tailorer` |
-| 3. 岗位定制 | `jd-tailorer` | 母版 + JD 分析报告 | 定制版 HTML/PDF | 定制版保存于 `tailored/` 目录，不覆盖母版 |
-| 4. 质量审计 | `resume-ats-optimizer` | HTML / PDF 交付物 | ATS 风险与关键词报告 | 质量门禁；修复呈现问题须用户确认 |
-| 5. 可视化微调 | `resume-canvas` | 已验证的视觉 HTML | 微调后 HTML + 重验 PDF | 仅视觉模式：排版微调、文字修正与重验闭环 |
-| 6. 版本追踪 | `resume-version-manager` | 当前交付物 + 事实库 | 版本目录与 Git 提交 | 记录版本变更、父版本及关联 manifest |
+| **0. 私有事实库** | `resume-workflow` | 用户已有简历或经历描述 | `resume-facts.yaml` | 初始化唯一事实源，全程不将未确认事实写回 |
+| **阶段一：母版生命周期** | `resume-builder` | 事实库 / 真实经历采访 | 母版 HTML/PDF、有效 Manifest | 对话采访，就地打磨经历，选模板并完成 A4 单页验证；建议本地 Git 提交 |
+| **阶段二：岗位定制生命周期** | `jd-tailorer` | 母版 + 目标 JD | 定制版 HTML/PDF、匹配报告与版本记录 | 一站式解构 JD、输出变更预览、双模生成、ATS 门禁与目录隔离；建议本地 Git 提交 |
+| **可选：本地微调守卫** | `resume-canvas` | 已验证的视觉 HTML | 微调后 HTML + 重验 PDF | 仅视觉模式：母版或定制版定稿后的本地所见即所得排版微调与 Manifest 重验闭环 |
 
 ## 先读
 
@@ -28,47 +24,67 @@ description: 编排从导入已有简历或采访开始，到母版、JD 定制�
 
 - 将用户简历保存在项目目录外的本地私有目录，例如 `<个人私有目录>/resume/`；不要使用源码仓库中的示例或模板目录保存真实个人数据。
 - 在用户确认导入/采访结果后，按 `resume-facts.example.yaml` 创建 `resume-facts.yaml`。它是母版和定制版的唯一事实源；未确认字段只能保留在该文件的待确认记录或分析报告中。
-- 用户明确同意后，才在这个私有目录初始化、提交或推送 Git。默认仅建议本地 Git，不默认创建远程仓库。
+- 建议将私有目录纳入**本地私有 Git 仓库**进行版本管理；不默认推送到远程公开仓库。用户明确同意后才执行提交建议，不自动执行 Git 初始化、提交、推送或覆盖。
 
-## 1. 建立或更新母版
+## 阶段一：建立或维护简历母版 (`resume-builder`)
 
-- 用户提供已有简历时，先调用 `resume-builder` 的导入路径：提取内容、展示解析结果，并对模糊、冲突、可能过期或缺少证据的字段增量追问。
-- 用户没有简历时，调用 `resume-builder` 的采访路径。
-- 只有用户确认的 claim 才写入 `resume-facts.yaml` 并生成母版。若某条经历职责化、贡献不清或证据不足，可条件触发 `resume-bullet-writer`；候选改写仍须用户确认。
-- 事实确认后让用户选择视觉或 ATS-safe 输出模式；视觉模式再从六个模板中选择。
+1. **导入或采访**：
+   - 用户提供已有简历时，走导入路径：提取内容、展示已识别内容，并对模糊、冲突或缺少证据的字段**增量追问**；
+   - 用户没有简历时，走结构化采访路径；
+   - 经历描述若职责化或缺少具体贡献，依据 `content-writing.md` **原地就地打磨**，使用强动词结构，不打断主流程。
+2. **事实确权**：
+   - 只有用户明确确认的 claim 才写入 `resume-facts.yaml`。
+3. **风格选择与生成**：
+   - 确认事实后选择视觉模式（6 套模板）或 ATS-safe 单栏模式，生成母版 `resume.html`（或对应命名）。
+4. **PDF 验证与可选 Canvas 微调**：
+   - 视觉版必须先完成 Canvas 字段验收与 Playwright 单页/密度验证（见下方验证契约）；
+   - 验证通过后询问是否需要本地 Canvas 预览微调；若需要，**路由至 `resume-canvas`**；
+   - 微调保存后必须在 Agent 工作流中核验事实并重新跑渲染脚本，闭环验证。
+5. **母版版本固化**：
+   - 建议在本地 Git 提交：`git commit -m "创建母版简历"`。
 
-## 2. 针对 JD 定制
+## 阶段二：针对岗位进行定向定制 (`jd-tailorer`)
 
-- 先调用 `job-description-analyzer`，将 JD 要求与 `resume-facts.yaml` 中的已确认 claim 对照，输出匹配点、真实缺口和定制优先级。
-- 再调用 `jd-tailorer`，先展示变更预览；只有用户确认前置、改写和保留的缺口后，才生成 `tailored/<公司名>-<岗位>/` 中的定制版。
+已有母版和 `resume-facts.yaml` 后，用户输入具体公司和岗位的 JD：
+1. **一站式 JD 分析与变更预览**：
+   - `jd-tailorer` 解构 JD 硬性条件、加分项与技术栈，对照事实库标定匹配点与真实缺口；
+   - 向用户展示**变更预览**（前置哪些项目、对齐哪些措辞、保留哪些客观缺口）；
+   - 用户仅需投递诊断时交付分析报告；用户确认定制时进入生成。
+2. **双模式输出与目录隔离**：
+   - 统一输出到专用的 `tailored/<公司名>-<岗位>/` 目录，**绝对不覆盖母版**；
+   - 输出定制版 `resume_visual.html / .pdf`（或 ATS 版）、`matching-analysis.md` 和 `version-notes.md`。
+3. **ATS 质量门禁与 PDF 验证**：
+   - 运行 ATS 可解析性检查（无图片承载文字、无隐藏文字）及 `validate_resume.py` 验证；
+   - 视觉版运行 `render_resume.ps1` 完成单页与 $\ge 98\%$ 利用率验证；
+   - 验证通过后按需提供 Canvas 预览；微调保存后重新验证。
+4. **版本归档与 Git 提交建议**：
+   - 建议本地提交：`git commit -m "定制：<公司名> - <岗位>"`。
 
-## 3. 审计与记录
+## 交付验证与 Canvas 契约（强制执行）
 
-- 调用 `resume-ats-optimizer` 作为生成后的质量关卡。报告可直接修复的呈现问题与不能伪造的事实缺口；修复前取得用户确认。
-- 母版或 JD 定制流程生成视觉 HTML 后，必须先完成 **PDF 验证**：用 `resume-builder` 的渲染脚本完成溢出、PDF 单页/页面密度验证并生成 hash manifest。之后询问用户是否需要本地 Canvas 预览；Canvas 是可选微调步骤。Canvas 保存会让 manifest 失效，保存后必须重新渲染与验证：
+母版或 JD 定制流程生成视觉 HTML 后，必须先完成可执行校验与 **PDF 验证**：
 
-  在 PDF 验证和 Canvas 启动前，先验收最终 HTML 的编辑字段协议：`data-resume-editor-template` 与 `data-resume-editor-version="1"` 必须位于 `<html>`；`data-resume-editor-id` 必须数量大于 0、唯一、语义化，并分别标在可独立编辑的文本元素上。禁止把编辑 ID 放在 `<html>`、`<body>`、`<main>`、`.page`、`.resume`、`header`、`footer`、`section`、`ul`、`ol`、`figure` 或包含多个板块/多个字段的容器上，也禁止用一个根容器 ID 代表整份简历。先运行可执行校验（失败即停止交付）：`npx -p @chasen-liao/resume-skills@latest resume-skills validate "<最终_visual.html路径>"`，重复直到输出“校验通过”。记录字段总数、重复 ID、容器误标 ID，以及个人信息 / 经历 bullet 字段检查结果；任何失败都必须停止交付并重新生成或拆分标记。
+1. **验收编辑字段协议**：
+   `data-resume-editor-template` 与 `data-resume-editor-version="1"` 必须位于 `<html>`；`data-resume-editor-id` 必须大于 0、唯一、语义化，并分别标在可独立编辑的文本元素上。禁止把编辑 ID 放在 `<html>`、`<body>`、`<main>`、`.page`、`.resume`、`header`、`footer`、`section`、`ul`、`ol`、`figure` 或包含多个板块/多个字段的容器上。先检查字段总数与唯一性。
+   ```bash
+   npx -p @chasen-liao/resume-skills@latest resume-skills validate "<最终_visual.html路径>"
+   ```
+2. **渲染与布局验收**：
+   ```bash
+   powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<最终_visual.html路径>" -OutputPdf "<交付目录/自定义文件名.pdf>"
+   python skills/resume-builder/scripts/validate_resume.py --html "<最终_visual.html路径>" --pdf "<交付目录/自定义文件名.pdf>" --mode visual --check-overflow --check-layout --min-fill-ratio 0.98 --preview "<交付目录/自定义文件名.preview.png>" --manifest "<交付目录/自定义文件名.resume-manifest.json>" --renderer "playwright@1.62.1" --json
+   ```
+   PDF 页数必须为 1，有效页面占用率至少 98%，底部安全区合规。
 
-  ```bash
-  powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<最终_visual.html路径>" -OutputPdf "<交付目录/自定义文件名.pdf>"
-  python skills/resume-builder/scripts/validate_resume.py --html "<最终_visual.html路径>" --pdf "<交付目录/自定义文件名.pdf>" --mode visual --check-overflow --check-layout --min-fill-ratio 0.98 --preview "<交付目录/自定义文件名.preview.png>" --manifest "<交付目录/自定义文件名.resume-manifest.json>" --renderer "playwright@1.62.1" --json
-  ```
-
-  `render_resume.ps1` 会完成 full-page 自动布局、真实 PDF 渲染、低分辨率预览生成并自动执行同等交付验证；第二条命令明确展示并可重复执行完整验证契约。manifest 以其中规范化的 `html.path` 绑定源 HTML，并同时绑定 PDF 和 preview，不要求三者与 manifest 使用相同 stem。
-
-  PDF 页数必须为 1，有效页面占用率至少 98%；页面偏空或上下留白不均应在不改变事实的前提下通过 full-page 垂直分布、密度和均匀间距处理，底部安全区失败必须修复。自动密度下限仍无法满足时要明确报告用户，不得静默交付大面积空白版本。
-
-  若用户选择需要本地可视化微调，**路由至 `resume-canvas` 技能**执行协议检查、编辑器启动与保存重验闭环：
-
-  ```bash
-  npx -p @chasen-liao/resume-skills@latest resume-skills editor "<最终_visual.html路径>" --manifest "<交付目录/自定义文件名.resume-manifest.json>"
-  ```
-
-  若用户选择 Canvas 但当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令；不得声称已打开 Web 预览。用户暂时不需要 Canvas 时直接交付已验证的视觉 HTML/PDF。ATS-safe 模式不启动 Canvas。详细的 Live Preview 热刷新、CLI 选项与编辑排障见 `resume-canvas`。
-- 调用 `resume-version-manager` 记录母版或定制版的父版本、事实文件、JD 和变更摘要。若用户明确要求 Git 提交，再记录提交 ID。
+3. **按需启动 Canvas**：
+   用户确认需要本地微调时，**路由至 `resume-canvas`**：
+   ```bash
+   npx -p @chasen-liao/resume-skills@latest resume-skills editor "<最终_visual.html路径>" --manifest "<交付目录/自定义文件名.resume-manifest.json>"
+   ```
+   若环境无法执行 `npx`，明确报告未启动并提供带实际路径的完整命令。ATS-safe 模式不启动 Canvas。用户不需要微调时直接交付产物。
 
 ## 不要做
 
-- 不把 PDF/DOCX/HTML 的解析文字直接当成用户确认的事实；扫描件或 OCR 不可靠时说明限制并请求可复制文本或用户确认。
-- 不让 JD、模板或 ATS 建议新增候选人的技能、指标、职责或成果。
-- 不自动初始化 Git、提交、推送、回滚或覆盖用户的文件。
+- 不把解析文本直接当成用户确认的事实；未经确认不进入最终成稿。
+- 不让 JD 要求或建议新增候选人未具备的技能、指标或经历；不伪造经历。
+- 不自动执行 Git 初始化、提交、推送、回滚或静默覆盖用户文件。

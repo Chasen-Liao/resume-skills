@@ -5,23 +5,37 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
+CORE_WORKFLOW_SKILLS = ("resume-builder", "jd-tailorer", "resume-workflow")
+ALL_CORE_SKILLS = ("resume-workflow", "resume-builder", "jd-tailorer", "resume-canvas")
+DEPRECATED_SKILLS = (
+    "job-description-analyzer",
+    "resume-bullet-writer",
+    "resume-ats-optimizer",
+    "resume-version-manager",
+)
+
 ADAPTED_SKILLS = {
-    "resume-bullet-writer": "resume-builder/references/resume-contract.md",
-    "job-description-analyzer": "resume-builder/references/resume-contract.md",
-    "resume-ats-optimizer": "resume-builder/references/resume-contract.md",
-    "resume-version-manager": "resume-builder/references/resume-contract.md",
+    "resume-workflow": "resume-builder/references/resume-contract.md",
+    "resume-builder": "references/resume-contract.md",
+    "jd-tailorer": "resume-builder/references/resume-contract.md",
 }
 
 
 class AdaptedSkillCatalogTests(unittest.TestCase):
     def test_adapted_skills_are_present_and_reference_fact_contract(self):
-        for skill_name, contract_reference in ADAPTED_SKILLS.items():
+        for skill_name in ALL_CORE_SKILLS:
             skill_file = SKILLS / skill_name / "SKILL.md"
             self.assertTrue(skill_file.is_file(), f"missing {skill_file}")
-
             content = skill_file.read_text(encoding="utf-8")
             self.assertRegex(content, rf"^---\nname: {re.escape(skill_name)}\n", skill_file)
             self.assertIn("description:", content, skill_file)
+
+        for deprecated in DEPRECATED_SKILLS:
+            self.assertFalse((SKILLS / deprecated).exists(), f"deprecated skill should be removed: {deprecated}")
+
+        for skill_name, contract_reference in ADAPTED_SKILLS.items():
+            skill_file = SKILLS / skill_name / "SKILL.md"
+            content = skill_file.read_text(encoding="utf-8")
             self.assertIn(contract_reference, content, skill_file)
 
     def test_resume_builder_documents_the_canvas_editor_protocol(self):
@@ -30,7 +44,7 @@ class AdaptedSkillCatalogTests(unittest.TestCase):
         self.assertIn("data-resume-editor-id", content)
 
     def test_canvas_editor_ids_are_independent_text_targets(self):
-        for skill_name in ("resume-builder", "jd-tailorer", "resume-workflow"):
+        for skill_name in CORE_WORKFLOW_SKILLS:
             content = (SKILLS / skill_name / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn("可独立编辑", content, skill_name)
             self.assertIn("禁止把", content, skill_name)
@@ -44,7 +58,7 @@ class AdaptedSkillCatalogTests(unittest.TestCase):
             r'npx -p @chasen-liao/resume-skills@latest resume-skills editor "<[^"\n]*visual\.html路径>"'
         )
 
-        for skill_name in ("resume-builder", "jd-tailorer", "resume-workflow"):
+        for skill_name in CORE_WORKFLOW_SKILLS:
             content = (SKILLS / skill_name / "SKILL.md").read_text(encoding="utf-8")
             command = command_pattern.search(content)
             self.assertIsNotNone(command, skill_name)
@@ -97,7 +111,7 @@ class AdaptedSkillCatalogTests(unittest.TestCase):
         self.assertRegex(content, r"ATS-safe 模式不(?:使用|启动) Canvas")
 
     def test_workflow_skills_route_to_resume_canvas(self):
-        for skill_name in ("resume-builder", "jd-tailorer", "resume-workflow"):
+        for skill_name in CORE_WORKFLOW_SKILLS:
             content = (SKILLS / skill_name / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn("resume-canvas", content, f"{skill_name} should route to resume-canvas")
 

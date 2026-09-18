@@ -14,10 +14,8 @@ class ResumeWorkflowTests(unittest.TestCase):
 
         self.assertIn("name: resume-workflow", skill)
         self.assertIn("resume-builder", skill)
-        self.assertIn("job-description-analyzer", skill)
         self.assertIn("jd-tailorer", skill)
-        self.assertIn("resume-ats-optimizer", skill)
-        self.assertIn("resume-version-manager", skill)
+        self.assertIn("resume-canvas", skill)
         self.assertIn("用户确认", skill)
 
     def test_facts_template_preserves_claim_evidence_and_confirmation(self):

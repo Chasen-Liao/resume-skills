@@ -6,8 +6,11 @@
 
 `resume-skills` 是一组以事实为边界的简历工作流技能，以及一个用于已生成 HTML 简历的本地 Canvas 排版编辑器。
 
-- 技能负责采访、事实核验、内容写作、JD 匹配、ATS 优化和版本管理。
-- `resume-skills editor <resume.html>` 负责已生成简历的文字与排版微调，不生成新经历；保存文字修改后必须重新确认事实并验证 PDF。
+- 技能体系收敛为「1 个顶层总编排 (`resume-workflow`) + 3 个核心专业站 (`resume-builder`, `jd-tailorer`, `resume-canvas`)」。
+- `resume-workflow` 编排双主生命周期（母版构建生命周期 + 岗位定向定制生命周期）。
+- `resume-builder` 负责母版经历采访、事实确权、就地 STAR/量化打磨与 6 套视觉模板渲染。
+- `jd-tailorer` 负责 JD 结构化解构、匹配度诊断、定向定制、ATS 门禁与版本归档。
+- `resume-skills editor <resume.html>`（由 `resume-canvas` 驱动）负责已生成简历的文字与排版微调，不生成新经历；保存文字修改后必须重新确认事实并验证 PDF。
 - 简历以独立 HTML 为主输出，浏览器打印为 PDF；为确保工作流中具有单一的事实来源 (Source of Truth)，Canvas 编辑器保存时将直接覆盖并固化原始 HTML 文件。
 
 ## 关键边界
@@ -22,14 +25,10 @@
 
 ```text
 skills/                         Agent Skills：工作流与参考资料
-  resume-builder/               对话式简历生成与 6 套模板
-  jd-tailorer/                  JD 定制与匹配报告
-  resume-bullet-writer/         经历 bullet 诊断与改写
-  job-description-analyzer/     JD 结构化分析
-  resume-ats-optimizer/         ATS 可读性与关键词诊断
+  resume-workflow/              完整流程编排（默认入口，双主阶段）
+  resume-builder/               母版对话构建、就地经历打磨与 6 套模板
+  jd-tailorer/                  JD 结构化分析、岗位匹配度诊断、定向定制与版本归档
   resume-canvas/                本地 Canvas 可视化微调与重验闭环
-  resume-version-manager/       简历版本策略与维护
-  resume-workflow/              完整流程编排（默认入口）
 bin/resume-skills.mjs           npx CLI 与本地 HTTP 服务
 lib/                            HTML 协议、资源路径、控件规则
 public/                         Canvas 前端（editor.html、app.js、app.css）
@@ -60,6 +59,7 @@ node bin\resume-skills.mjs editor skills\resume-builder\references\examples\mode
 ## 发布检查
 
 1. 更新 `package.json` 版本、README 和 `CHANGELOG.md`。
-2. 运行上述全部测试、`npm run test:integration`，并用 `npm pack --dry-run --json` 检查发布包包含 `requirements-test.txt` 且不包含 `__pycache__`/`.pyc`。
-3. 发布 scoped npm 包时使用 `npm publish --access public`。
-4. `npx skills add` 读取 GitHub 仓库中的 `skills/*/SKILL.md`；若技能本身有更新，需在确认干净的提交范围后再推送仓库。
+2. 运行全部测试：`npm test`、`npm run test:integration`，并用 `npm pack --dry-run --json` 检查发布包包含 `requirements-test.txt` 且不包含 `__pycache__`/`.pyc`。
+3. 执行端到端真实简历编辑与保存回归测试，确保 HTML 原子写回与 manifest 失效正常。
+4. 发布 scoped npm 包时使用 `npm publish --access public`。
+5. `npx skills add` 读取 GitHub 仓库中的 `skills/*/SKILL.md`；若技能本身有更新，需在确认干净的提交范围后再推送仓库。

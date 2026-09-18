@@ -49,15 +49,18 @@ test("Markdown source preserves front matter and article content", () => {
   assert.match(source, /pbs\.twimg\.com\/media/);
 });
 
-test("tutorial follows the current eight-skill delivery workflow", () => {
+test("tutorial follows the current core-skill delivery workflow", () => {
   const source = readRequired(markdown);
   const skills = [
-    "resume-workflow", "resume-builder", "job-description-analyzer",
-    "resume-bullet-writer", "jd-tailorer", "resume-ats-optimizer",
-    "resume-canvas",
-    "resume-version-manager",
+    "resume-workflow", "resume-builder", "jd-tailorer", "resume-canvas",
   ];
   for (const skill of skills) assert.match(source, new RegExp(`\\b${skill}\\b`), skill);
+  const deprecatedSkills = [
+    "job-description-analyzer", "resume-bullet-writer", "resume-ats-optimizer", "resume-version-manager"
+  ];
+  for (const deprecated of deprecatedSkills) {
+    assert.doesNotMatch(source, new RegExp(`\\b${deprecated}\\b`), `Deprecated skill ${deprecated} should not appear`);
+  }
   assert.match(source, /\*_visual\.html/);
   assert.match(source, /\*_ats\.html/);
   assert.match(source, /npx skills add Chasen-Liao\/resume-skills --skill '\*' --agent codex --yes/);

@@ -17,12 +17,14 @@ test("base tests and integration rendering are explicit, separate installable co
   assert.match(requirements, /^pypdf==/m);
 });
 
-test("npm dry-run package contains the README hero and delivery runtime", () => {
+test("npm dry-run package contains delivery runtime and excludes heavy promotional images", () => {
   const output = execSync("npm pack --dry-run --json", { encoding: "utf8" });
   const report = JSON.parse(output);
   const pack = Array.isArray(report) ? report[0] : Object.values(report)[0];
   const files = pack.files.map(({ path }) => path);
-  assert.ok(files.includes("image.png"));
+  assert.equal(files.includes("image.png"), false);
+  assert.equal(files.includes("builder.png"), false);
+  assert.equal(files.some((path) => path.startsWith("assets/")), false);
   assert.ok(files.includes("requirements-test.txt"));
   assert.ok(files.includes("lib/artifact-manifest.mjs"));
   assert.ok(files.includes("lib/resume-layout.mjs"));
@@ -31,12 +33,13 @@ test("npm dry-run package contains the README hero and delivery runtime", () => 
   assert.equal(files.some((path) => /(?:^|\/)__pycache__(?:\/|$)|\.pyc$/i.test(path)), false);
 });
 
+const BUILTIN_EXAMPLES = [
+  "classic-business", "creative-bold", "japanese-minimal",
+  "minimal-blue-business", "modern-minimal", "tech-dark",
+];
+
 test("built-in examples are visibly marked as fictional demos", () => {
-  const examples = [
-    "classic-business", "creative-bold", "japanese-minimal",
-    "minimal-blue-business", "modern-minimal", "tech-dark",
-  ];
-  for (const name of examples) {
+  for (const name of BUILTIN_EXAMPLES) {
     const html = readFileSync(`skills/resume-builder/references/examples/${name}.html`, "utf8");
     const document = parse(html);
     const root = document.childNodes.find((node) => node.tagName === "html");
@@ -46,11 +49,7 @@ test("built-in examples are visibly marked as fictional demos", () => {
 });
 
 test("built-in visual templates carry the full-page density contract", () => {
-  const examples = [
-    "classic-business", "creative-bold", "japanese-minimal",
-    "minimal-blue-business", "modern-minimal", "tech-dark",
-  ];
-  for (const name of examples) {
+  for (const name of BUILTIN_EXAMPLES) {
     const html = readFileSync(`skills/resume-builder/references/examples/${name}.html`, "utf8");
     assert.match(html, /data-resume-layout="full-page"/, name);
     assert.match(html, /--resume-density-min:\s*0\.84/, name);

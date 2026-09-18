@@ -2,6 +2,30 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.9.0] - 2026-09-18
+
+### Changed
+
+- **架构瘦身与技能收敛（Breaking Change）**：将原先分散的 8 个技能深度收敛为「1 个顶层总编排 + 3 个核心专业站」，大幅降低用户与 Agent 的认知与跳转负担：
+  - `resume-workflow`：精简为双主生命周期（母版构建生命周期 + 岗位定向定制生命周期）；
+  - `resume-builder`：整合原 `resume-bullet-writer` 的经历打磨能力，就地完成 STAR/量化润色，无需跳出；内置母版版本管理建议；
+  - `jd-tailorer`：一站式吞并原 `job-description-analyzer`（JD 结构化解构与匹配诊断）、`resume-ats-optimizer`（ATS 质量门禁与可读性审计）和 `resume-version-manager`（投递隔离目录 `tailored/<公司名>-<岗位>/` 与 `version-notes.md` 记录）；
+  - `resume-canvas`：保持纯粹的独立可视化微调站，更新与 `jd-tailorer`、`resume-builder` 的双向闭环流转。
+- 物理移除 4 个冗余技能目录：`skills/job-description-analyzer`、`skills/resume-bullet-writer`、`skills/resume-ats-optimizer`、`skills/resume-version-manager`。
+- 同步重构教程（`docs/tutorial.md`）、`README.md`、`AGENTS.md` 和全部回归测试，断言废弃技能不再被索引或引用。
+
+### Removed
+
+- 移除仓库内遗留的 `.agents/skills`（来自 emilkowalski/skills 的 7 个本地动效技能）与 `skills-lock.json`，消除与简历核心定位无关的依赖。
+
+### Optimized
+
+- **发布包与体积极致精简**：
+  - 将 `package.json` 的 `files` 白名单剔除本地宣传图片、文档与规范文件；
+  - 将 `README.md` 中的图片引用替换为 raw GitHub 绝对 URL；
+  - 优化头像资产 `avatar.png`，替换为标准 1.16 KB 矢量剪影；
+  - npm 打包体积从 2.5 MB 锐降至 ~107 KB（压缩包）/ ~373 KB（解压后），缩减幅度达 95.7%。
+
 ## [0.8.0] - 2026-09-14
 
 ### Added

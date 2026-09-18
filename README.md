@@ -2,7 +2,7 @@
 
 > 详细教程参考我的 X 推文：https://x.com/chasen_liao/status/2077689805752942619?s=20
 
-![alt text](image.png)
+![alt text](https://raw.githubusercontent.com/Chasen-Liao/resume-skills/main/image.png)
 
 这是一个面向 Codex、Claude Code 和其他兼容 Agent Skills 的简历工作流技能。
 
@@ -12,7 +12,7 @@
 
 完整的分章节安装与使用指南见：[Resume Skills GitHub Pages 教程](https://chasen-liao.github.io/resume-skills/)（[页面源码](docs/index.html)）。
 
-![Resume Skills builder](builder.png)
+![Resume Skills builder](https://raw.githubusercontent.com/Chasen-Liao/resume-skills/main/builder.png)
 
 ## 适合谁
 
@@ -87,41 +87,44 @@ resume-skills editor resume_visual.html
 
 `jd-tailorer` 会输出岗位定制版和匹配分析，不会覆盖你的母版。
 
-## 你可以使用的 8 个 Skills
+## 你可以使用的 4 个核心 Skills
 
 | Skill | 什么时候用 | 主要输入 | 主要输出 |
 |---|---|---|---|
-| `resume-workflow` | 希望由 Agent 串联完整流程，不想自己选择 skill | 已有简历或真实经历；可附 JD | 已确认事实库、母版、定制版、审计与版本记录 |
-| `resume-builder` | 创建或更新简历母版 | 已有简历或你的真实个人信息、教育、经历、项目、技能 | 经确认的母版、视觉版或 ATS-safe 版 HTML/PDF |
-| `job-description-analyzer` | JD 定制前分析，或单独判断是否值得投递 | JD 文本/文件 + 简历母版或事实 | 要求地图、匹配证据、真实缺口与定制优先级 |
-| `jd-tailorer` | 为一个具体公司和岗位定制简历 | 简历母版 + JD 分析 | 变更预览确认后的定制 HTML/PDF + `matching-analysis.md` |
-| `resume-bullet-writer` | 条件触发：经历描述职责化、贡献不清或证据不足时 | 原始描述、真实职责/结果，可附目标 JD | 有证据支持的改写候选、诊断与待确认问题 |
-| `resume-ats-optimizer` | 母版或定制版生成后的质量关卡 | HTML、PDF、文本，可附 JD | ATS 风险清单、关键词与结构优化建议 |
-| `resume-canvas` | 视觉版生成并验证后，进行本地可视化微调与重验闭环 | 已验证的视觉 HTML；可附带 manifest | 微调后 HTML、重新验证的 PDF 与 manifest |
-| `resume-version-manager` | 在确认节点保存母版、定制版和投递记录 | 现有文件、目标岗位、版本记录 | 版本命名、目录结构、变更摘要与 Git 维护策略 |
+| `resume-workflow` | 希望由 Agent 串联完整流程，不想自己挑选单个 skill | 已有简历或真实经历；可附 JD | 完整端到端生命周期编排（母版制作 + 针对 JD 定制） |
+| `resume-builder` | 创建或更新简历母版、就地打磨经历 | 已有简历或真实个人信息、经历、项目、技能 | 经确认的母版事实库、视觉版或 ATS-safe 版 HTML/PDF |
+| `jd-tailorer` | 针对具体岗位 JD 进行结构化解构、匹配评估与定向定制 | 目标 JD 文本/链接 + 简历母版/事实库 | 变更预览确认后的定制 HTML/PDF、匹配分析报告与版本归档 |
+| `resume-canvas` | 视觉版生成并验证后，进行本地可视化微调与重验闭环 | 已验证的视觉 HTML；可附带 manifest | 本地微调后 HTML、重新验证的 PDF 与更新的 manifest |
 
 ### 推荐工作流
 
 ```text
-空的简历工作区 → resume-workflow → 建立事实库与母版
-
+空的简历工作区 → resume-workflow（端到端总编排）
+    ↓
+【阶段一：母版生命周期】
 已有简历 ──→ 解析 → 确认 → 增量追问 ──┐
-                                        ├→ resume-builder → 母版简历
+                                        ├→ resume-builder → 就地打磨经历 → 渲染单页母版
 从零开始 ──→ 逐步采访 ─────────────────┘
-    ├─ 条件触发：经历职责化/证据不足 → resume-bullet-writer → 用户确认后更新事实库
     ↓
-输入 JD → job-description-analyzer → 匹配点、真实缺口与定制策略
+（可选微调）resume-canvas → 本地可视化微调排版与文字 → 保存后重验闭环
     ↓
-jd-tailorer → 变更预览 → 用户确认 → 岗位定制版
+【阶段二：岗位定制生命周期】
+输入目标 JD ──→ jd-tailorer ──→ 结构化解构 JD & 输出要求地图
+                                  ↓
+                              变更预览（前置经历 / 对齐术语 / 真实缺口）
+                                  ↓
+                              用户确认门禁
+                                  ↓
+                              生成定制版 HTML/PDF + matching-analysis.md
+                                  ↓
+                              ATS 质量门禁与单页验证（validate_resume.py）
+                                  ↓
+                              输出至 tailored/<公司>-<岗位>/ 并更新版本记录
     ↓
-resume-ats-optimizer（质量关卡：报告风险，不静默改写）
-    ↓
-（可选微调）resume-canvas → 本地排版微调与文字修正 → 保存后重验
-    ↓
-resume-version-manager（记录确认后的版本与投递历史）
+（可选微调）resume-canvas → 本地微调定制版 → 保存后重验闭环
 ```
 
-`resume-bullet-writer`、`job-description-analyzer` 和 `resume-ats-optimizer` 都可以单独使用；它们不会绕过事实确认或静默覆盖母版。
+每个专业 Skill 均可单独使用；全程只基于用户明确确认的事实，不编造经历，不静默覆盖母版。
 
 ## 两种输出模式
 
@@ -138,9 +141,9 @@ resume-version-manager（记录确认后的版本与投递历史）
   <td align="center"><b>创意个性</b></td>
 </tr>
 <tr>
-  <td><img src="assets/modern-minimal.png" width="280" alt="现代简约"></td>
-  <td><img src="assets/classic-business.png" width="280" alt="经典商务"></td>
-  <td><img src="assets/creative-bold.png" width="280" alt="创意个性"></td>
+  <td><img src="https://raw.githubusercontent.com/Chasen-Liao/resume-skills/main/assets/modern-minimal.png" width="280" alt="现代简约"></td>
+  <td><img src="https://raw.githubusercontent.com/Chasen-Liao/resume-skills/main/assets/classic-business.png" width="280" alt="经典商务"></td>
+  <td><img src="https://raw.githubusercontent.com/Chasen-Liao/resume-skills/main/assets/creative-bold.png" width="280" alt="创意个性"></td>
 </tr>
 <tr>
   <td align="center">留白、高对比、克制</td>
@@ -153,9 +156,9 @@ resume-version-manager（记录确认后的版本与投递历史）
   <td align="center"><b>简约蓝色商务</b></td>
 </tr>
 <tr>
-  <td><img src="assets/japanese-minimal.png" width="280" alt="日式极简"></td>
-  <td><img src="assets/tech-dark.png" width="280" alt="科技感"></td>
-  <td><img src="assets/minimal-blue-business.png" width="280" alt="简约蓝色商务"></td>
+  <td><img src="https://raw.githubusercontent.com/Chasen-Liao/resume-skills/main/assets/japanese-minimal.png" width="280" alt="日式极简"></td>
+  <td><img src="https://raw.githubusercontent.com/Chasen-Liao/resume-skills/main/assets/tech-dark.png" width="280" alt="科技感"></td>
+  <td><img src="https://raw.githubusercontent.com/Chasen-Liao/resume-skills/main/assets/minimal-blue-business.png" width="280" alt="简约蓝色商务"></td>
 </tr>
 <tr>
   <td align="center">暖色、轻质、呼吸感</td>
@@ -340,7 +343,7 @@ resume/
 npx skills add Chasen-Liao/resume-skills --skill '*' --agent codex --yes
 ```
 
-`jd-tailorer` 与几个辅助 Skill 会共享 `resume-builder` 的事实契约和写作规范；只安装单个 Skill 可能缺少这些参考文件。
+`jd-tailorer` 会共享 `resume-builder` 的事实契约和写作规范；只安装单个 Skill 可能缺少这些参考文件。
 
 ### Canvas 无法打开某个 HTML
 

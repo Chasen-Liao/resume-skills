@@ -1,103 +1,121 @@
 ---
 name: jd-tailorer
-description: 根据职位描述(JD)定制简历的技能。当用户提到「JD」「职位描述」「岗位匹配」「针对...改简历」「投递」「求职」「招聘要求」「Job Description」或者提供具体职位链接/文本要求修改简历时使用。支持上传或粘贴 JD 文本，自动进行关键词匹配和内容优化，基于已有简历生成针对该岗位的定制版 HTML 和 PDF。
+description: 根据职位描述(JD)进行结构化分析、岗位匹配度诊断、ATS 可读性审计与定向简历定制的完整工作站。当用户提到「JD」「职位描述」「岗位匹配」「分析这个 JD」「我是否适合」「针对...改简历」「投递」「求职」「招聘要求」「Job Description」「ATS 筛选」或保存不同投递版本时使用。支持仅分析 JD 输出诊断报告，或一站式生成针对该岗位的定制版 HTML/PDF、匹配报告与版本记录。
 ---
 
 # JD 简历定制器 (JD Tailorer)
 
-根据职位描述定制简历——关键词对齐 + 内容重排序 + 术语对齐。**不编造经历**。
+一站式完成 JD 结构化分析、岗位匹配度评估、简历定向定制、ATS 质量门禁与投递版本归档。**不编造经历，以事实契约与已确认事实为唯一边界**。
 
 ## 前置条件
 
 需已有基础简历和已确认事实。优先读取私有 `resume-facts.yaml`；若只有旧简历内容或 HTML，先通过 `resume-builder` 或 `resume-workflow` 提取、确认并建立事实文件，不能把未确认的解析内容直接用于定制。
 
-## 协作入口
+## 核心职责与模式分支
 
-优先接收 `job-description-analyzer` 基于 `resume-facts.yaml` 生成的要求地图与匹配证据；若没有，先在本 skill 内完成同等分析。生成前必须向用户展示**变更预览**：哪些已确认经历会前置、哪些措辞会对齐 JD、哪些要求仍是缺口；用户确认后才生成定制版。经历描述若需重点强化可条件调用 `resume-bullet-writer`。
+本技能承接两类使用场景，无需跨技能跳转：
+1. **仅分析诊断模式**：当用户仅提供 JD 并询问“我是否适合”、“帮我分析这个 JD”、“岗位匹配度”时，输出要求地图、匹配证据与缺口分析，不生成简历；
+2. **完整定制模式**：在分析基础上向用户展示**变更预览**，用户确认后一站式生成定制 HTML/PDF、执行 ATS 质量审计、生成版本记录并提供 Canvas 微调。
 
 **协作流转与出口**：
 - **排版微调**：视觉定制版生成并完成 PDF 验证后，若用户需要交互式微调，**路由至 `resume-canvas`**；
-- **质量关卡**：定制完成后可调用 `resume-ats-optimizer` 进行 ATS 风险审计；
-- **版本归档**：最终交付时将定制文件交由 `resume-version-manager` 记录版本与变更；上述技能都不得静默改写或覆盖定制版。
+- **微调重验**：Canvas 微调保存后，必须回到 Agent 工作流重新核验事实与渲染验证 PDF，并更新版本记录。
 
 ## 参考文件解析
 
 - 所有相对路径都以本 `SKILL.md` 所在目录为基准，不以当前工作目录为基准。
-- 开始 JD 分析、匹配或改写前，必须先读取并遵循 `../resume-builder/references/resume-contract.md` 和 `../resume-builder/references/content-writing.md`；两份共享参考文档优先于本入口中的示例、版式偏好和流程提示。
+- 开始工作前，必须先读取并遵循 `../resume-builder/references/resume-contract.md` 和 `../resume-builder/references/content-writing.md`；两份共享参考文档优先于本入口中的示例、版式偏好和流程提示。
 - 若 `resume-builder` 与本 skill 一起安装，再读取 `../resume-builder/references/design-guidelines.md` 和对应的 CSS 文件。
 - 本 skill 必须与 `resume-builder` 一起安装；缺少共享参考文件时，要求用户安装完整 skill 集后再继续，不猜测契约规则，也不承诺 DOCX 生成。
 
 ## 工作流程
 
-### 第一步：获取 JD
+### 第一步：获取与解构 JD
 
-让用户粘贴 JD 文本或上传文件。
+1. 让用户粘贴 JD 文本、上传文件或提供职位链接。
+2. 结构化解构 JD 要求并分类：
+   - `must_have`：硬性门槛（专业、年限、核心技术栈）；
+   - `preferred`：加分项与优势项；
+   - `responsibility`：核心岗位职责；
+   - `context`：业务场景、团队文化或工作方式信号。
+   每项尽量保留 JD 原文关键词或段落作为依据。
 
-### 第二步：JD 分析
+### 第二步：对照事实库进行匹配分析
 
-提取：核心技术要求、加分项、关键词（技术栈/行业术语/软技能）、岗位职责、公司文化暗示。简要呈现分析结果确认。
+将 JD 要求与用户已确认的 `resume-facts.yaml`（或母版事实）逐一比对：
+- **直接匹配**：已有经历/技能中具备强相关证据；
+- **相关证据**：有相似或可迁移经验，但术语未对齐或表达偏弱；
+- **真实缺口**：JD 要求但候选人不具备（如实记录，绝不编造技能或虚构指标）；
+- **待确认**：需要向候选人进一步核实的事项（不进入最终简历成稿）。
 
-### 第三步：匹配分析
+若用户仅需要投递可行性评估，此时直接交付包含《要求地图》与《匹配度建议》的诊断报告，结束流程。
 
-对比简历与 JD：
-- 匹配点：已有的强相关经验/技能
-- 缺失点：JD 要求但不具备的（如实告知，不编造）
-- 弱化点：有关联度低的内容（保留但降优先级）
+### 第三步：变更预览与用户确认（门禁）
 
-### 第四步：内容定制
+在生成定制简历前，**必须向用户展示变更预览并取得确认**：
+1. **经历重排与前置**：说明哪些强相关项目或经历会前置；
+2. **术语与表达对齐**：说明哪些措辞或技能标签会对齐 JD 术语；
+3. **保留的缺口与弱化项**：明确说明哪些 JD 要求属于未匹配缺口（如实保留缺口，不硬加关键词）。
+用户明确同意变更预览后，才进入定制成稿生成。
 
-遵循已先读取的事实契约和写作规范（`../resume-builder/references/resume-contract.md`、`../resume-builder/references/content-writing.md`）。每条改写前先核对 claim 的来源、证据、置信度和指标状态；待确认字段只写入采集/分析报告，不能进入最终简历成稿。
+### 第四步：内容定制规范
 
-**改写检查清单（每次改写必须逐条核对）**：
+遵循已先读取的事实契约和写作规范（`../resume-builder/references/resume-contract.md`、`../resume-builder/references/content-writing.md`）：
+- **清晰表达**：优先使用 `强动词 + 具体动作/技术 + 结果或证据 + 背景/范围` 组织 bullet；没有数字时使用已确认的非数字证据，不强行编造指标；
+- **关键词自然对齐**：将已确认事实中的技术表达对齐 JD 常用词，严禁 keyword stuffing；
+- **板块与重点重排**：按 JD 相关性调整板块顺序；
+- **区分度说明**：定制完成后向用户清晰说明相较于母版的改动点。
 
-- **清晰表达**：优先用清楚的行动、技术、结果或证据、背景/范围组织 bullet；没有数字时使用已确认的非数字证据，不补写指标。
-- **关键词优化**：术语对齐 JD → 自然融入描述和技能标签；关键词用于排序与表达，不设覆盖率硬指标，不进行 keyword stuffing。
-- **板块重排**：按 JD 相关性调整板块顺序；项目和校园经历是否前置由候选人阶段、证据强度和岗位相关性决定。
-- **内容微调**：只重排、压缩和对齐已有 claim；自我评价从已验证事实归纳，不设固定字数或句数。
-- **区分度说明**：定制完成后向用户说明改动点
+### 第五步：生成定制文件与目录隔离
 
-### 第五步：生成定制文件
+先让用户在视觉 HTML/PDF 与 ATS-safe HTML/PDF 中选择输出模式，统一输出到专用的岗位目录 `tailored/<公司名>-<岗位>/` 中，**绝对不覆盖母版**：
+- 视觉模式：`resume_visual.html` 与 `resume_visual.pdf`，沿用基础简历 CSS 风格；
+- ATS-safe 模式：`resume_ats.html` 与 `resume_ats.pdf`，采用单栏标准正文结构；
+- `matching-analysis.md`：岗位匹配分析报告（模板见 `references/matching-analysis.md`）；
+- `version-notes.md`：版本与投递记录（记录父版本、JD 来源与日期、变更摘要、关键词来源、保留缺口与验证结果）。
 
-先让用户在视觉 HTML/PDF 与 ATS-safe HTML/PDF 中选择模式，再输出到 `tailored/<公司名>-<岗位>/`：
-- 视觉模式：`resume_visual.html` 与 `resume_visual.pdf`，沿用基础简历 CSS 风格并进行视觉打印验证
-- ATS-safe 模式：`resume_ats.html` 与 `resume_ats.pdf`，使用单栏和标准文本结构并进行 ATS-safe 解析验证
-- `matching-analysis.md` — 匹配分析报告（模板见 `references/matching-analysis.md`）
-- `matching-analysis.md` 可包含匹配缺口、关键词来源和待确认字段；待确认字段不得复制到上述最终 HTML/PDF。
-- 仓库当前只生成 HTML 与浏览器打印 PDF，没有 DOCX 生成能力，不承诺 DOCX 产物。
-- 若沿用任一内置视觉样式，保留或生成对应的 `data-resume-editor-template`、`data-resume-editor-version="1"` 和稳定、唯一、语义化的 `data-resume-editor-id` 文字标记；不要依赖 Canvas 运行时补齐标记。
-- 编辑 ID 只能标在姓名、职位、日期、板块标题、单条 bullet、单个技能标签等独立文本字段上；禁止把编辑 ID 放在 `<html>`、`<body>`、`<main>`、`.page`、`.resume`、`header`、`footer`、`section`、`ul`、`ol`、`figure` 或包含多个字段的复合容器上。不要给整份定制简历添加一个兜底 ID。
+若沿用内置视觉样式，根节点声明 `data-resume-layout="full-page"`，保留 `data-resume-editor-template`、`data-resume-editor-version="1"` 和稳定、唯一、语义化的叶子级 `data-resume-editor-id`（禁止整页或板块容器加 ID）。
 
-### PDF 验证
+### 第六步：PDF 验证与质量审计
 
-在 PDF 验证前，先对最终 `resume_visual.html` 做可执行的 Canvas 字段验收，再手动核对：
+交付前必须执行质量审计与 PDF 验证：
+1. **ATS 可解析性审计**：
+   - 检查正文阅读顺序，确保无隐藏文字、无纯图片承载文字、无复杂分栏 CSS；
+   - 若环境具备 Python 脚本，运行自动化门禁：
+     ```bash
+     python skills/resume-builder/scripts/validate_resume.py --html "<tailored目录中的html路径>" --mode ats
+     ```
+2. **Canvas 协议验收**（视觉模式）：
+   ```bash
+   npx -p @chasen-liao/resume-skills@latest resume-skills validate "<tailored目录中的resume_visual.html路径>"
+   ```
+   确保输出“校验通过”。每个需要编辑的文本节点必须是可独立编辑的叶子字段；禁止把编辑 ID 放在 `<html>`、`<body>`、`<main>`、`.page`、`.resume`、`header`、`footer`、`section`、`ul`、`ol`、`figure` 或包含多个字段的复合容器上。字段总数必须大于 0 且 ID 唯一。
+3. **Playwright 渲染与单页验证**（视觉模式）：
+   运行 `render_resume.ps1` 渲染真实 PDF 并生成 preview 与 manifest。PDF 必须恰好 1 页、页面有效占用率默认 $\ge 98\%$ 且保留底部安全距。
 
-```bash
-npx -p @chasen-liao/resume-skills@latest resume-skills validate "<tailored目录中的resume_visual.html路径>"
-```
+### 第七步：交付与 Canvas 预览
 
-重复执行直到输出“校验通过”。该命令只校验编辑协议：`<html>` 带 `data-resume-editor-template` / `data-resume-editor-version="1"`、至少 1 个 `data-resume-editor-id` 位于可独立编辑的叶子文本字段、ID 唯一、无整页/板块容器 ID；它不统计字段总数、也不按命名检查个人信息或经历 bullet。字段总数、重复 ID、容器误标以及个人信息/经历 bullet 是否齐全，需对最终 HTML 手工复核（与 resume-builder 的验收口径一致）。检查必须针对完成定制后的最终 HTML，而不是只检查基础模板。任一项失败时不得启动 Canvas 或交付，必须拆分字段、补齐稳定 ID 后重新验证。
-
-视觉模式使用 `render_resume.ps1` 渲染：视觉根 `<html>` 必须声明 `data-resume-layout="full-page"`，并继承 `resume-builder` 的 density/full-page 契约。脚本会在检测到溢出时自动压缩密度，在内容不足时用垂直分布撑满有效区域，并生成低分辨率 `*.preview.png`。PDF 必须恰好 1 页、有效页面占用率默认 `≥98%` 且保留底部安全余量；任一条件失败，或缺少 Playwright/Chromium 或 `pypdf` 时为不可交付的 `degraded`/`fail`。不得用虚构文案、无意义重复或隐藏溢出填充。Canvas 保存后 manifest 会失效，必须重新 render + validate；ATS-safe 模式仍检查 HTML 单栏、标准标题、正文阅读顺序和纯文本可解析性，并验证 PDF 文本提取结果。
-
-### 交付与 Canvas 预览
-
-视觉模式完成 PDF 验证和必要修正后，先询问用户是否需要定制版的本地 Canvas 预览。Canvas 是可选微调步骤；用户选择需要时才执行下面的命令，暂时不需要时直接交付已验证的 HTML/PDF：
-
-```bash
-npx -p @chasen-liao/resume-skills@latest resume-skills editor "<tailored目录中的resume_visual.html路径>"
-```
-
-用户选择 Canvas 后，命令会启动本地服务并尝试打开浏览器。告知用户定制版 HTML/PDF 与匹配报告的位置；Canvas 保存时会直接覆盖定制版 HTML，保存文字与排版修改后的最新版本。Canvas 不负责事实采访或 AI 改写；任何文字变更必须回到 Agent 工作流重新确认事实并验证 PDF。若用户选择 Canvas 但当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。
-
-若用户需要深入微调排版（字号/间距/颜色/页边距）、利用 Live Preview 热重载协同或需要高级 CLI 自动化（`--json` / `--no-open` / `--port`），**路由至 `resume-canvas` 技能**。
-
-ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
+1. **Canvas 预览（可选）**：
+   视觉模式完成 PDF 验证后，询问用户是否需要本地 Canvas 预览微调。用户需要时执行：
+   ```bash
+   npx -p @chasen-liao/resume-skills@latest resume-skills editor "<tailored目录中的resume_visual.html路径>"
+   ```
+   用户若需要排版微调，**路由至 `resume-canvas`**；Canvas 保存后 manifest 失效，必须回到工作流重验。若用户选择 Canvas 但当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。
+   ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
+2. **版本追踪与 Git 提交建议**：
+   建议用户将简历工作区置于本地私有 Git 仓库中管理。定制生成后，给出语义化提交建议，例如：
+   ```bash
+   git add resume-facts.yaml tailored/<公司名>-<岗位>/
+   git commit -m "定制：<公司名> - <岗位>"
+   ```
+   **约束**：不自动执行 Git 初始化、提交、推送或覆盖，必须由用户确认或自行执行。
 
 ## 硬约束
 
-- 绝不编造经历，修改仅限于措辞和呈现方式
-- 待确认字段只能出现在采集/分析报告，不能进入最终简历成稿
-- 视觉模式沿用基础简历的 CSS 视觉风格；ATS-safe 模式优先遵循单栏、标准标题和可解析正文结构
+- 绝不编造经历，修改仅限于措辞、重排和对齐真实证据；
+- 待确认字段只能出现在分析报告，不能进入最终成稿；
+- 定制版本独立存放于 `tailored/<公司名>-<岗位>/`，绝不静默覆盖母版；
+- 视觉模式沿用基础简历 CSS 风格，ATS-safe 模式严格遵守单栏与纯文本可提取标准。
 
 ## 参考文档
 
