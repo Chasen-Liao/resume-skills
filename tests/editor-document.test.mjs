@@ -318,3 +318,45 @@ test("rejects newly added or removed editor ids before cleanup", () => {
   assert.throws(() => validateEditorSave(editableSaveSource, added), /不能新增、删除或重复编辑字段/);
   assert.throws(() => validateEditorSave(editableSaveSource, removed), /不能新增、删除或重复编辑字段/);
 });
+
+test("removes translation bubbles and dictionary widgets injected outside editable fields", () => {
+  const submitted = editableSaveSource
+    .replace("张小明", "张小强")
+    .replace(
+      "</body>",
+      '<div id="gtx-trans" style="position: absolute; left: 100px; top: 200px;"><div class="gtx-trans-icon"></div></div><div class="notranslate" id="yddContainer">有道词典</div><monica-agent-container style="z-index: 2147483647; position: fixed;"></monica-agent-container></body>',
+    );
+
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /张小强/);
+  assert.doesNotMatch(saved, /gtx-trans|yddContainer|monica-agent|有道词典/);
+});
+
+test("removes translation and spellcheck wrapper spans injected into editable fields", () => {
+  const submitted = editableSaveSource.replace(
+    ">张小明</h1>",
+    '><span class="notranslate" translate="no">张小强</span></h1>',
+  );
+
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /<h1[^>]*>张小强<\/h1>/);
+  assert.doesNotMatch(saved, /notranslate|translate="no"|<span/);
+});
+
+test("removes extension-injected styles and meta tags from head", () => {
+  const submitted = editableSaveSource
+    .replace("张小明", "张小强")
+    .replace(
+      "</head>",
+      '<style id="immersive-translate-style">.notranslate{color:red;}</style><style class="darkreader darkreader--sync">body{background:#000;}</style><meta name="google" content="notranslate"><style>/* anon */ body{color:#333;}</style></head>',
+    );
+
+  const saved = validateEditorSave(editableSaveSource, submitted);
+
+  assert.match(saved, /张小强/);
+  assert.doesNotMatch(saved, /immersive-translate-style|darkreader|notranslate|anon/);
+});
+
+

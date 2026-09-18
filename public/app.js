@@ -312,6 +312,34 @@ function cleanForExport() {
   doc.querySelectorAll(runtimeAttributeSelector).forEach((node) => {
     for (const name of editorRuntimeInjectedAttrs) node.removeAttribute(name);
   });
+  // 简历中绝不包含任何 script，主动清理浏览器扩展注入的脚本
+  doc.querySelectorAll("script").forEach((node) => node.remove());
+  // 清理浏览器插件在非编辑区域注入的外部自定义元素、浮层或样式节点
+  doc.querySelectorAll("*").forEach((node) => {
+    if (node.hasAttribute("data-resume-editor-id")) return;
+    const tag = node.tagName.toLowerCase();
+    if (["html", "body"].includes(tag)) return;
+    if (tag === "style") {
+      if (node.id === "resume-editor-overrides" || node.hasAttribute("data-resume-layout-contract")) return;
+      const marker = `${node.id || ""} ${node.className || ""}`;
+      if (/grammarly|immersive[-_ ]?translate|language[-_ ]?tool|deepl|translate|notranslate|gtx|ydd|dict|monica|sider|extension|plugin|overlay|toolbar|darkreader|stylish|stylus/i.test(marker)) {
+        node.remove();
+      }
+      return;
+    }
+    if (["title", "meta", "link"].includes(tag)) {
+      const marker = `${node.id || ""} ${node.className || ""} ${node.getAttribute("name") || ""}`;
+      if (/grammarly|immersive[-_ ]?translate|translate|notranslate|gtx|ydd|dict|monica|sider|extension|plugin|darkreader/i.test(marker)) {
+        node.remove();
+      }
+      return;
+    }
+    const marker = `${tag} ${node.id || ""} ${node.className || ""}`;
+    if (tag.includes("-") || /grammarly|immersive[-_ ]?translate|language[-_ ]?tool|deepl|translate|notranslate|gtx|ydd|dict|monica|sider|extension|plugin|overlay|toolbar|darkreader|crx/i.test(marker)) {
+      if (node.closest("[data-resume-editor-id]")) return;
+      node.remove();
+    }
+  });
   return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
 }
 function bindControl(control, handler) {

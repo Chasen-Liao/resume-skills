@@ -622,3 +622,50 @@ test("the canvas recovers when an external fix turns a bad file into a good one"
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("saves cleanly in real browser when extensions inject styles/widgets into head and body", { skip: !chromiumAvailable }, async () => {
+  const r = await openEditableCanvas(chromium, sampleHtml);
+  try {
+    const field = r.frame.locator('[data-resume-editor-id="profile-name"]');
+    await field.click();
+    await r.page.waitForFunction(() => document.querySelector("#selection-name")?.textContent.includes("张小明"));
+    const textEditor = r.page.locator("#selected-text");
+    await textEditor.fill("王五");
+    await r.page.waitForFunction(() => document.querySelector("#selected-text")?.value === "王五");
+
+    // 模拟真实浏览器扩展向 iframe head 和 body 注入外部 style/script/widgets
+    await r.frame.evaluate(() => {
+      const style1 = document.createElement("style");
+      style1.id = "immersive-translate-style";
+      style1.textContent = ".notranslate { color: red; }";
+      document.head.appendChild(style1);
+
+      const style2 = document.createElement("style");
+      style2.className = "darkreader darkreader--sync";
+      style2.textContent = "body { background: #000; }";
+      document.head.appendChild(style2);
+
+      const script = document.createElement("script");
+      script.src = "chrome-extension://example/content.js";
+      document.head.appendChild(script);
+
+      const trans = document.createElement("div");
+      trans.id = "gtx-trans";
+      trans.innerHTML = '<div class="gtx-trans-icon"></div>';
+      document.body.appendChild(trans);
+
+      const monica = document.createElement("monica-agent-container");
+      document.body.appendChild(monica);
+    });
+
+    await r.page.locator("#save-html").click();
+    await r.page.waitForFunction(() => document.querySelector("#save-status")?.textContent.includes("已成功保存"));
+
+    const onDisk = await readFile(r.sourcePath, "utf8");
+    assert.match(onDisk, /王五/, "edited text must be saved");
+    assert.doesNotMatch(onDisk, /immersive-translate-style|darkreader|chrome-extension|gtx-trans|monica-agent/, "injected elements must not reach the saved HTML");
+  } finally {
+    await closeEditableCanvas(r);
+  }
+});
+

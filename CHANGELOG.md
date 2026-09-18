@@ -2,6 +2,16 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.9.1] - 2026-09-18
+
+### Fixed
+
+- **Canvas 浏览器扩展注入免疫与保存兼容**：
+  - 修复日常浏览器环境下（非无痕模式），浏览器扩展（如沉浸式翻译、Dark Reader、有道词典、Monica 等）向 `<head>` 注入额外 `<style>`/`<script>`/`<meta>` 导致子元素数量不匹配拦截保存的缺陷（`在 <head> 中子元素数量不匹配`）；
+  - 服务端 `lib/editor-document.mjs` 基于源文件 `<head>` 元素白名单自动识别并切除外部注入节点，并在结构比对时忽略 `<head>` 内部格式空白文本节点；
+  - 前端 `public/app.js` 在 `cleanForExport()` 导出清理中主动剔除非受控 `<script>`、扩展自定义元素以及外来样式与浮层；
+  - 扩充扩展标记识别库，覆盖 `notranslate`、`gtx`、`ydd`、`dict`、`darkreader`、`stylish`、`stylus` 等常见扩展，保障任意日常浏览器均可顺畅编辑并安全回写。
+
 ## [0.9.0] - 2026-09-18
 
 ### Changed
