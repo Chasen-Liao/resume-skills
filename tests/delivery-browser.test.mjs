@@ -33,12 +33,18 @@ test("real template save invalidates delivery and re-render verifies edited text
     await once(server, "listening");
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
+    // External fonts must not delay/reload the iframe while the save flow is exercised.
+    await page.route("https://fonts.googleapis.com/**", (route) => route.abort());
     await page.goto(`http://127.0.0.1:${server.address().port}`);
     const frame = page.frames().find((candidate) => candidate !== page.mainFrame());
+    await frame.waitForFunction(() => document.querySelector("#resume-editor-chrome"));
     await frame.locator('[data-resume-editor-id="profile-name"]').click();
+    await page.waitForFunction(() => document.querySelector("#selected-text")?.value === "张小明");
     await page.locator("#selected-text").fill("DEMO 编辑后姓名");
+    await frame.waitForFunction(() => document.querySelector('[data-resume-editor-id="profile-name"]')?.textContent === "DEMO 编辑后姓名");
     await page.locator("#font-size").fill("23.5");
     await page.locator("#font-size").dispatchEvent("change");
+    await frame.waitForFunction(() => getComputedStyle(document.querySelector('[data-resume-editor-id="profile-name"]')).fontSize === "23.5px");
     await page.locator("#save-html").click();
     await page.waitForFunction(() => document.querySelector("#save-status")?.textContent.includes("已成功保存"));
     const saved = await readFile(html, "utf8");
