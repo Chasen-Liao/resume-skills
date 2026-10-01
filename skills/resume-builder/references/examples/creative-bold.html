@@ -81,14 +81,6 @@
       border: 3px solid var(--color-border); /* 粗重边缘 */
     }
 
-    /* === 布局网格 === */
-    .layout-grid {
-      display: grid;
-      grid-template-columns: 32% 1fr;
-      height: calc(100% - 22mm); /* 扣除头部高度 */
-      gap: 6mm;
-    }
-
     /* === 顶部 Header === */
     .resume-header {
       display: flex;
@@ -326,21 +318,8 @@
       min-height: var(--page-height);
       padding-bottom: calc(var(--page-margin) + var(--resume-bottom-safe));
     }
-    html[data-resume-layout="full-page"] .resume > :last-child,
-    html[data-resume-layout="full-page"] .resume > .footer-layout > :last-child,
-    html[data-resume-layout="full-page"] .resume > .layout-grid > :last-child,
-    html[data-resume-layout="full-page"] .resume > .layout-grid > .left-col > :last-child,
-    html[data-resume-layout="full-page"] .resume > .layout-grid > .right-col > :last-child {
+    html[data-resume-layout="full-page"] .resume > :last-child {
       margin-bottom: 0;
-    }
-    html[data-resume-layout="full-page"] .resume > .layout-grid {
-      align-content: stretch;
-    }
-    html[data-resume-layout="full-page"] .resume > .layout-grid > .left-col,
-    html[data-resume-layout="full-page"] .resume > .layout-grid > .right-col {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
     }
     @media print {
       html[data-resume-layout="full-page"] .resume {
@@ -372,92 +351,79 @@
       </div>
     </header>
 
-    <!-- 左右网格分栏 -->
-    <div class="layout-grid">
-      <!-- 左栏：教育、技能、评价 -->
-      <div class="left-col">
-        <!-- 教育背景 -->
-        <section class="section">
-          <h2 class="section-title" data-resume-editor-id="section-education-title">EDUCATION</h2>
-          <div class="education-block">
-            <div data-resume-editor-id="education-1-school">广州美术学院</div>
-            <div data-resume-editor-id="education-1-degree">视觉传达设计 · 艺术学学士</div>
-            <div class="education-meta" data-resume-editor-id="education-1-date">2021.09 - 2025.07</div>
-          </div>
-        </section>
+    <!-- 单栏按教育、经历、项目、技能、评价均匀分布 -->
+    <section class="section">
+      <h2 class="section-title" data-resume-editor-id="section-education-title">EDUCATION</h2>
+      <div class="education-block">
+        <div data-resume-editor-id="education-1-school">广州美术学院</div>
+        <div data-resume-editor-id="education-1-degree">视觉传达设计 · 艺术学学士</div>
+        <div class="education-meta" data-resume-editor-id="education-1-date">2021.09 - 2025.07</div>
+      </div>
+    </section>
 
-        <!-- 专业技能 -->
-        <section class="section">
-          <h2 class="section-title" data-resume-editor-id="section-skills-title">SKILLS</h2>
-          <div class="skill-tags-container">
-            <span class="skill-badge" data-resume-editor-id="skill-1">UI/UX Design</span>
-            <span class="skill-badge" data-resume-editor-id="skill-2">交互原型 (Figma)</span>
-            <span class="skill-badge" data-resume-editor-id="skill-3">动效设计 (AE)</span>
-            <span class="skill-badge" data-resume-editor-id="skill-4">视觉传达</span>
-            <span class="skill-badge" data-resume-editor-id="skill-5">3D 建模 (C4D)</span>
-            <span class="skill-badge" data-resume-editor-id="skill-6">前端开发 (HTML/CSS)</span>
-            <span class="skill-badge" data-resume-editor-id="skill-7">用户调研</span>
-            <span class="skill-badge" data-resume-editor-id="skill-8">英语六级 (CET-6)</span>
-          </div>
-        </section>
+    <section class="section">
+      <h2 class="section-title" data-resume-editor-id="section-experience-title">EXPERIENCE</h2>
 
-        <!-- 自我评价 -->
-        <section class="section">
-          <h2 class="section-title" data-resume-editor-id="section-summary-title">PROFILE</h2>
-          <div class="summary-block" data-resume-editor-id="profile-summary">
-            视觉传达方向设计学学士。具备敏锐的视觉感知与系统的交互逻辑设计能力，能熟练完成全链路原型开发与动效表达。热爱探索前沿设计趋势，期望为高成长性产品团队带来卓越的美学与体验价值。
-          </div>
-        </section>
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title" data-resume-editor-id="experience-1-title">腾讯科技有限公司 · 交互设计实习生 (WXG)</div>
+          <div class="item-meta" data-resume-editor-id="experience-1-date">2024.07 - 2024.12</div>
+        </div>
+        <ul class="item-details">
+          <li data-resume-editor-id="experience-1-bullet-1">负责微信视频号“个人主页”改版设计，独立主导交互流程梳理并输出 12 套高保真原型，改版后转化留存率提升 7.8%。</li>
+          <li data-resume-editor-id="experience-1-bullet-2">协助搭建视频号交互组件规范，维护 Sketch/Figma 库中 50+ 通用交互模板，提升团队原型搭建效率 40%。</li>
+          <li data-resume-editor-id="experience-1-bullet-3">参与 12 次用户深度访谈，挖掘交互核心痛点，成功推动 3 项产品功能决策优化落地。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title" data-resume-editor-id="section-projects-title">PROJECTS</h2>
+
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title" data-resume-editor-id="project-1-title">“无界”智能办公空间协同 App · UI/UX 负责人</div>
+          <div class="item-meta" data-resume-editor-id="project-1-date">2024.02 - 2024.06</div>
+        </div>
+        <ul class="item-details">
+          <li data-resume-editor-id="project-1-bullet-1">主导面向中小企业的全平台办公协同系统设计，建立完整的 UI 设计语言与全链路交互框架体系。</li>
+          <li data-resume-editor-id="project-1-bullet-2">设计创新的手势操作逻辑与卡片布局，测试阶段使得复杂办公流操作步数减少 22%，用户体验满意度评分达 94.6 分。</li>
+          <li data-resume-editor-id="project-1-bullet-3">项目在 Behance 开源展示，斩获 3000+ Appreciations，并获设计界多名大咖推荐分享。</li>
+        </ul>
       </div>
 
-      <!-- 右栏：项目与工作 -->
-      <div class="right-col">
-        <!-- 实习经历 -->
-        <section class="section">
-          <h2 class="section-title" data-resume-editor-id="section-experience-title">EXPERIENCE</h2>
-          
-          <div class="item-block">
-            <div class="item-header">
-              <div class="item-title" data-resume-editor-id="experience-1-title">腾讯科技有限公司 · 交互设计实习生 (WXG)</div>
-              <div class="item-meta" data-resume-editor-id="experience-1-date">2024.07 - 2024.12</div>
-            </div>
-            <ul class="item-details">
-              <li data-resume-editor-id="experience-1-bullet-1">负责微信视频号“个人主页”改版设计，独立主导交互流程梳理并输出 12 套高保真原型，改版后转化留存率提升 7.8%。</li>
-              <li data-resume-editor-id="experience-1-bullet-2">协助搭建视频号交互组件规范，维护 Sketch/Figma 库中 50+ 通用交互模板，提升团队原型搭建效率 40%。</li>
-              <li data-resume-editor-id="experience-1-bullet-3">参与 12 次用户深度访谈，挖掘交互核心痛点，成功推动 3 项产品功能决策优化落地。</li>
-            </ul>
-          </div>
-        </section>
-
-        <!-- 项目经验 -->
-        <section class="section">
-          <h2 class="section-title" data-resume-editor-id="section-projects-title">PROJECTS</h2>
-
-          <div class="item-block">
-            <div class="item-header">
-              <div class="item-title" data-resume-editor-id="project-1-title">“无界”智能办公空间协同 App · UI/UX 负责人</div>
-              <div class="item-meta" data-resume-editor-id="project-1-date">2024.02 - 2024.06</div>
-            </div>
-            <ul class="item-details">
-              <li data-resume-editor-id="project-1-bullet-1">主导面向中小企业的全平台办公协同系统设计，建立完整的 UI 设计语言与全链路交互框架体系。</li>
-              <li data-resume-editor-id="project-1-bullet-2">设计创新的手势操作逻辑与卡片布局，测试阶段使得复杂办公流操作步数减少 22%，用户体验满意度评分达 94.6 分。</li>
-              <li data-resume-editor-id="project-1-bullet-3">项目在 Behance 开源展示，斩获 3000+ Appreciations，并获设计界多名大咖推荐分享。</li>
-            </ul>
-          </div>
-
-          <div class="item-block">
-            <div class="item-header">
-              <div class="item-title" data-resume-editor-id="project-2-title">盲盒潮流玩具电商小程序视觉设计 · 视觉设计</div>
-              <div class="item-meta" data-resume-editor-id="project-2-date">2023.09 - 2023.12</div>
-            </div>
-            <ul class="item-details">
-              <li data-resume-editor-id="project-2-bullet-1">负责小程序 0 到 1 视觉规范制定，采用潮酷赛博风视觉调性，产出 60+ 核心插画资产。</li>
-              <li data-resume-editor-id="project-2-bullet-2">主导开盒交互动效设计，首月上线促成盲盒开盒订单 5000+，购买支付转化率较旧版本提高 15.3%。</li>
-            </ul>
-          </div>
-        </section>
+      <div class="item-block">
+        <div class="item-header">
+          <div class="item-title" data-resume-editor-id="project-2-title">盲盒潮流玩具电商小程序视觉设计 · 视觉设计</div>
+          <div class="item-meta" data-resume-editor-id="project-2-date">2023.09 - 2023.12</div>
+        </div>
+        <ul class="item-details">
+          <li data-resume-editor-id="project-2-bullet-1">负责小程序 0 到 1 视觉规范制定，采用潮酷赛博风视觉调性，产出 60+ 核心插画资产。</li>
+          <li data-resume-editor-id="project-2-bullet-2">主导开盒交互动效设计，首月上线促成盲盒开盒订单 5000+，购买支付转化率较旧版本提高 15.3%。</li>
+        </ul>
       </div>
-    </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title" data-resume-editor-id="section-skills-title">SKILLS</h2>
+      <div class="skill-tags-container">
+        <span class="skill-badge" data-resume-editor-id="skill-1">UI/UX Design</span>
+        <span class="skill-badge" data-resume-editor-id="skill-2">交互原型 (Figma)</span>
+        <span class="skill-badge" data-resume-editor-id="skill-3">动效设计 (AE)</span>
+        <span class="skill-badge" data-resume-editor-id="skill-4">视觉传达</span>
+        <span class="skill-badge" data-resume-editor-id="skill-5">3D 建模 (C4D)</span>
+        <span class="skill-badge" data-resume-editor-id="skill-6">前端开发 (HTML/CSS)</span>
+        <span class="skill-badge" data-resume-editor-id="skill-7">用户调研</span>
+        <span class="skill-badge" data-resume-editor-id="skill-8">英语六级 (CET-6)</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title" data-resume-editor-id="section-summary-title">PROFILE</h2>
+      <div class="summary-block" data-resume-editor-id="profile-summary">
+        视觉传达方向设计学学士。具备敏锐的视觉感知与系统的交互逻辑设计能力，能熟练完成全链路原型开发与动效表达。热爱探索前沿设计趋势，期望为高成长性产品团队带来卓越的美学与体验价值。
+      </div>
+    </section>
   </div>
 
 </body>

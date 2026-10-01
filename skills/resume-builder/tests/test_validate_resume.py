@@ -293,18 +293,18 @@ class ValidateResumeTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("text", result.stdout.lower())
 
-    def test_pdf_layout_warns_when_single_page_is_too_sparse(self):
+    def test_pdf_layout_rejects_sparse_page_even_with_relaxed_fill_threshold(self):
         with tempfile.TemporaryDirectory() as directory:
             pdf = Path(directory) / "sparse.pdf"
             write_layout_pdf(pdf, y=500)
             result = run_validator(
                 "--pdf", pdf, "--check-layout", "--min-fill-ratio", "0.78", "--json"
             )
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
             report = json.loads(result.stdout)
             layout = [item for item in report["checks"] if item["name"] == "page fill"]
             self.assertEqual(len(layout), 1)
-            self.assertEqual(layout[0]["status"], "warn")
+            self.assertEqual(layout[0]["status"], "fail")
             self.assertIn("占用率", layout[0]["message"])
 
     def test_pdf_layout_default_98_percent_threshold_is_a_delivery_failure(self):
@@ -321,7 +321,7 @@ class ValidateResumeTests(unittest.TestCase):
     def test_pdf_layout_passes_when_content_nearly_fills_one_page(self):
         with tempfile.TemporaryDirectory() as directory:
             pdf = Path(directory) / "full.pdf"
-            write_layout_pdf(pdf, y=100)
+            write_layout_pdf(pdf, y=list(range(780, 59, -80)))
             result = run_validator("--pdf", pdf, "--check-layout", "--min-fill-ratio", "0.78")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("[PASS] page fill", result.stdout)
@@ -342,13 +342,24 @@ class ValidateResumeTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("bottom safety", result.stdout)
 
-    def test_pdf_layout_warns_when_top_and_bottom_whitespace_are_unbalanced(self):
+    def test_pdf_layout_rejects_unbalanced_whitespace(self):
         with tempfile.TemporaryDirectory() as directory:
             pdf = Path(directory) / "unbalanced.pdf"
             write_layout_pdf(pdf, y=[720, 300])
             result = run_validator("--pdf", pdf, "--check-layout", "--min-fill-ratio", "0.78")
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn("[WARN] vertical balance", result.stdout)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("[FAIL] vertical balance", result.stdout)
+
+    def test_pdf_layout_rejects_large_gap_above_bottom_text(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pdf = Path(directory) / "bottom-text.pdf"
+            write_layout_pdf(pdf, y=[780, 500, 45])
+            result = run_validator("--pdf", pdf, "--check-layout", "--json")
+            report = json.loads(result.stdout)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertFalse(report["deliverable"])
+            gaps = [item for item in report["checks"] if item["name"] == "vertical gaps"]
+            self.assertEqual(gaps[0]["status"], "fail")
 
 if __name__ == "__main__":
     unittest.main()

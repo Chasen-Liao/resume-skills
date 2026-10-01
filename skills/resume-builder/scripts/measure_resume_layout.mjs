@@ -33,7 +33,9 @@ try {
       message: layout.status === "fail" ? layout.message : result.message,
       layout,
     }));
+    if (layout.status === "fail" || result.status === "fail") process.exitCode = 1;
   }
+  if (layout.status === "degraded") process.exitCode = 2;
 } catch (error) {
   console.log(JSON.stringify({
     status: "degraded",

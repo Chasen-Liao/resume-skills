@@ -20,6 +20,8 @@ description: 编排从导入已有简历或采访开始，到母版制作、针�
 
 读取 `../resume-builder/references/resume-contract.md`、`../resume-builder/references/content-writing.md` 和 `../resume-builder/references/resume-facts.example.yaml`。按当前阶段再读取对应 skill 的 `SKILL.md`，不要用本文件替代其事实、排版或验证约束。
 
+首次执行验证命令前，按 [渲染环境与命令路径](../resume-builder/references/runtime-setup.md) 定位完整运行时；所有脚本及私有产物使用实际绝对路径，不假设用户当前目录包含 `skills/` 或渲染依赖。
+
 ## 0. 建立私有工作目录
 
 - 将用户简历保存在项目目录外的本地私有目录，例如 `<个人私有目录>/resume/`；不要使用源码仓库中的示例或模板目录保存真实个人数据。
@@ -75,6 +77,7 @@ description: 编排从导入已有简历或采访开始，到母版制作、针�
    python skills/resume-builder/scripts/validate_resume.py --html "<最终_visual.html路径>" --pdf "<交付目录/自定义文件名.pdf>" --mode visual --check-overflow --check-layout --min-fill-ratio 0.98 --preview "<交付目录/自定义文件名.preview.png>" --manifest "<交付目录/自定义文件名.resume-manifest.json>" --renderer "playwright@1.62.1" --json
    ```
    PDF 页数必须为 1，有效页面占用率至少 98%，底部安全区合规。
+   自动校验通过后，AI 必须打开最终整页截图，分别检查底部留白、上下平衡、板块间空隙和双栏各栏分布；按 [整页截图视觉复核](../resume-builder/SKILL.md#整页截图视觉复核视觉模式强制执行) 执行。明显底部空缺或留白失衡时不得交付，调整后重新渲染、校验并查看新截图；不能用 CI 或 manifest 通过代替实际看图。该步骤适用于母版、JD 定制版及 Canvas 保存后的重验。
 
 3. **按需启动 Canvas**：
    用户确认需要本地微调时，**路由至 `resume-canvas`**：

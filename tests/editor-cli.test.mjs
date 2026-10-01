@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync, spawn } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { once } from "node:events";
 import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
@@ -50,6 +50,25 @@ test("editor help documents an HTML input path and options", () => {
   assert.match(output, /--json/);
   assert.match(output, /--port/);
   assert.match(output, /--write-port-file/);
+});
+
+test("validate --check-layout rejects sparse layout and accepts balanced content", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "resume-layout-cli-"));
+  try {
+    const path = join(directory, "resume.html");
+    for (const count of [2, 12]) {
+      await writeFile(path, `<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1" data-resume-layout="full-page"><head><style>
+        * { box-sizing: border-box; margin: 0; }
+        .resume { width: 794px; height: 1123px; padding: 38px 38px 55px; display: flex; flex-direction: column; }
+      </style></head><body><div class="resume">${Array.from({length: count}, (_, i) => `<p data-resume-editor-id="content-${i}">Confirmed text</p>`).join("")}</div></body></html>`);
+      const result = spawnSync(process.execPath, [cli, "validate", path, "--check-layout", "--json"], { cwd: root, encoding: "utf8" });
+      const report = JSON.parse(result.stdout);
+      assert.equal(result.status, count === 2 ? 1 : 0, result.stdout + result.stderr);
+      assert.equal(report.layout.status, count === 2 ? "fail" : "pass");
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test("editor CLI exposes a reachable server after JSON startup", async () => {

@@ -65,7 +65,7 @@
   body {
     width: var(--page-width);
     min-height: var(--page-height);
-    padding: var(--page-margin);
+    padding: 0;                 /* 页边距由 .resume 承担，避免两层内边距导致第二页 */
     background: white;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;

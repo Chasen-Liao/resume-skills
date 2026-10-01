@@ -46,6 +46,8 @@ npx skills add Chasen-Liao/resume-skills --list
 - GitHub 仓库中的 `SKILL.md`：提供简历采访、JD 定制、ATS 检查和版本管理流程
 - npm 包：提供 `resume-skills` CLI 和本地 Canvas 编辑器
 
+仓库当前版本为 **0.10.0**。此版本新增留白门禁和强制整页截图复核；GitHub 推送与 npm 发布独立进行，`@latest` 是否包含这些能力以 npm 实际版本为准。完整 PDF 渲染环境及命令路径见 [运行时初始化说明](skills/resume-builder/references/runtime-setup.md)。
+
 Skill 的安装不依赖 npm 包；只有需要手动打开本地 Canvas 时才需要使用 npm CLI：
 
 ```bash
@@ -233,7 +235,9 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor resume_visual.html
 > npx -p @chasen-liao/resume-skills@latest resume-skills validate resume_visual.html
 > ```
 >
-> `validate` 只做协议校验不启动服务，退出码 0 = 通过、1 = 失败（失败详情与修复指引在 stderr）。
+> `validate` 默认只做协议校验不启动服务；添加 `--check-layout` 可检查打印排版的溢出、底部/各栏留白和大块内部空隙（需要 Playwright 与 Chromium）。例如：`node bin/resume-skills.mjs validate resume_visual.html --check-layout --json`。退出码 0 = 通过、1 = 失败、2 = 浏览器测量不可用；未加此参数时，协议校验通过不代表排版合格。
+>
+> 留白门禁：底部空白不得超过有效高度的 2%，上下留白差不得超过 20mm，正文内部连续空隙不得超过有效高度的 25%；内置双栏按栏独立检查。`validate_resume.py --check-layout` 会检查 PDF 的上下平衡和内部空隙，同时提供 `--html` 时还会执行浏览器排版检查。所有测量通过后，AI 仍须打开最终整页截图复核，不能用 CI 或 manifest 通过代替实际看图。
 
 支持的高级 CLI 参数：
 

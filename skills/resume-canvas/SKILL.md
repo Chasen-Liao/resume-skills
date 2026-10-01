@@ -23,6 +23,8 @@ description: 指导与驱动 resume-canvas (本地 HTML 简历可视化微调编
 
 ## 核心工作流
 
+首次执行校验或保存后重验前，读取 [渲染环境与命令路径](../resume-builder/references/runtime-setup.md)。Canvas CLI 可独立启动，保存后的 PDF/截图重验则需要完整运行时；使用实际脚本和私有产物的绝对路径。
+
 ### 第一步：验收编辑协议契约
 
 在启动 Canvas 或交付视觉 HTML 之前，必须确保目标 HTML 符合编辑字段协议：
@@ -98,7 +100,8 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor "<最终_visual.ht
      ```bash
      powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<最终_visual.html路径>" -OutputPdf "<交付目录/自定义文件名.pdf>"
      ```
-   - 确认 PDF 页数恰好为 1 页，有效利用率 ≥ 98%，且 manifest 为有效状态后，微调闭环才算完成。
+   - **整页截图视觉复核**：AI 必须打开重新渲染生成的整页截图，按 [整页截图视觉复核](../resume-builder/SKILL.md#整页截图视觉复核视觉模式强制执行) 检查底部留白、上下平衡、板块间空隙和双栏各栏分布。明显底部空缺或留白失衡时，即使自动校验通过也不得交付；在 Canvas 支持的排版项内调整后重新渲染、校验并查看新截图。若需要结构重排，回到 `resume-builder` 或 `jd-tailorer` 处理，不扩展 Canvas 的编辑边界。
+   - 确认 PDF 页数恰好为 1 页，有效利用率 ≥ 98%，manifest 为有效状态，且 AI 已实际看图确认留白均匀后，微调闭环才算完成。无法查看截图时必须说明视觉复核未完成。
 
 ---
 

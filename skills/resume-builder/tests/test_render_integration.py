@@ -38,9 +38,9 @@ class RenderIntegrationTests(unittest.TestCase):
                 with self.subTest(template=html.name):
                     pdf = output_dir / f"delivery-{html.stem}.pdf"
                     result = render(html, pdf)
-                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                     manifest = output_dir / f"delivery-{html.stem}.resume-manifest.json"
                     record = json.loads(manifest.read_text(encoding="utf-8"))
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                     self.assertEqual(record["status"], "valid")
                     self.assertTrue(record["validation"]["deliverable"])
                     self.assertEqual(Path(record["html"]["path"]), html.resolve())
@@ -50,15 +50,22 @@ class RenderIntegrationTests(unittest.TestCase):
                     self.assertLessEqual(preview["width"], 1600)
                     self.assertLessEqual(preview["height"], 1600)
 
-    def test_short_medium_and_long_visual_fixtures_stay_on_one_safe_page(self):
+    def test_sparse_short_fixture_is_rejected_and_balanced_fixtures_pass(self):
         with tempfile.TemporaryDirectory() as directory:
             output_dir = Path(directory)
             for html in sorted(FIXTURES.glob("visual-*.html")):
                 with self.subTest(fixture=html.name):
                     pdf = output_dir / f"delivery-{html.stem}.pdf"
                     result = render(html, pdf)
-                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                     manifest = json.loads((output_dir / f"delivery-{html.stem}.resume-manifest.json").read_text(encoding="utf-8"))
+                    if html.stem == "visual-short":
+                        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                        self.assertEqual(manifest["status"], "invalid")
+                        self.assertFalse(manifest["validation"]["deliverable"])
+                        self.assertTrue(any(check["status"] == "fail" and "空隙" in check["message"]
+                                            for check in manifest["validation"]["checks"]))
+                        continue
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                     self.assertEqual(manifest["status"], "valid")
                     checks = {item["name"]: item for item in manifest["validation"]["checks"]}
                     self.assertEqual(checks["PDF page count"]["message"], "1 page")

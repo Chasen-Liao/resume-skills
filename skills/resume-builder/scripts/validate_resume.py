@@ -330,7 +330,7 @@ def pdf_literal_text(data: bytes) -> str:
     return "\n".join(pieces)
 
 
-def measure_pdf_text_bounds(page: Any) -> tuple[float, float] | None:
+def measure_pdf_text_bounds(page: Any, spans: list[tuple[float, float]] | None = None) -> tuple[float, float] | None:
     """Return the top and bottom text bounds in PDF coordinates."""
     bounds: list[tuple[float, float]] = []
 
@@ -356,6 +356,8 @@ def measure_pdf_text_bounds(page: Any) -> tuple[float, float] | None:
         return None
     if not bounds:
         return None
+    if spans is not None:
+        spans.extend(bounds)
     return max(item[0] for item in bounds), min(item[1] for item in bounds)
 
 
@@ -422,9 +424,10 @@ def validate_pdf(
         elif reader is None:
             add(checks, "page fill", "degraded", "无法从当前 PDF 解析页面占用率，不可作为已验证交付物")
         else:
-            bounds = measure_pdf_text_bounds(reader.pages[0])
+            spans: list[tuple[float, float]] = []
+            bounds = measure_pdf_text_bounds(reader.pages[0], spans)
             if bounds is None:
-                add(checks, "page fill", "warn", "无法从 PDF 文本测量页面占用率")
+                add(checks, "page fill", "degraded", "无法从 PDF 文本测量页面占用率，不可作为已验证交付物")
             else:
                 top_y, bottom_y = bounds
                 page_height = float(reader.pages[0].mediabox.height)
@@ -438,11 +441,23 @@ def validate_pdf(
                 top_space = max((page_height - page_margin_pt) - top_y, 0)
                 bottom_space = max(bottom_y - page_margin_pt, 0)
                 imbalance = abs(top_space - bottom_space)
+                # Merge text rows across the page to detect blank bands that a
+                # bottom caption can otherwise conceal. HTML measures columns separately.
+                max_gap = 0.0
+                previous_top = None
+                for span_top, span_bottom in sorted(spans, key=lambda span: span[1]):
+                    if previous_top is not None:
+                        max_gap = max(max_gap, span_bottom - previous_top)
+                        previous_top = max(previous_top, span_top)
+                    else:
+                        previous_top = span_top
+                add(checks, "vertical gaps", "fail" if max_gap > printable_height * 0.25 else "pass",
+                    f"最大内部空隙 {max_gap:.1f}pt（上限为有效高度的 25%）；仍须查看整页截图")
                 if imbalance > 56.7:
                     add(
                         checks,
                         "vertical balance",
-                        "warn",
+                        "fail",
                         f"上下留白差 {imbalance:.1f}pt，建议让上下间距更接近",
                     )
                 else:
@@ -460,7 +475,7 @@ def validate_pdf(
                         f"内容已超出可打印底部安全区（bottom={bottom_y:.1f}pt）",
                     )
                 elif (bottom_y - page_margin_pt) < bottom_safe_pt:
-                    safety_status = "fail" if min_fill_ratio >= 0.98 else "warn"
+                    safety_status = "fail"
                     add(
                         checks,
                         "bottom safety",
@@ -476,7 +491,7 @@ def validate_pdf(
                     )
                 fill_message = f"页面占用率 {fill_ratio:.0%}（目标 ≥ {min_fill_ratio:.0%}）"
                 if fill_ratio < min_fill_ratio:
-                    fill_status = "fail" if min_fill_ratio >= 0.98 else "warn"
+                    fill_status = "fail"
                     add(checks, "page fill", fill_status, f"{fill_message}，页面偏空；请调整布局密度、间距或垂直分布")
                 else:
                     add(checks, "page fill", "pass", fill_message)
@@ -499,7 +514,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--check-layout",
         action="store_true",
-        help="check one-page layout, printable bottom safety, and text fill ratio",
+        help="check PDF fill, balance and blank bands; with --html also check browser overflow and column whitespace",
     )
     parser.add_argument(
         "--min-fill-ratio",
@@ -523,7 +538,7 @@ def main(argv: list[str] | None = None) -> int:
         html = read_html(args.html, checks)
         if html is not None:
             validate_html(html, args.mode, args.required_text, checks)
-            if args.check_overflow:
+            if args.check_overflow or args.check_layout:
                 check_html_overflow(args.html, args.layout_script, checks)
     if args.pdf:
         validate_pdf(

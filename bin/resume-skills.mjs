@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { closeSync, copyFileSync, existsSync, fsyncSync, openSync, readFileSync, renameSync, statSync, unlinkSync, watch, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { basename, dirname, extname, join, resolve } from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { prepareEditorDocument, validateEditorFields, validateEditorSave } from "../lib/editor-document.mjs";
@@ -43,7 +43,8 @@ function printHelp() {
   console.log("         The resume is validated before the server starts: at least one");
   console.log("         data-resume-editor-id on leaf text fields, unique ids, no container ids.");
   console.log("validate: Check a resume HTML against the editor protocol without starting a server.");
-  console.log("         Exit code 0 = valid, 1 = invalid (with fix guidance on stderr).");
+  console.log("         Add --check-layout for browser checks of overflow and uneven whitespace.");
+  console.log("         Exit code 0 = valid, 1 = invalid, 2 = browser measurement unavailable.");
   console.log("\nOptions:");
   console.log("  -p, --port <number>   Specify server port. Default: 8848; if taken, walks up to");
   console.log("                       8853 then a random free port. Explicit --port is strict:");
@@ -51,6 +52,7 @@ function printHelp() {
   console.log("  --host <host>         Loopback host only: 127.0.0.1 or ::1 (default: 127.0.0.1)");
   console.log("  --json                Output NDJSON status events (server_started / error / ...)");
   console.log("  --manifest <path>     Delivery manifest explicitly associated with this HTML");
+  console.log("  --check-layout        validate only: measure print layout (requires Playwright + Chromium)");
   console.log("  --write-port-file <path>  After start, write {url, port, pid, sourcePath} JSON");
   console.log("                       (for background launches and scripts that poll readiness)");
   console.log("  --no-open             Do not automatically open the browser");
@@ -389,6 +391,7 @@ if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
         host: { type: "string", default: "127.0.0.1" },
         json: { type: "boolean", default: false },
         manifest: { type: "string" },
+        "check-layout": { type: "boolean", default: false },
         open: { type: "boolean", default: true },
         "no-open": { type: "boolean", default: false },
         "write-port-file": { type: "string" },
@@ -444,10 +447,28 @@ if (resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
           process.exitCode = 1;
           return;
         }
+        let layout;
+        if (values["check-layout"]) {
+          const measured = spawnSync(process.execPath, [join(packageRoot, "skills/resume-builder/scripts/measure_resume_layout.mjs"), "--html", targetPath], {
+            encoding: "utf8", timeout: 60000, maxBuffer: 5 * 1024 * 1024, windowsHide: true,
+          });
+          try {
+            layout = JSON.parse(measured.stdout);
+          } catch {
+            layout = { status: "degraded", message: `浏览器布局测量不可用：${measured.error?.message || measured.stderr || "没有有效测量结果"}` };
+          }
+          if (layout.status !== "pass") {
+            if (values.json) console.log(JSON.stringify({ event: "error", error: layout.message, layout }));
+            else console.error(layout.message);
+            process.exitCode = layout.status === "fail" ? 1 : 2;
+            return;
+          }
+        }
         if (values.json) {
-          console.log(JSON.stringify({ event: "validation_passed", sourcePath: targetPath }));
+          console.log(JSON.stringify({ event: "validation_passed", sourcePath: targetPath, ...(layout ? { layout } : {}) }));
         } else {
           console.log(`校验通过：${basename(targetPath)} 的编辑字段符合协议（template/version/ID 均有效）。`);
+          if (layout) console.log("浏览器排版校验通过；仍须打开整页截图完成视觉复核。");
         }
         return;
       }

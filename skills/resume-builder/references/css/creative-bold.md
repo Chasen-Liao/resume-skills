@@ -82,12 +82,8 @@
 ## 组件级 CSS
 
 ```css
-/* === 布局网格（Brutalism 风格推荐双栏） === */
-.layout-grid {
-  display: grid;
-  grid-template-columns: 32% 1fr;
-  gap: 6mm;
-}
+/* === 默认单栏：章节直接置于 .resume，由 common.md 的全页契约均匀分布 === */
+/* 只有真实内容足够且两栏均通过留白检查时才使用双栏；不要设置固定网格高度。 */
 
 /* === 顶部 Header === */
 .resume-header {

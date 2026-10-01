@@ -20,7 +20,6 @@ if (!values.html || !values.pdf) {
 }
 
 const require = createRequire(import.meta.url);
-const { version: playwrightVersion } = require("playwright/package.json");
 const htmlPath = resolve(values.html);
 const pdfPath = resolve(values.pdf);
 const previewPath = values.preview ? resolve(values.preview) : null;
@@ -32,6 +31,7 @@ function report(value) {
 
 let browser;
 try {
+  const { version: playwrightVersion } = require("playwright/package.json");
   const { chromium } = await import("playwright");
   browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 794, height: 1123 }, deviceScaleFactor: 1 });
@@ -68,6 +68,8 @@ try {
     pdf: pdfPath,
     preview: previewPath,
   });
+  // Keep PDF and preview for diagnosis, but never report failed layout as success.
+  if (layout.status !== "pass") process.exitCode = 1;
 } catch (error) {
   report({ status: "degraded", message: `视觉版渲染不可用：${error.message}` });
   process.exitCode = 1;

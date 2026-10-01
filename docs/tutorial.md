@@ -74,7 +74,11 @@ JD 关键词只是岗位要求，不是候选人事实。若缺少某项要求�
 powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<生成的_visual.html路径>" -OutputPdf "<生成的_visual.pdf路径>"
 ```
 
-脚本用 Playwright 生成 A4 PDF：对声明 `data-resume-layout="full-page"` 的视觉 HTML，短内容自动垂直分布，长内容在安全密度下限之上自动压缩；随后运行 HTML 溢出、PDF 页数、可提取文本、98% 有效页面占用率和底部安全区检查，并生成低分辨率 `*.preview.png`。成功时会在旁边写出 `*.resume-manifest.json`，记录 HTML/PDF/preview SHA-256、renderer 版本和验证结果。缺少 Playwright、Chromium 或 `pypdf` 时状态为不可交付，不能把人工目测当作自动验证通过。
+脚本用 Playwright 生成 A4 PDF：对声明 `data-resume-layout="full-page"` 的视觉 HTML，短内容尝试均匀垂直分布，长内容在安全密度下限之上自动压缩；随后运行 HTML 溢出、页面/各栏留白、内部空隙、PDF 页数、可提取文本、98% 有效页面占用率和底部安全区检查，并生成低分辨率 `*.preview.png`。成功时会在旁边写出 `*.resume-manifest.json`，记录 HTML/PDF/preview SHA-256、renderer 版本和验证结果。缺少 Playwright、Chromium 或 `pypdf` 时状态为不可交付，不能把人工目测当作自动验证通过。
+
+首次运行需按 [运行时初始化说明](https://github.com/Chasen-Liao/resume-skills/blob/main/skills/resume-builder/references/runtime-setup.md) 定位完整仓库、安装依赖，并将脚本与私有简历路径解析为实际绝对路径。只安装 Skill 不代表 PDF 渲染环境已经就绪。
+
+自动检查通过后，**AI 必须打开当前最终版本的完整 A4 截图**，检查底部是否留白过多、上下是否平衡、各栏及板块间空隙是否均匀。明显偏空时不得交付，调整后重新渲染、校验并查看新截图；CI 通过、manifest 有效或生成了截图文件都不能代替实际看图。`resume-skills validate` 默认只验收字段协议，添加 `--check-layout` 才会测量浏览器排版。
 
 ## 5. 需要时打开本地 Canvas
 
@@ -117,6 +121,7 @@ ATS-safe 版不使用 Canvas，直接在生成后检查单栏阅读顺序、复�
 
 - 联系方式、时间、数字、链接均来自已确认事实；
 - 视觉 PDF 恰好一页，有效页面占用率 ≥98%，底部安全余量充足，HTML 无溢出，文字可复制；
+- AI 已打开最终整页截图，确认底部、上下及各栏留白均匀，无明显大块空隙；
 - ATS-safe 版保持单栏、标准标题和稳定阅读顺序；
 - 当前 `*.resume-manifest.json` 为 valid，且 hash 对应当前 HTML/PDF/preview；
 - Canvas 保存后已经重新渲染与验证；

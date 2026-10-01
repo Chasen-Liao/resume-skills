@@ -24,6 +24,7 @@ description: 根据职位描述(JD)进行结构化分析、岗位匹配度诊断
 ## 参考文件解析
 
 - 所有相对路径都以本 `SKILL.md` 所在目录为基准，不以当前工作目录为基准。
+- 命令示例中的 `skills/...` 是完整运行时根目录下的路径；首次执行时读取 [渲染环境与命令路径](../resume-builder/references/runtime-setup.md)，将脚本和私有产物解析为实际绝对路径。
 - 开始工作前，必须先读取并遵循 `../resume-builder/references/resume-contract.md` 和 `../resume-builder/references/content-writing.md`；两份共享参考文档优先于本入口中的示例、版式偏好和流程提示。
 - 若 `resume-builder` 与本 skill 一起安装，再读取 `../resume-builder/references/design-guidelines.md` 和对应的 CSS 文件。
 - 本 skill 必须与 `resume-builder` 一起安装；缺少共享参考文件时，要求用户安装完整 skill 集后再继续，不猜测契约规则，也不承诺 DOCX 生成。
@@ -80,8 +81,8 @@ description: 根据职位描述(JD)进行结构化分析、岗位匹配度诊断
 
 交付前必须执行质量审计与 PDF 验证：
 1. **ATS 可解析性审计**：
-   - 检查正文阅读顺序，确保无隐藏文字、无纯图片承载文字、无复杂分栏 CSS；
-   - 若环境具备 Python 脚本，运行自动化门禁：
+   - 两种模式都检查正文阅读顺序、可提取文本和隐藏文字；视觉版允许用户选择的双栏与照片，但重要信息不能只存在于图片中，不宣称视觉版满足 ATS-safe 的全部约束。
+   - ATS-safe 模式另外要求单栏、无复杂分栏 CSS、无图片承载文字，必须执行下列静态审计，并检查最终 PDF 页数、可提取文本及关键事实（`--pdf` 与 `--required-text`）；不要把 `--mode ats` 用于视觉双栏或带照片模板：
      ```bash
      python skills/resume-builder/scripts/validate_resume.py --html "<tailored目录中的html路径>" --mode ats
      ```
@@ -92,6 +93,8 @@ description: 根据职位描述(JD)进行结构化分析、岗位匹配度诊断
    确保输出“校验通过”。每个需要编辑的文本节点必须是可独立编辑的叶子字段；禁止把编辑 ID 放在 `<html>`、`<body>`、`<main>`、`.page`、`.resume`、`header`、`footer`、`section`、`ul`、`ol`、`figure` 或包含多个字段的复合容器上。字段总数必须大于 0 且 ID 唯一。
 3. **Playwright 渲染与单页验证**（视觉模式）：
    运行 `render_resume.ps1` 渲染真实 PDF 并生成 preview 与 manifest。PDF 必须恰好 1 页、页面有效占用率默认 $\ge 98\%$ 且保留底部安全距。
+4. **整页截图视觉复核**（视觉模式）：
+   AI 必须打开本次最终渲染的整页截图，按 [整页截图视觉复核](../resume-builder/SKILL.md#整页截图视觉复核视觉模式强制执行) 检查底部留白、上下平衡、板块间空隙和双栏各栏分布。岗位定制删减内容后尤其要检查底部是否明显偏空；即使自动校验全部通过，留白失衡也不得交付，须调整排版后重新渲染、校验并查看新截图。
 
 ### 第七步：交付与 Canvas 预览
 
