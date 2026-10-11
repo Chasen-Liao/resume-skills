@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import struct
 import subprocess
@@ -208,7 +209,7 @@ def verify_manifest_record(
         )
 
 
-def check_html_overflow(path: Path, layout_script: Path, checks: list[Check]) -> None:
+def check_html_overflow(path: Path, layout_script: Path, checks: list[Check]) -> dict[str, Any] | None:
     try:
         result = subprocess.run(
             ["node", str(layout_script), "--html", str(path)],
@@ -226,6 +227,7 @@ def check_html_overflow(path: Path, layout_script: Path, checks: list[Check]) ->
     if status not in {"pass", "fail", "degraded"}:
         status = "degraded"
     add(checks, "overflow measurement", status, measurement.get("message", "layout measurement returned no message"))
+    return measurement.get("layout")
 
 
 def read_html(path: Path, checks: list[Check]) -> str | None:
@@ -367,9 +369,9 @@ def validate_pdf(
     checks: list[Check],
     check_layout: bool = False,
     min_fill_ratio: float = 0.98,
-    page_margin_pt: float = 28.35,
-    bottom_safe_pt: float = 12.0,
-) -> None:
+    page_margin_pt: float = 10 * 72 / 25.4,
+    bottom_margin_pt: float = 9 * 72 / 25.4,
+) -> dict[str, Any] | None:
     try:
         data = path.read_bytes()
     except OSError as exc:
@@ -431,15 +433,13 @@ def validate_pdf(
             else:
                 top_y, bottom_y = bounds
                 page_height = float(reader.pages[0].mediabox.height)
-                # The effective area ends at the required bottom safety line.
-                # Extra whitespace inside that line is still safe, but should
-                # count against the 98% visual-fill target.
-                effective_bottom = page_margin_pt + bottom_safe_pt
-                printable_height = page_height - (2 * page_margin_pt) - bottom_safe_pt
+                # Bottom margin is a total physical distance, not top margin + safety.
+                effective_bottom = bottom_margin_pt
+                printable_height = page_height - page_margin_pt - bottom_margin_pt
                 unused_bottom = max(bottom_y - effective_bottom, 0)
-                fill_ratio = 1 - (unused_bottom / printable_height) if printable_height > 0 else 0
                 top_space = max((page_height - page_margin_pt) - top_y, 0)
-                bottom_space = max(bottom_y - page_margin_pt, 0)
+                fill_ratio = max(0, 1 - ((top_space + unused_bottom) / printable_height)) if printable_height > 0 else 0
+                bottom_space = unused_bottom
                 imbalance = abs(top_space - bottom_space)
                 # Merge text rows across the page to detect blank bands that a
                 # bottom caption can otherwise conceal. HTML measures columns separately.
@@ -467,34 +467,29 @@ def validate_pdf(
                         "pass",
                         f"上下留白差 {imbalance:.1f}pt",
                     )
-                if bottom_y < page_margin_pt:
-                    add(
-                        checks,
-                        "bottom safety",
-                        "fail",
-                        f"内容已超出可打印底部安全区（bottom={bottom_y:.1f}pt）",
-                    )
-                elif (bottom_y - page_margin_pt) < bottom_safe_pt:
-                    safety_status = "fail"
-                    add(
-                        checks,
-                        "bottom safety",
-                        safety_status,
-                        f"底部安全余量仅 {bottom_y - page_margin_pt:.1f}pt；视觉版交付至少需要 {bottom_safe_pt:.1f}pt",
-                    )
-                else:
-                    add(
-                        checks,
-                        "bottom safety",
-                        "pass",
-                        f"底部安全余量 {bottom_y - page_margin_pt:.1f}pt",
-                    )
-                fill_message = f"页面占用率 {fill_ratio:.0%}（目标 ≥ {min_fill_ratio:.0%}）"
+                actual_bottom_mm = bottom_y * 25.4 / 72
+                required_bottom_mm = bottom_margin_pt * 25.4 / 72
+                # Text bounds are estimated; allow 0.25mm for font/print rounding.
+                safety_status = "pass" if bottom_y + (0.25 * 72 / 25.4) >= bottom_margin_pt else "fail"
+                add(checks, "bottom safety", safety_status,
+                    f"实际底部距离 {actual_bottom_mm:.2f}mm；总底部边距要求 {required_bottom_mm:.2f}mm（容差 0.25mm）")
+                fill_message = f"有效区域页面占用率 {fill_ratio:.1%}（目标 ≥ {min_fill_ratio:.0%}）；实际底部距离 {actual_bottom_mm:.2f}mm"
                 if fill_ratio < min_fill_ratio:
                     fill_status = "fail"
                     add(checks, "page fill", fill_status, f"{fill_message}，页面偏空；请调整布局密度、间距或垂直分布")
                 else:
                     add(checks, "page fill", "pass", fill_message)
+                return {"topMarginMm": page_margin_pt * 25.4 / 72,
+                        "bottomMarginMm": required_bottom_mm, "actualBottomMm": actual_bottom_mm,
+                        "fillRatio": fill_ratio, "minFillRatio": min_fill_ratio,
+                        "measurementToleranceMm": 0.25}
+
+
+def margin_mm(value: str) -> float:
+    number = float(value)
+    if not math.isfinite(number) or not 8 <= number <= 20:
+        raise argparse.ArgumentTypeError("margin must be finite and between 8 and 20 mm")
+    return number
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -522,6 +517,8 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.98,
         help="fail visual delivery when measurable PDF text occupies less than this ratio (default: 0.98)",
     )
+    parser.add_argument("--page-margin-mm", type=margin_mm, help="PDF top margin; otherwise use measured HTML or 10 mm")
+    parser.add_argument("--bottom-margin-mm", type=margin_mm, help="total PDF bottom margin; otherwise use measured HTML or 9 mm (no added safety zone)")
     parser.add_argument("--preview", type=Path, help="low-resolution PNG preview produced alongside the PDF")
     parser.add_argument("--manifest", type=Path, help="write an HTML/PDF delivery manifest")
     parser.add_argument("--verify-manifest", type=Path, help="verify hashes in an existing delivery manifest")
@@ -532,6 +529,10 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     checks: list[Check] = []
+    html_layout = None
+    pdf_layout = None
+    if not math.isfinite(args.min_fill_ratio) or not 0 < args.min_fill_ratio <= 1:
+        add(checks, "layout configuration", "fail", "min-fill-ratio must be finite and in (0, 1]")
     if not args.html and not args.pdf:
         add(checks, "input", "fail", "provide --html and/or --pdf")
     if args.html:
@@ -539,14 +540,27 @@ def main(argv: list[str] | None = None) -> int:
         if html is not None:
             validate_html(html, args.mode, args.required_text, checks)
             if args.check_overflow or args.check_layout:
-                check_html_overflow(args.html, args.layout_script, checks)
+                html_layout = check_html_overflow(args.html, args.layout_script, checks)
+    margins = (html_layout or {}).get("measurement", {}).get("marginsMm", {})
+    top_margin_mm = margins.get("top", 10)
+    bottom_margin_mm = margins.get("bottom", 9)
+    for value, measured, label in ((args.page_margin_mm, top_margin_mm, "top"),
+                                   (args.bottom_margin_mm, bottom_margin_mm, "bottom")):
+        if value is not None and margins and abs(value - measured) > 0.25:
+            add(checks, "layout configuration", "fail", f"{label} margin override disagrees with measured HTML; update CSS and re-render first")
+    if args.page_margin_mm is not None:
+        top_margin_mm = args.page_margin_mm
+    if args.bottom_margin_mm is not None:
+        bottom_margin_mm = args.bottom_margin_mm
     if args.pdf:
-        validate_pdf(
+        pdf_layout = validate_pdf(
             args.pdf,
             args.required_text,
             checks,
             check_layout=args.check_layout,
             min_fill_ratio=args.min_fill_ratio,
+            page_margin_pt=top_margin_mm * 72 / 25.4,
+            bottom_margin_pt=bottom_margin_mm * 72 / 25.4,
         )
     preview = validate_preview(args.preview, checks) if args.preview else None
 
@@ -563,8 +577,11 @@ def main(argv: list[str] | None = None) -> int:
     degraded = any(check.status == "degraded" for check in checks)
     deliverable = not has_failures and not degraded
     ok = deliverable
+    layout_record = {**(pdf_layout or {}), "marginsMm": margins,
+                     "density": (html_layout or {}).get("density")}
     report = {
         "ok": ok,
+        "layout": layout_record,
         "deliverable": deliverable,
         "checks": [check.as_dict() for check in checks],
         "summary": {
@@ -602,6 +619,7 @@ def main(argv: list[str] | None = None) -> int:
             "pdf": {"path": str(args.pdf.resolve()), "sha256": file_hash(args.pdf)} if args.pdf else None,
             "preview": preview,
             "renderer": renderer,
+            "layout": layout_record,
             "validation": report,
         }
         args.manifest.parent.mkdir(parents=True, exist_ok=True)

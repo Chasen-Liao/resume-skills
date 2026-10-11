@@ -9,9 +9,9 @@
       --page-height: 297mm;
       --page-margin: 10mm;
       --resume-density: 1;
-      --resume-density-min: 0.84;
+      --resume-density-min: 0.84; --resume-density-max: 1.2;
       --resume-fill-target: 0.98;
-      --resume-bottom-safe: 4.5mm;
+      --resume-bottom-margin: 9mm;
       --fs-name: calc(24px * var(--resume-density));
       --fs-body: calc(10px * var(--resume-density));
       --gap-section: calc(8mm * var(--resume-density));
@@ -19,7 +19,7 @@
     }
     * { box-sizing: border-box; margin: 0; }
     body { display: flex; justify-content: center; background: #e2e8f0; font: var(--fs-body)/var(--lh-body) Arial, sans-serif; }
-    .resume { width: var(--page-width); height: var(--page-height); padding: var(--page-margin) var(--page-margin) calc(var(--page-margin) + var(--resume-bottom-safe)); background: white; display: flex; flex-direction: column; justify-content: space-between; }
+    .resume { width: var(--page-width); height: var(--page-height); padding: var(--page-margin) var(--page-margin) var(--resume-bottom-margin); background: white; display: flex; flex-direction: column; justify-content: space-between; }
     .resume-header { border-bottom: 2px solid #172033; padding-bottom: 8px; }
     h1 { font-size: var(--fs-name); color: #172033; }
     .section { margin-bottom: var(--gap-section); }

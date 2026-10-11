@@ -12,8 +12,9 @@
       --resume-layout: full-page;
       --resume-density: 1;
       --resume-density-min: 0.84;
+      --resume-density-max: 1.2;
       --resume-fill-target: 0.98;
-      --resume-bottom-safe: 4.5mm;
+      --resume-bottom-margin: 9mm;
       --page-width: 210mm;
       --page-height: 297mm;
       --page-margin: 10mm;
@@ -341,7 +342,7 @@
       flex-direction: column;
       justify-content: space-between;
       min-height: var(--page-height);
-      padding-bottom: calc(var(--page-margin) + var(--resume-bottom-safe));
+      padding-bottom: var(--resume-bottom-margin);
     }
     html[data-resume-layout="full-page"] .resume > :last-child,
     html[data-resume-layout="full-page"] .resume > .footer-layout > :last-child,
@@ -353,7 +354,7 @@
     }
     @media print {
       html[data-resume-layout="full-page"] .resume {
-        padding-bottom: calc(var(--page-margin) + var(--resume-bottom-safe));
+        padding-bottom: var(--resume-bottom-margin);
       }
     }
   </style>

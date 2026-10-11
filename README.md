@@ -46,7 +46,7 @@ npx skills add Chasen-Liao/resume-skills --list
 - GitHub 仓库中的 `SKILL.md`：提供简历采访、JD 定制、ATS 检查和版本管理流程
 - npm 包：提供 `resume-skills` CLI 和本地 Canvas 编辑器
 
-仓库当前版本为 **0.10.0**。此版本新增留白门禁和强制整页截图复核；GitHub 推送与 npm 发布独立进行，`@latest` 是否包含这些能力以 npm 实际版本为准。完整 PDF 渲染环境及命令路径见 [运行时初始化说明](skills/resume-builder/references/runtime-setup.md)。
+仓库当前版本为 **0.10.1**。此版本将视觉简历的总底部边距统一为 9mm，改善短内容自动排版，并统一 HTML/PDF 的边距校验与记录；GitHub 推送与 npm 发布独立进行，`@latest` 是否包含这些能力以 npm 实际版本为准。完整 PDF 渲染环境及命令路径见 [运行时初始化说明](skills/resume-builder/references/runtime-setup.md)。
 
 Skill 的安装不依赖 npm 包；只有需要手动打开本地 Canvas 时才需要使用 npm CLI：
 
@@ -169,7 +169,7 @@ resume-skills editor resume_visual.html
 </tr>
 </table>
 
-视觉版以 A4 单页和有效区域至少 98% 为目标。`resume-builder`、`jd-tailorer` 或 `resume-workflow` 生成视觉母版或视觉定制版并完成 PDF 验证后，应先询问用户是否需要 Canvas 预览：用户选择需要时，再执行 `npx -p @chasen-liao/resume-skills@latest resume-skills editor <实际生成的_visual.html路径> --manifest <实际_manifest路径>`；用户暂时不需要时不启动 Canvas，也不阻塞 HTML/PDF 交付。渲染脚本会对声明 `data-resume-layout="full-page"` 的视觉 HTML 自动分布短内容、在安全密度下限内压缩长内容，并生成低分辨率 `*.preview.png`。若仍无法达到 98%、单页或底部安全区，必须明确报告原因。若用户选择 Canvas 但当前环境不能执行 `npx`，Agent 必须明确说明未启动并给出完整手动命令。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。最终 PDF 必须有 `*.resume-manifest.json`，其中 HTML/PDF/preview hash、Playwright renderer 版本与验证结果都对应当前文件。
+视觉版以 A4 单页和有效区域至少 98% 为目标。`resume-builder`、`jd-tailorer` 或 `resume-workflow` 生成视觉母版或视觉定制版并完成 PDF 验证后，应先询问用户是否需要 Canvas 预览：用户选择需要时，再执行 `npx -p @chasen-liao/resume-skills@latest resume-skills editor <实际生成的_visual.html路径> --manifest <实际_manifest路径>`；用户暂时不需要时不启动 Canvas，也不阻塞 HTML/PDF 交付。渲染脚本会对声明 `data-resume-layout="full-page"` 的视觉 HTML 先在密度上限内放大短内容的字号、行距与间距，再均匀分配剩余空间；长内容在安全密度下限内压缩，并生成低分辨率 `*.preview.png`。六套模板默认使用 **9mm 总底部边距**，不再叠加额外安全区，上/左右边距保留原值。若仍无法达到 98%、单页或底部安全区，必须明确报告原因。若用户选择 Canvas 但当前环境不能执行 `npx`，Agent 必须明确说明未启动并给出完整手动命令。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。最终 PDF 必须有 `*.resume-manifest.json`，其中 HTML/PDF/preview hash、Playwright renderer 版本、有效边距、实际底部距离、密度与验证结果都对应当前文件。PDF 校验读取 HTML 实测边距；有效区域占用率 100% 不等于纸张没有物理留白。
 
 ### ATS-safe HTML/PDF
 

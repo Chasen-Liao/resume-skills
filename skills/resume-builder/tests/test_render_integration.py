@@ -43,12 +43,37 @@ class RenderIntegrationTests(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                     self.assertEqual(record["status"], "valid")
                     self.assertTrue(record["validation"]["deliverable"])
+                    self.assertAlmostEqual(record["layout"]["bottomMarginMm"], 9, places=2)
+                    self.assertGreaterEqual(record["layout"]["actualBottomMm"], 8.75)
                     self.assertEqual(Path(record["html"]["path"]), html.resolve())
                     self.assertEqual(Path(record["pdf"]["path"]), pdf.resolve())
                     preview = record["preview"]
                     self.assertTrue(Path(preview["path"]).is_file())
                     self.assertLessEqual(preview["width"], 1600)
                     self.assertLessEqual(preview["height"], 1600)
+
+    def test_custom_css_margins_flow_into_pdf_validation_and_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output_dir = Path(directory)
+            source = (EXAMPLES / "classic-business.html").read_text(encoding="utf-8")
+            html = output_dir / "custom-margin.html"
+            html.write_text(source.replace("--resume-bottom-margin: 9mm;", "--resume-bottom-margin: 11mm;"), encoding="utf-8")
+            result = render(html, output_dir / "custom.pdf")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            record = json.loads((output_dir / "custom.resume-manifest.json").read_text(encoding="utf-8"))
+            self.assertAlmostEqual(record["layout"]["topMarginMm"], 12, places=2)
+            self.assertAlmostEqual(record["layout"]["bottomMarginMm"], 11, places=2)
+            self.assertGreaterEqual(record["layout"]["actualBottomMm"], 10.75)
+            self.assertTrue(record["validation"]["deliverable"])
+            mismatch = subprocess.run(
+                ["python", str(ROOT / "skills/resume-builder/scripts/validate_resume.py"),
+                 "--html", str(html), "--pdf", str(output_dir / "custom.pdf"),
+                 "--check-layout", "--bottom-margin-mm", "9", "--json"],
+                cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60,
+            )
+            self.assertNotEqual(mismatch.returncode, 0)
+            checks = json.loads(mismatch.stdout)["checks"]
+            self.assertTrue(any(check["name"] == "layout configuration" and check["status"] == "fail" for check in checks))
 
     def test_sparse_short_fixture_is_rejected_and_balanced_fixtures_pass(self):
         with tempfile.TemporaryDirectory() as directory:

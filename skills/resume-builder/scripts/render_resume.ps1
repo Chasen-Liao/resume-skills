@@ -8,7 +8,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $previousNpmLogLevel = $env:npm_config_loglevel
+$previousConsoleEncoding = [Console]::OutputEncoding
 $env:npm_config_loglevel = 'error'
+# Node emits UTF-8 JSON. Legacy Windows PowerShell otherwise decodes it as
+# the local code page, which can corrupt Chinese messages and JSON quotes.
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
 
 try {
     $htmlPath = (Resolve-Path -LiteralPath $HTML -ErrorAction Stop).Path
@@ -57,4 +61,5 @@ try {
     exit 1
 } finally {
     $env:npm_config_loglevel = $previousNpmLogLevel
+    [Console]::OutputEncoding = $previousConsoleEncoding
 }

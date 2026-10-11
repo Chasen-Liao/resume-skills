@@ -334,6 +334,35 @@ class ValidateResumeTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("PDF page count", result.stdout)
 
+    def test_pdf_bottom_margin_is_nine_mm_total_not_an_added_safety_zone(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for margin_mm, expected in ((9.1, "pass"), (8.9, "pass"), (8.0, "fail")):
+                with self.subTest(margin_mm=margin_mm):
+                    pdf = Path(directory) / "boundary.pdf"
+                    write_layout_pdf(pdf, y=[margin_mm * 72 / 25.4 + 3])
+                    checks = []
+                    VALIDATOR.validate_pdf(pdf, [], checks, check_layout=True)
+                    safety = next(check for check in checks if check.name == "bottom safety")
+                    self.assertEqual(safety.status, expected, safety.message)
+                    self.assertIn("mm", safety.message)
+
+    def test_pdf_only_cli_reports_physical_bottom_distance_and_custom_margin(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pdf = Path(directory) / "custom.pdf"
+            write_layout_pdf(pdf, y=list(range(795, 40, -60)) + [11.1 * 72 / 25.4 + 3])
+            result = run_validator("--pdf", pdf, "--check-layout", "--bottom-margin-mm", "11", "--json")
+            report = json.loads(result.stdout)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertAlmostEqual(report["layout"]["actualBottomMm"], 11.1, places=2)
+            self.assertAlmostEqual(report["layout"]["bottomMarginMm"], 11, places=2)
+            stricter = run_validator("--pdf", pdf, "--check-layout", "--bottom-margin-mm", "12", "--json")
+            self.assertNotEqual(stricter.returncode, 0)
+            safety = next(check for check in json.loads(stricter.stdout)["checks"] if check["name"] == "bottom safety")
+            self.assertEqual(safety["status"], "fail")
+            for invalid in ("nan", "inf", "0", "-1"):
+                rejected = run_validator("--pdf", pdf, "--bottom-margin-mm", invalid)
+                self.assertNotEqual(rejected.returncode, 0)
+
     def test_pdf_layout_rejects_content_past_printable_bottom(self):
         with tempfile.TemporaryDirectory() as directory:
             pdf = Path(directory) / "clipped.pdf"

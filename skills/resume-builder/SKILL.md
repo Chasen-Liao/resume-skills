@@ -65,8 +65,8 @@ CSS 文件包含 3 套配色变量 + 推荐字体 + 风格 CSS。`css/common.md`
 根据第二步选定的模式合并 `css/common.md` 排版 + 对应风格 CSS/布局 + 已通过契约门槛的用户信息，生成独立 HTML。视觉模式使用 `<姓名>_<岗位>_visual.html`；ATS-safe 模式使用 `<姓名>_<岗位>_ats.html`，对应 PDF 使用相同前缀和 `.pdf` 扩展名。
 
 视觉模式：
-- A4 尺寸、页边距、字号、间距、行高等排版参数参见 `css/common.md`（唯一定义源）；根 `<html>` 必须声明 `data-resume-layout="full-page"`，并保留 `--resume-density`、`--resume-density-min`、`--resume-fill-target: 0.98` 和 `--resume-bottom-safe` 变量。
-- 页面主体必须按 `css/common.md` 的 full-page 契约使用可伸展的 flex/grid 布局：内容不足时用 `space-between` 均匀分布，内容过多时由渲染脚本在安全密度下限之上自动压缩；不得用虚构内容填白或用 `overflow: hidden` 静默裁切。
+- A4 尺寸、页边距、字号、间距、行高等排版参数参见 `css/common.md`（唯一定义源）；根 `<html>` 必须声明 `data-resume-layout="full-page"`，并保留 `--resume-density`、`--resume-density-min`、`--resume-density-max: 1.2`、`--resume-fill-target: 0.98` 和 `--resume-bottom-margin: 9mm` 变量。底部为 9mm 总边距，不再叠加额外安全区；上/左右边距保持模板原值。
+- 页面主体必须按 `css/common.md` 的 full-page 契约使用可伸展的 flex/grid 布局：内容不足时先在密度上限内放大字号、行距和条目/板块间距，再用 `space-between` 分配剩余空间，内容过多时由渲染脚本在安全密度下限之上自动压缩；不得用虚构内容填白或用 `overflow: hidden` 静默裁切。
 - CSS 变量统管颜色，系统字体栈（PingFang SC, Microsoft YaHei）
 - 交付为单文件时，头像等本地图片使用 `data URL` 内嵌；若保留外部网页字体，必须同时提供系统字体回退，并在验证中说明离线渲染可能不同。
 - 技能标签用 `<span class="skill-badge">` 排列，badge 样式由风格 CSS 定义（ATS 友好）
@@ -103,11 +103,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/script
 - `page fill` 以 PDF 可提取文本的纵向范围估算**有效页面区域**占用率，目标至少 `98%`；默认低于目标直接失败并明确提示布局密度/间距问题，不能为填白编造事实。
 - `vertical balance` 检查可打印区域上下留白差；超过 20mm 直接失败，优先均匀调整板块间距、条目间距和容器内边距，避免内容挤在顶部或底部。
 - `vertical gaps` 检查 PDF 文本行之间的最大连续空隙，超过有效高度的 25% 直接失败，防止底部孤立文字掩盖正文偏空。同时传入 `--html` 时，`--check-layout` 也会执行浏览器检查，分别测量页面和内置双栏的底部留白及内部空隙；这些测量不能替代下面的整页截图复核。
-- `bottom safety` 不得失败；内容越过可打印底部安全区或安全余量不足时，必须回退间距或字号调整。
+- `bottom safety` 不得失败；默认总底部边距为 9mm，PDF 校验使用 HTML 实测 padding（文本边界估算容差 0.25mm），并报告实际底部距离。有效区域占用率 100% 不代表物理底部没有留白；自定义边距必须改 HTML、重新渲染并记录到 manifest，不能只调校验参数。
 
-版面调整顺序：先使用已有且已确认的板块和内容；短内容由 full-page 契约均匀分布，长内容由渲染脚本在 `--resume-density-min` 之上自动压缩；仍溢出再按“页边距不小于 8mm → 间距 → 行高不低于 1.25 → 正文不小于 9.5px → 精简低相关内容 → 在适合时切换双栏”的顺序处理。上下间距尽量相近，任何一次调整后都重新导出 PDF 并运行同一命令。不得新增未确认经历、指标、技能或占位文本，也不以难以阅读的小字号硬塞一页。
+版面调整顺序：先使用已有且已确认的板块和内容；短内容先在 `--resume-density-max` 内放大变量控制的字号、行距和间距，再均匀分布剩余空间；长内容由渲染脚本在 `--resume-density-min` 之上自动压缩；仍溢出再按“页边距不小于 8mm → 间距 → 行高不低于 1.25 → 正文不小于 9.5px → 精简低相关内容 → 在适合时切换双栏”的顺序处理。上下间距尽量相近，任何一次调整后都重新导出 PDF 并运行同一命令。不得新增未确认经历、指标、技能或占位文本，也不以难以阅读的小字号硬塞一页。
 
-渲染脚本会在导出 PDF 前执行 full-page 自动布局：先保持默认密度，只有检测到 A4 溢出才迭代 `--resume-density`，并同时生成同名前缀的低分辨率 `*.preview.png`。随后执行浏览器溢出和 PDF 布局验证，并生成同名前缀的 `*.resume-manifest.json`，其中包含 HTML/PDF/preview SHA-256、renderer 版本和验证结果。`degraded`、`fail` 或 hash 不一致都不可交付。完成自动检查后，必须由 AI 执行下面的整页截图视觉复核，同时检查可见裁切、断图、照片、字体回退和打印背景，并核对链接；自动检查不能保证这些视觉细节。视觉模式以 A4 单页和有效区域 ≥98% 为硬目标，所有警告都要记录处理结果。
+渲染脚本会在导出 PDF 前执行 full-page 自动布局：短内容在上限内扩张，长内容在下限内压缩 `--resume-density`，并同时生成同名前缀的低分辨率 `*.preview.png`。随后执行浏览器溢出和 PDF 布局验证，并生成同名前缀的 `*.resume-manifest.json`，其中包含 HTML/PDF/preview SHA-256、renderer 版本、有效边距/实际底部距离/密度和验证结果。`degraded`、`fail` 或 hash 不一致都不可交付。完成自动检查后，必须由 AI 执行下面的整页截图视觉复核，同时检查可见裁切、断图、照片、字体回退和打印背景，并核对链接；自动检查不能保证这些视觉细节。视觉模式以 A4 单页和有效区域 ≥98% 为硬目标，所有警告都要记录处理结果。
 
 #### 整页截图视觉复核（视觉模式强制执行）
 

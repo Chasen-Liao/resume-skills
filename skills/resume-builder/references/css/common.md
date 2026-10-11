@@ -33,8 +33,9 @@
   --resume-layout: full-page;
   --resume-density: 1;
   --resume-density-min: 0.84;
+  --resume-density-max: 1.2;    /* 短内容最多放大 20%，避免过度拉伸 */
   --resume-fill-target: 0.98;
-  --resume-bottom-safe: 4.5mm;  /* 约 12.8pt，给打印留出底部安全余量 */
+  --resume-bottom-margin: 9mm; /* 总底部边距，已包含安全留白，不再与 page-margin 相加 */
 
   /* 字号 */
   --fs-name: calc(24px * var(--resume-density));              /* 22-26px */
@@ -109,7 +110,7 @@ html[data-resume-layout="full-page"] .resume {
   flex-direction: column;
   justify-content: space-between;
   min-height: var(--page-height);
-  padding-bottom: calc(var(--page-margin) + var(--resume-bottom-safe));
+  padding-bottom: var(--resume-bottom-margin);
 }
 
 html[data-resume-layout="full-page"] .resume > .resume-header,
@@ -144,7 +145,7 @@ html[data-resume-layout="full-page"] .resume > .layout-grid > .right-col {
 
 @media print {
   html[data-resume-layout="full-page"] .resume {
-    padding-bottom: calc(var(--page-margin) + var(--resume-bottom-safe));
+    padding-bottom: var(--resume-bottom-margin);
   }
 }
 
@@ -170,8 +171,10 @@ p, li {
 python skills/resume-builder/scripts/validate_resume.py --html <resume.html> --pdf <resume.pdf> --check-layout --min-fill-ratio 0.98 --json
 ```
 
-- 目标是 1 页、页面占用率至少 98%，并让顶部和底部留白接近；渲染脚本会在 `--resume-density-min` 之上自动压缩长内容，短内容由 `space-between` 均匀分布到有效区域。
-- 页面偏空时，优先依靠全页契约的垂直分布；页面溢出时自动迭代 `--resume-density`，再使用已有内容均匀调整 `--gap-section`、`--gap-item`、行高或容器内边距。
-- 自动调整达到密度下限仍无法满足 98% 或安全区要求时，校验会明确失败并提示用户；不得补写经历、指标、技能或重复文案。
+- 目标是 1 页、有效区域页面占用率至少 98%；默认总底部边距为 **9mm**，上/左右边距仍由 `--page-margin` 控制，不额外叠加安全区。
+- 短内容先自动增大 `--resume-density`（最多 `--resume-density-max: 1.2`），同步放大变量控制的字号、行距和条目/板块间距，直到自然内容高度达到有效高度的约 90% 或触达上限；剩余空间再由 `space-between` 均匀分配。不可仅将孤立文字推到底部伪造饱满度。
+- 长内容在 `--resume-density-min` 之上自动压缩；扩张导致溢出时回退到上一个安全值。内容太少、单栏偏空或内部空隙过大时仍须明确失败，不通过超大字号或虚构内容填白。
+- HTML 的实际 computed padding 是布局政策来源；同时传入 `--html --pdf --check-layout` 时，PDF 校验读取同一配置，并在 manifest 中记录有效边距、实际底部距离和密度。Canvas 调整 `--page-margin` 只影响上/左右边距，总底部边距独立保持 9mm。
+- 自定义底部边距修改 `--resume-bottom-margin` 后重新渲染；仅校验 PDF 时可显式传 `--bottom-margin-mm 9` / `--page-margin-mm 10`（8–20mm）。同时提供 HTML 时，CLI 参数必须与实测 padding 一致，不允许改校验参数掩盖实际布局。PDF 文本边界估算允许 0.25mm 舍入容差，校验同时报告实际物理底部距离；100% 不等于没有物理边距。
 - 页面溢出时，先缩小页边距（不低于 8mm），再压缩间距和行高（不低于 1.25），最后才考虑正文缩小（不低于 9.5px）或精简低相关内容。每次调整后重新导出和验证。
 - `bottom safety` 失败或 PDF 页数大于 1 时，输出不可交付；必须修复后再进入 Canvas 预览或交付。
