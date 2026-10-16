@@ -275,9 +275,17 @@ function updateReadingProgress() {
 window.addEventListener("scroll", updateReadingProgress, { passive: true });
 window.addEventListener("resize", updateReadingProgress);
 
+function resolveContentSource(value) {
+  const url = new URL(value, window.location.href);
+  if (url.origin !== window.location.origin || !["http:", "https:"].includes(url.protocol)) {
+    throw new Error("Invalid contentSource: cross-origin or unsupported protocol");
+  }
+  return url.href;
+}
+
 async function loadTutorial() {
   try {
-    const response = await fetch(content.dataset.contentSource, { cache: "no-cache" });
+    const response = await fetch(resolveContentSource(content.dataset.contentSource), { cache: "no-cache" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const tutorial = renderMarkdown(await response.text());
     content.innerHTML = `${renderArticleHeader(tutorial.metadata)}${tutorial.html}`;
@@ -292,7 +300,7 @@ async function loadTutorial() {
     updateReadingProgress();
   } catch (error) {
     content.setAttribute("aria-busy", "false");
-    content.innerHTML = `<div class="error-state" role="alert"><h1>教程暂时无法加载</h1><p>请确认 <code>${escapeHtml(content.dataset.contentSource)}</code> 与本页面一起部署，或直接打开 Markdown 原文。</p><a href="${escapeHtml(content.dataset.contentSource)}">打开 Markdown 原文</a></div>`;
+    content.innerHTML = `<div class="error-state" role="alert"><h1>教程暂时无法加载</h1><p>请确认 <code>${escapeHtml(content.dataset.contentSource)}</code> 与本页面一起部署，或直接打开 Markdown 原文。</p></div>`;
     navContainer.innerHTML = '<span class="nav-loading">目录加载失败</span>';
     console.error("Unable to load tutorial markdown", error);
   }
