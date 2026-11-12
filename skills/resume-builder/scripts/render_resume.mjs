@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { fitResumeLayout } from "../../../lib/resume-layout.mjs";
+import { openResumePage } from "../../../lib/resume-page.mjs";
 
 const { values } = parseArgs({
   options: {
@@ -34,13 +34,7 @@ try {
   const { version: playwrightVersion } = require("playwright/package.json");
   const { chromium } = await import("playwright");
   browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 794, height: 1123 }, deviceScaleFactor: 1 });
-  await page.emulateMedia({ media: "print" });
-  await page.goto(pathToFileURL(htmlPath).href, { waitUntil: "domcontentloaded" });
-  await Promise.race([
-    page.evaluate(() => document.fonts?.ready),
-    new Promise((resolve) => setTimeout(resolve, 5000)),
-  ]);
+  const page = await openResumePage(browser, htmlPath);
 
   const layout = await fitResumeLayout(page);
   await page.pdf({

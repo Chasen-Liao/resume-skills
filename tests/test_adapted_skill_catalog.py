@@ -44,27 +44,42 @@ class AdaptedSkillCatalogTests(unittest.TestCase):
         self.assertIn("data-resume-editor-id", content)
 
     def test_canvas_editor_ids_are_independent_text_targets(self):
-        for skill_name in CORE_WORKFLOW_SKILLS:
-            content = (SKILLS / skill_name / "SKILL.md").read_text(encoding="utf-8")
-            self.assertIn("可独立编辑", content, skill_name)
-            self.assertIn("禁止把", content, skill_name)
-            self.assertIn("ID 放在", content, skill_name)
-            self.assertIn("容器", content, skill_name)
-            self.assertIn("字段总数", content, skill_name)
-            self.assertIn("唯一", content, skill_name)
+        delivery_gate = (SKILLS / "resume-builder" / "references" / "delivery-gate.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("可独立编辑", delivery_gate)
+        self.assertIn("禁止把", delivery_gate)
+        self.assertIn("ID 放在", delivery_gate)
+        self.assertIn("容器", delivery_gate)
+        self.assertIn("字段总数", delivery_gate)
+        self.assertIn("唯一", delivery_gate)
+
+        builder_content = (SKILLS / "resume-builder" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("data-resume-editor-id", builder_content)
+        self.assertIn("容器", builder_content)
 
     def test_visual_resume_entrypoints_launch_the_canvas_editor(self):
         command_pattern = re.compile(
             r'npx -p @chasen-liao/resume-skills@latest resume-skills editor "<[^"\n]*visual\.html路径>"'
         )
 
+        canvas_content = (SKILLS / "resume-canvas" / "SKILL.md").read_text(encoding="utf-8")
+        command = command_pattern.search(canvas_content)
+        self.assertIsNotNone(command, "resume-canvas")
+        self.assertIn("明确报告未启动", canvas_content)
+        self.assertRegex(canvas_content, r"ATS-safe 模式[^\n]*不(?:使用|启动) Canvas")
+
+        gate_content = (SKILLS / "resume-builder" / "references" / "delivery-gate.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertLess(gate_content.index("渲染与布局验证"), gate_content.index("可选 Canvas 预览与路由"))
+        self.assertIn("resume-canvas", gate_content)
+        self.assertRegex(gate_content, r"ATS-safe 模式[\s\S]{0,200}?不(?:使用|启动) Canvas")
+
         for skill_name in CORE_WORKFLOW_SKILLS:
             content = (SKILLS / skill_name / "SKILL.md").read_text(encoding="utf-8")
-            command = command_pattern.search(content)
-            self.assertIsNotNone(command, skill_name)
-            self.assertLess(content.index("PDF 验证"), command.start(), skill_name)
-            self.assertIn("明确报告未启动", content, skill_name)
-            self.assertRegex(content, r"ATS-safe 模式不(?:使用|启动) Canvas", skill_name)
+            self.assertIn("resume-canvas", content, skill_name)
+            self.assertRegex(content, r"ATS-safe 模式[\s\S]{0,200}?不(?:使用|启动) Canvas", skill_name)
 
     def test_matching_report_uses_traceable_requirement_states(self):
         content = (SKILLS / "jd-tailorer" / "references" / "matching-analysis.md").read_text(encoding="utf-8")
@@ -76,9 +91,16 @@ class AdaptedSkillCatalogTests(unittest.TestCase):
         self.assertNotIn("JD 高频要求", content)
 
     def test_skill_instructions_do_not_claim_unsupported_pdf_checks(self):
-        content = (SKILLS / "resume-builder" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertNotIn("页数、裁切、复制文本、链接和字体", content)
-        self.assertIn("PDF 页数和可提取文本", content)
+        for content in (
+            (SKILLS / "resume-builder" / "SKILL.md").read_text(encoding="utf-8"),
+            (SKILLS / "resume-builder" / "references" / "delivery-gate.md").read_text(encoding="utf-8"),
+        ):
+            self.assertNotIn("页数、裁切、复制文本、链接和字体", content)
+
+        delivery_gate = (SKILLS / "resume-builder" / "references" / "delivery-gate.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("可提取文本", delivery_gate)
 
     def test_resume_builder_requires_portable_visual_resources(self):
         content = (SKILLS / "resume-builder" / "SKILL.md").read_text(encoding="utf-8")
@@ -118,4 +140,3 @@ class AdaptedSkillCatalogTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

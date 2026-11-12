@@ -27,24 +27,14 @@ description: 指导与驱动 resume-canvas (本地 HTML 简历可视化微调编
 
 ### 第一步：验收编辑协议契约
 
-在启动 Canvas 或交付视觉 HTML 之前，必须确保目标 HTML 符合编辑字段协议：
+在启动 Canvas 或交付视觉 HTML 之前，必须确保目标 HTML 符合编辑字段协议并执行静态校验（门禁命令）：
 
-1. **协议根标记**：
-   `<html>` 根节点必须声明：
-   - `data-resume-editor-template="<模板标识>"`（如 `modern-minimal` 等）
-   - `data-resume-editor-version="1"`
-   - `data-resume-layout="full-page"`
-2. **字段独立性要求**：
-   - 字段总数必须大于 0；
-   - 必须使用唯一、小写、语义化的 `data-resume-editor-id`（例如 `profile-name`、`experience-1-title`、`experience-1-bullet-1`、`skill-1` 等）；
-   - **可独立编辑原则**：`data-resume-editor-id` 只能标在具体的叶子文本元素上；
-   - **禁止把编辑 ID 放在容器上**：禁止把 ID 放在 `<html>`、`<body>`、`<main>`、`.page`、`.resume`、`header`、`footer`、`section`、`ul`、`ol`、`figure` 或包含多个板块/复合内容的容器上，严禁使用整页兜底 ID。带链接的复合联系方式需将文本拆分为独立字段。
-3. **执行静态校验（门禁命令）**：
-   ```bash
-   npx -p @chasen-liao/resume-skills@latest resume-skills validate "<最终_visual.html路径>"
-   ```
-   - 重复执行直到输出“校验通过”；
-   - 若出现错误（缺少协议版本、缺少模板名、存在容器 ID、重复 ID 等），必须对照报错节点在 HTML 中修复，严禁在校验未通过时启动 Canvas。
+```bash
+npx -p @chasen-liao/resume-skills@latest resume-skills validate "<最终_visual.html路径>"
+```
+
+- 重复执行直到输出“校验通过”；若出现错误，必须对照报错节点在 HTML 中修复，严禁在校验未通过时启动 Canvas。
+- 完整的编辑协议契约（包含 `data-resume-editor-template`、`data-resume-editor-version="1"`、`data-resume-layout="full-page"`、叶子字段可独立编辑、唯一语义化 `data-resume-editor-id`、禁止把编辑 ID 放在容器上等规则），统一遵循 [交付门禁与验证契约](../resume-builder/references/delivery-gate.md#协议校验编辑字段契约)。校验规则以 `validate` 命令及 lib 实现为准。
 
 ---
 
@@ -96,12 +86,12 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor "<最终_visual.ht
 2. **必须回到 Agent 工作流执行重验闭环**：
    - **事实核验**：检查 HTML 中的修改内容是否涉及关键经历、时间、职位、数据或技能。若发现未经确认的新事实，必须向用户核实，不可直接交付；
    - **重新渲染与验证 PDF**：
-     必须重新执行渲染与验证脚本，生成有效的新 PDF 与 manifest：
-     ```bash
+     必须重新执行渲染脚本生成有效的新 PDF 与 manifest：
+     ```powershell
      powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<最终_visual.html路径>" -OutputPdf "<交付目录/自定义文件名.pdf>"
      ```
-   - **整页截图视觉复核**：AI 必须打开重新渲染生成的整页截图，按 [整页截图视觉复核](../resume-builder/SKILL.md#整页截图视觉复核视觉模式强制执行) 检查底部留白、上下平衡、板块间空隙和双栏各栏分布。明显底部空缺或留白失衡时，即使自动校验通过也不得交付；在 Canvas 支持的排版项内调整后重新渲染、校验并查看新截图。若需要结构重排，回到 `resume-builder` 或 `jd-tailorer` 处理，不扩展 Canvas 的编辑边界。
-   - 确认 PDF 页数恰好为 1 页，有效利用率 ≥ 98%，manifest 为有效状态，且 AI 已实际看图确认留白均匀后，微调闭环才算完成。无法查看截图时必须说明视觉复核未完成。
+   - **整页截图视觉复核**：AI 必须打开重新渲染生成的 `*.preview.png`，完整遵循 [交付门禁与验证契约](../resume-builder/references/delivery-gate.md#整页截图视觉复核视觉模式强制执行)。重点检查留白是否均匀、上下是否平衡；明显底部空缺或留白失衡时，即使自动校验通过也不得交付，须在 Canvas 支持的排版项内调整并重新渲染、校验与复核。若需要结构重排，回到 `resume-builder` 或 `jd-tailorer` 处理，不扩展 Canvas 的编辑边界。
+   - 确认 PDF 页数恰好为 1 页，有效利用率 ≥ 98%，manifest 恢复有效状态，且视觉复核通过后，微调闭环才算完成。无法查看截图时必须说明视觉复核未完成。
 
 ---
 

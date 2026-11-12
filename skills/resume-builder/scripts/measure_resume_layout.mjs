@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { evaluateOverflowMeasurement } from "../../../lib/layout-validation.mjs";
 import { fitResumeLayout } from "../../../lib/resume-layout.mjs";
+import { openResumePage } from "../../../lib/resume-page.mjs";
 
 const { values } = parseArgs({
   options: { html: { type: "string" } },
@@ -18,10 +17,7 @@ let browser;
 try {
   const { chromium } = await import("playwright");
   browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 794, height: 1123 } });
-  await page.emulateMedia({ media: "print" });
-  await page.goto(pathToFileURL(resolve(values.html)).href, { waitUntil: "networkidle" });
-  await page.evaluate(() => document.fonts?.ready);
+  const page = await openResumePage(browser, values.html);
   const layout = await fitResumeLayout(page);
   if (layout.status === "degraded") {
     console.log(JSON.stringify(layout));

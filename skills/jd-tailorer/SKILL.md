@@ -1,6 +1,6 @@
 ---
 name: jd-tailorer
-description: 根据职位描述(JD)进行结构化分析、岗位匹配度诊断、ATS 可读性审计与定向简历定制的完整工作站。当用户提到「JD」「职位描述」「岗位匹配」「分析这个 JD」「我是否适合」「针对...改简历」「投递」「求职」「招聘要求」「Job Description」「ATS 筛选」或保存不同投递版本时使用。支持仅分析 JD 输出诊断报告，或一站式生成针对该岗位的定制版 HTML/PDF、匹配报告与版本记录。
+description: 根据职位描述(JD)进行结构化分析、岗位匹配度诊断、ATS 可读性审计与定向简历定制的完整工作站。当用户提到「JD」「职位描述」「岗位匹配」「分析这个 JD」「我是否适合」「针对...改简历」「投递」「招聘要求」「Job Description」「ATS 筛选」或保存不同投递版本时使用。支持仅分析 JD 输出诊断报告，或一站式生成针对该岗位的定制版 HTML/PDF、匹配报告与版本记录。
 ---
 
 # JD 简历定制器 (JD Tailorer)
@@ -25,9 +25,7 @@ description: 根据职位描述(JD)进行结构化分析、岗位匹配度诊断
 
 - 所有相对路径都以本 `SKILL.md` 所在目录为基准，不以当前工作目录为基准。
 - 命令示例中的 `skills/...` 是完整运行时根目录下的路径；首次执行时读取 [渲染环境与命令路径](../resume-builder/references/runtime-setup.md)，将脚本和私有产物解析为实际绝对路径。
-- 开始工作前，必须先读取并遵循 `../resume-builder/references/resume-contract.md` 和 `../resume-builder/references/content-writing.md`；两份共享参考文档优先于本入口中的示例、版式偏好和流程提示。
-- 若 `resume-builder` 与本 skill 一起安装，再读取 `../resume-builder/references/design-guidelines.md` 和对应的 CSS 文件。
-- 本 skill 必须与 `resume-builder` 一起安装；缺少共享参考文件时，要求用户安装完整 skill 集后再继续，不猜测契约规则，也不承诺 DOCX 生成。
+- 本 skill 必须与 `resume-builder` 一起安装；开始工作前，必须先读取并遵循 `../resume-builder/references/resume-contract.md`、`../resume-builder/references/content-writing.md`、`../resume-builder/references/design-system.md` 和对应的 CSS 文件。共享参考文档优先于本入口中的示例、版式偏好和流程提示。缺少共享参考文件时，要求用户安装完整 skill 集后再继续，不猜测契约规则，也不承诺 DOCX 生成。
 
 ## 工作流程
 
@@ -61,10 +59,10 @@ description: 根据职位描述(JD)进行结构化分析、岗位匹配度诊断
 
 ### 第四步：内容定制规范
 
-遵循已先读取的事实契约和写作规范（`../resume-builder/references/resume-contract.md`、`../resume-builder/references/content-writing.md`）：
-- **清晰表达**：优先使用 `强动词 + 具体动作/技术 + 结果或证据 + 背景/范围` 组织 bullet；没有数字时使用已确认的非数字证据，不强行编造指标；
+遵循已先读取的事实契约与写作规范（`../resume-builder/references/resume-contract.md`、`../resume-builder/references/content-writing.md`）：
+- **清晰表达**：遵循其强动词表达结构、结果证据与 ATS 表达指南；没有数字时使用已确认的非数字证据，不强行编造指标；
 - **关键词自然对齐**：将已确认事实中的技术表达对齐 JD 常用词，严禁 keyword stuffing；
-- **板块与重点重排**：按 JD 相关性调整板块顺序；
+- **板块与重点重排**：按 JD 相关性调整板块与经历顺序；
 - **区分度说明**：定制完成后向用户清晰说明相较于母版的改动点。
 
 ### 第五步：生成定制文件与目录隔离
@@ -79,39 +77,29 @@ description: 根据职位描述(JD)进行结构化分析、岗位匹配度诊断
 
 ### 第六步：PDF 验证与质量审计
 
-交付前必须执行质量审计与 PDF 验证：
-1. **ATS 可解析性审计**：
-   - 两种模式都检查正文阅读顺序、可提取文本和隐藏文字；视觉版允许用户选择的双栏与照片，但重要信息不能只存在于图片中，不宣称视觉版满足 ATS-safe 的全部约束。
-   - ATS-safe 模式另外要求单栏、无复杂分栏 CSS、无图片承载文字，必须执行下列静态审计，并检查最终 PDF 页数、可提取文本及关键事实（`--pdf` 与 `--required-text`）；不要把 `--mode ats` 用于视觉双栏或带照片模板：
+交付前必须执行质量审计与 PDF 验证，统一遵循 [交付门禁与验证契约](../resume-builder/references/delivery-gate.md)：
+1. **ATS-safe 模式验证**：
+   - 遵循门禁中的单栏结构、正文阅读顺序与纯文本可提取标准，运行：
      ```bash
      python skills/resume-builder/scripts/validate_resume.py --html "<tailored目录中的html路径>" --mode ats
      ```
-2. **Canvas 协议验收**（视觉模式）：
-   ```bash
-   npx -p @chasen-liao/resume-skills@latest resume-skills validate "<tailored目录中的resume_visual.html路径>"
-   ```
-   确保输出“校验通过”。每个需要编辑的文本节点必须是可独立编辑的叶子字段；禁止把编辑 ID 放在 `<html>`、`<body>`、`<main>`、`.page`、`.resume`、`header`、`footer`、`section`、`ul`、`ol`、`figure` 或包含多个字段的复合容器上。字段总数必须大于 0 且 ID 唯一。
-3. **Playwright 渲染与单页验证**（视觉模式）：
-   运行 `render_resume.ps1` 渲染真实 PDF 并生成 preview 与 manifest。PDF 必须恰好 1 页、页面有效占用率默认 $\ge 98\%$；继承 `resume-builder` 的总底部边距 9mm、独立上/左右边距及有上限的短内容自动扩张契约，不额外叠加安全区。校验使用 HTML 实测边距，并在 manifest 中记录配置与实际底部距离。
-4. **整页截图视觉复核**（视觉模式）：
-   AI 必须打开本次最终渲染的整页截图，按 [整页截图视觉复核](../resume-builder/SKILL.md#整页截图视觉复核视觉模式强制执行) 检查底部留白、上下平衡、板块间空隙和双栏各栏分布。岗位定制删减内容后尤其要检查底部是否明显偏空；即使自动校验全部通过，留白失衡也不得交付，须调整排版后重新渲染、校验并查看新截图。
+2. **视觉模式验证**：
+   - **协议校验**：运行 `resume-skills validate` 确认编辑协议通过；
+   - **渲染与单页验证**：运行 `render_resume.ps1` 渲染真实 PDF 并生成 preview 与 manifest；
+   - **整页截图视觉复核（定制特有重点）**：AI 必须打开渲染生成的整页截图，遵循 [整页截图视觉复核](../resume-builder/references/delivery-gate.md#整页截图视觉复核视觉模式强制执行)。特别注意：**岗位定制删减内容后尤其要检查底部是否明显偏空**；即使自动校验全部通过，留白失衡也不得交付，须调整排版后重新渲染、校验并查看新截图。
 
 ### 第七步：交付与 Canvas 预览
 
 1. **Canvas 预览（可选）**：
-   视觉模式完成 PDF 验证后，询问用户是否需要本地 Canvas 预览微调。用户需要时执行：
-   ```bash
-   npx -p @chasen-liao/resume-skills@latest resume-skills editor "<tailored目录中的resume_visual.html路径>"
-   ```
-   用户若需要排版微调，**路由至 `resume-canvas`**；Canvas 保存后 manifest 失效，必须回到工作流重验。若用户选择 Canvas 但当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已预览。
-   ATS-safe 模式不启动 Canvas，只交付文件位置和浏览器打印方法。
-2. **版本追踪与 Git 提交建议**：
-   建议用户将简历工作区置于本地私有 Git 仓库中管理。定制生成后，给出语义化提交建议，例如：
-   ```bash
-   git add resume-facts.yaml tailored/<公司名>-<岗位>/
-   git commit -m "定制：<公司名> - <岗位>"
-   ```
-   **约束**：不自动执行 Git 初始化、提交、推送或覆盖，必须由用户确认或自行执行。
+   视觉模式完成验证后，按 [交付门禁与验证契约](../resume-builder/references/delivery-gate.md#可选-canvas-预览与路由) 询问用户是否需要本地 Canvas 预览微调。用户需要排版微调时，**路由至 `resume-canvas`**；Canvas 保存后 manifest 失效，必须回到工作流执行重验闭环。ATS-safe 模式不启动 Canvas。
+2. **版本记录与 Git 提交建议**：
+   - 更新本次定制的 `version-notes.md`，记录版本摘要与验证结果；
+   - 遵循 [交付门禁与验证契约](../resume-builder/references/delivery-gate.md#本地-git-提交建议)，给出本地私有 Git 仓库语义化提交建议，例如：
+     ```bash
+     git add resume-facts.yaml tailored/<公司名>-<岗位>/
+     git commit -m "定制：<公司名> - <岗位>"
+     ```
+   - **约束**：不自动执行 Git 初始化、提交、推送或覆盖，必须由用户确认或自行执行。
 
 ## 硬约束
 
@@ -124,6 +112,7 @@ description: 根据职位描述(JD)进行结构化分析、岗位匹配度诊断
 
 - `../resume-builder/references/resume-contract.md` — 事实契约（每次工作前先读取）
 - `../resume-builder/references/content-writing.md` — 写作规范（每次工作前先读取）
-- `../resume-builder/references/design-guidelines.md` — 设计美学指南（备用：用户无基础简历时参考）
+- `../resume-builder/references/design-system.md` — 设计系统与规范指南
+- `../resume-builder/references/delivery-gate.md` — 交付门禁与验证契约
 - `../resume-builder/references/css/<style>.md` — 对应风格 CSS 变量与布局
 - `references/matching-analysis.md` — 匹配分析报告模板

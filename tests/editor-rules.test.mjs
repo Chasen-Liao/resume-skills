@@ -4,7 +4,7 @@ import test from "node:test";
 import { editorBlockChildTagNames, editorContainerClassNames, editorContainerTagNames, editorRuntimeInjectedAttributeNames } from "../lib/editor-rules.mjs";
 
 test("editor rule sets match the documented protocol contract", () => {
-  // 容器黑名单 = SKILL.md 全集（落地为规则的唯一权威处）
+  // 容器黑名单以 lib/editor-rules.mjs 实现为准
   assert.deepEqual(editorContainerTagNames, ["html", "body", "main", "section", "header", "footer", "ul", "ol", "figure"]);
   assert.deepEqual(editorContainerClassNames, ["page", "resume"]);
   for (const tag of ["div", "p", "h1", "li", "img", "table", "section"]) {

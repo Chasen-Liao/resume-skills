@@ -28,6 +28,9 @@ test("npm dry-run package contains delivery runtime and excludes heavy promotion
   assert.ok(files.includes("requirements-test.txt"));
   assert.ok(files.includes("lib/artifact-manifest.mjs"));
   assert.ok(files.includes("lib/resume-layout.mjs"));
+  assert.ok(files.includes("lib/resume-page.mjs"));
+  assert.ok(files.includes("skills/resume-builder/references/delivery-gate.md"));
+  assert.ok(files.includes("skills/resume-builder/references/design-system.md"));
   assert.ok(files.includes("skills/resume-builder/scripts/measure_resume_layout.mjs"));
   assert.ok(files.includes("skills/resume-builder/scripts/render_resume.mjs"));
   assert.equal(files.some((path) => /(?:^|\/)__pycache__(?:\/|$)|\.pyc$/i.test(path)), false);

@@ -66,12 +66,16 @@ class ResumeWorkflowTests(unittest.TestCase):
 
     def test_visual_delivery_command_renders_and_writes_a_reproducible_manifest(self):
         skill = (SKILLS / "resume-workflow" / "SKILL.md").read_text(encoding="utf-8")
-
+        self.assertIn("delivery-gate.md", skill)
         self.assertIn("render_resume.ps1", skill)
-        self.assertIn("--check-overflow", skill)
-        self.assertIn("--manifest", skill)
-        self.assertIn("--renderer", skill)
-        self.assertIn("--check-layout", skill)
+        self.assertIn("manifest", skill)
+
+        gate_contract = (SKILLS / "resume-builder" / "references" / "delivery-gate.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("render_resume.ps1", gate_contract)
+        self.assertIn("validate_resume.py", gate_contract)
+        self.assertIn("resume-manifest.json", gate_contract)
 
 
 if __name__ == "__main__":

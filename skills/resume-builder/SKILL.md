@@ -1,6 +1,6 @@
 ---
 name: resume-builder
-description: 通过对话式采访构建精美简历的技能。当用户提到「简历」「resume」「CV」「求职」「找工作」「面试」「制作简历」「生成简历」或者想要创建一个展示个人经历和技能的网页时使用。支持 HTML 简历生成、A4 纸打印布局、PDF 导出。能够引导用户逐步完善简历内容，从个人信息到项目经历全面覆盖。
+description: 通过对话式采访构建与更新母版简历的技能。当用户提到「母版简历」「基础简历」「创建简历」「制作简历」「生成简历」「更新简历」「resume」「CV」或者想要创建一个展示个人经历和技能的网页时使用。支持 HTML 简历生成、A4 纸打印布局、PDF 导出。能够引导用户逐步完善简历内容，从个人信息到项目经历全面覆盖。
 ---
 
 # 简历构建器 (Resume Builder)
@@ -10,7 +10,7 @@ description: 通过对话式采访构建精美简历的技能。当用户提到�
 ## 核心理念
 
 - 输出：独立 HTML 文件，内嵌 CSS，A4 尺寸（210mm × 297mm），浏览器打印 PDF
-- 设计：大胆有辨识度，拒绝通用 AI 审美（详见 `references/design-guidelines.md`）
+- 设计：大胆有辨识度，拒绝通用 AI 审美（详见 `references/design-system.md`）
 - 生成前先选择输出模式：视觉 HTML/PDF 或 ATS-safe HTML/PDF；两种模式共享同一事实数据。
 
 ## 先决规则
@@ -27,10 +27,8 @@ description: 通过对话式采访构建精美简历的技能。当用户提到�
 
 **技能协作流转**：
 - **经历打磨**：采访中若发现某条经历职责化、缺少具体贡献或证据不足，直接依据 `references/content-writing.md` 就地引导用户提供行动与交付物证据，就地改写为强动词结构，不打断采访主流程；
-- **质量审计**：母版交付前，通过 `validate_resume.py`（视觉单页与密度）或 `--mode ats`（ATS 格式）执行自动化质量审计；
-- **排版微调**：视觉母版生成并完成 PDF 验证后，若用户需要交互式微调，**路由至 `resume-canvas`**；
-- **岗位定制**：母版定稿后若需投递具体岗位，**路由至 `jd-tailorer`**（一站式完成 JD 结构化分析、匹配评估与定向定制）；
-- **版本追踪**：母版定稿后，建议用户在本地私有 Git 仓库提交初始母版（如 `git commit -m "创建母版简历"`），保护事实源。
+- **排版微调**：视觉母版生成并完成交付门禁验证后，若用户需要交互式微调，**路由至 `resume-canvas`**；
+- **岗位定制**：母版定稿后若需投递具体岗位，**路由至 `jd-tailorer`**（一站式完成 JD 结构化分析、匹配评估与定向定制）。
 
 ## 工作流程
 
@@ -71,10 +69,10 @@ CSS 文件包含 3 套配色变量 + 推荐字体 + 风格 CSS。`css/common.md`
 - 交付为单文件时，头像等本地图片使用 `data URL` 内嵌；若保留外部网页字体，必须同时提供系统字体回退，并在验证中说明离线渲染可能不同。
 - 技能标签用 `<span class="skill-badge">` 排列，badge 样式由风格 CSS 定义（ATS 友好）
 - 不在简历模板中嵌入导出按钮；PDF 由浏览器打印或本地 Canvas 的“打印为 PDF”操作导出，避免遮挡简历内容
-- 使用任一内置风格时，生成的 `<html>` 必须包含对应的 `data-resume-editor-template`（`modern-minimal`、`classic-business`、`creative-bold`、`japanese-minimal`、`minimal-blue-business` 或 `tech-dark`）和 `data-resume-editor-version="1"`。每个需要 Canvas 微调的真实文本必须有稳定、唯一、语义化的 `data-resume-editor-id`；不要依赖运行时补齐。
-- `data-resume-editor-id` 只能标在一个具体的文本字段上，例如姓名、职位、日期、板块标题、单条 bullet 或单个技能标签；不要为了“通过协议检查”给整页或整块内容加一个兜底 ID。
+- 使用任一内置风格时，生成的 `<html>` 必须包含对应的 `data-resume-editor-template`（`modern-minimal`、`classic-business`、`creative-bold`、`japanese-minimal`、`minimal-blue-business` 或 `tech-dark`）和 `data-resume-editor-version="1"`。每个需要 Canvas 微调的真实文本必须有稳定、唯一、语义化的 `data-resume-editor-id`；字段总数必须大于 0，不要依赖运行时补齐。
+- `data-resume-editor-id` 只能标在一个具体的文本字段上，例如姓名、职位、日期、板块标题、单条 bullet 或单个技能标签；遵循可独立编辑原则，不要为了“通过协议检查”给整页或整块内容加一个兜底 ID。
 - **禁止把编辑 ID 放在** `<html>`、`<body>`、`<main>`、`.page`、`.resume`、`header`、`footer`、`section`、`ul`、`ol`、`figure` 或包含多个板块/多个字段的容器上。带链接的联系方式应把可编辑文本拆成独立字段，不能把整行联系方式作为一个可编辑容器。
-- 上述标记供 `npx -p @chasen-liao/resume-skills@latest resume-skills editor <resume.html>` 的本地 Canvas 微调器识别；Canvas 可编辑已有字段的纯文本并保存受限排版覆盖，不允许插入 HTML 或新增字段。文字事实变更后必须重新确认事实并验证 PDF；不要将标记用于头像、布局容器、任意 HTML 或未经确认的字段。
+- 上述标记供本地 Canvas 微调器识别；Canvas 可编辑已有字段的纯文本并保存受限排版覆盖，不允许插入 HTML 或新增字段。文字事实变更后必须重新确认事实并验证 PDF；不要将标记用于头像、布局容器、任意 HTML 或未经确认的字段。详细协议规则参见 [交付门禁与验证契约](references/delivery-gate.md#协议校验编辑字段契约)。
 
 ATS-safe 模式：
 - 使用单栏、标准板块标题、普通可复制文本和稳定的正文阅读顺序；重要信息不依赖图片、文本框、复杂嵌套表格、页眉页脚或装饰字体。
@@ -83,63 +81,35 @@ ATS-safe 模式：
 
 ### 第四步：按模式验证（强制执行，不可跳过）
 
-生成最终视觉 HTML 后，先做 Canvas 字段验收，再渲染 PDF：
+生成最终 HTML 后，必须严格执行交付门禁验证，指标要求与调整细节参见 [交付门禁与验证契约](references/delivery-gate.md)。
 
-- 先运行可执行校验（失败即停止，严禁跳过）：`npx -p @chasen-liao/resume-skills@latest resume-skills validate "<最终_visual.html路径>"`，重复直到输出“校验通过”。
-- 再按下列规则手工复核：在最终 HTML（完成事实替换和定制后，不是只检查参考模板）统计 `data-resume-editor-id`，记录字段总数、重复 ID、容器误标 ID，以及 `profile-*` 和 `*-bullet-*` 字段是否存在。
-- 字段总数必须大于 0，ID 必须唯一且符合小写语义化命名；`main/page/resume/section` 等整页或板块容器不得带 ID。
-- 每个 ID 节点的文本必须对应一个可独立编辑的字段；如果一个节点同时包含多个板块、列表或大量链接文本，必须拆分标记。
-- 任一检查失败都不得启动 Canvas、渲染 PDF 或交付；修正 HTML 或重新生成后从头复验。禁止用一个根容器 ID 代替字段标记。
-
-视觉 HTML/PDF：导出 PDF 后同时检查结构、PDF 页数和可提取文本、页面密度和可打印安全区：
-
-```bash
-powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<生成的_visual.html路径>" -OutputPdf "<生成的_visual.pdf路径>"
-```
-
-`--check-layout` 的验收规则：
-
-- `PDF page count` 必须是 `1 page`；超过 1 页直接失败，不能用裁切或隐藏溢出伪装成单页。
-- `page fill` 以 PDF 可提取文本的纵向范围估算**有效页面区域**占用率，目标至少 `98%`；默认低于目标直接失败并明确提示布局密度/间距问题，不能为填白编造事实。
-- `vertical balance` 检查可打印区域上下留白差；超过 20mm 直接失败，优先均匀调整板块间距、条目间距和容器内边距，避免内容挤在顶部或底部。
-- `vertical gaps` 检查 PDF 文本行之间的最大连续空隙，超过有效高度的 25% 直接失败，防止底部孤立文字掩盖正文偏空。同时传入 `--html` 时，`--check-layout` 也会执行浏览器检查，分别测量页面和内置双栏的底部留白及内部空隙；这些测量不能替代下面的整页截图复核。
-- `bottom safety` 不得失败；默认总底部边距为 9mm，PDF 校验使用 HTML 实测 padding（文本边界估算容差 0.25mm），并报告实际底部距离。有效区域占用率 100% 不代表物理底部没有留白；自定义边距必须改 HTML、重新渲染并记录到 manifest，不能只调校验参数。
-
-版面调整顺序：先使用已有且已确认的板块和内容；短内容先在 `--resume-density-max` 内放大变量控制的字号、行距和间距，再均匀分布剩余空间；长内容由渲染脚本在 `--resume-density-min` 之上自动压缩；仍溢出再按“页边距不小于 8mm → 间距 → 行高不低于 1.25 → 正文不小于 9.5px → 精简低相关内容 → 在适合时切换双栏”的顺序处理。上下间距尽量相近，任何一次调整后都重新导出 PDF 并运行同一命令。不得新增未确认经历、指标、技能或占位文本，也不以难以阅读的小字号硬塞一页。
-
-渲染脚本会在导出 PDF 前执行 full-page 自动布局：短内容在上限内扩张，长内容在下限内压缩 `--resume-density`，并同时生成同名前缀的低分辨率 `*.preview.png`。随后执行浏览器溢出和 PDF 布局验证，并生成同名前缀的 `*.resume-manifest.json`，其中包含 HTML/PDF/preview SHA-256、renderer 版本、有效边距/实际底部距离/密度和验证结果。`degraded`、`fail` 或 hash 不一致都不可交付。完成自动检查后，必须由 AI 执行下面的整页截图视觉复核，同时检查可见裁切、断图、照片、字体回退和打印背景，并核对链接；自动检查不能保证这些视觉细节。视觉模式以 A4 单页和有效区域 ≥98% 为硬目标，所有警告都要记录处理结果。
-
-#### 整页截图视觉复核（视觉模式强制执行）
-
-- AI 必须使用图像查看工具打开本次最终渲染生成的 `*.preview.png`，实际查看完整 A4 页面（包含顶部和底部）；若预览不完整或不清晰，补截同一最终 HTML 在打印样式下的完整 A4 页面，或将最终 PDF 页面渲染为图片后查看。不能只生成截图、检查图片文件存在，或只看局部截图就声称已完成复核。
-- 重点检查正文结束到页面底部的留白是否过大、上下留白是否协调，以及板块之间是否存在突兀的大块空隙。双栏必须分别检查每一栏，不能因为另一栏或底部的一行文字触底就判定整页均匀。保留必要打印安全边距，允许留白，但应分布均匀，不能让正文集中在顶部而底部明显空缺。
-- 即使 CI、`page fill`、溢出检查和 manifest 全部通过，只要截图中有明显底部空缺、单栏偏空或留白失衡，仍视为视觉验收未通过，不能直接交付。先在排版约束内调整字号、行高、条目/板块间距和页边距；双栏仍失衡时可在生成阶段调整布局或切换单栏，不得编造内容填白或用底部孤立文字伪装占用率。
-- 每次修改后重新渲染 PDF、执行自动校验，并打开新截图复核，直到留白均匀且无溢出、裁切。交付时简述截图路径及底部留白、上下平衡、各栏分布的复核结论。若无法查看截图，明确标记视觉复核未完成，不得声称已通过视觉验收。
-
-ATS-safe HTML/PDF：检查 DOM 是否单栏、标题和时间/组织/职位关系是否清晰、正文复制后顺序是否正确，以及 PDF 文本是否可提取；再检查无图片文字、复杂嵌套表格、关键页眉页脚信息和不可复制装饰字体。按目标平台要求检查 HTML/PDF 格式，不宣称 ATS 必然通过。
+- **视觉 HTML/PDF**：
+  1. **协议校验**：运行 `npx -p @chasen-liao/resume-skills@latest resume-skills validate "<生成的_visual.html路径>"`，确保输出“校验通过”（详见 [协议校验](references/delivery-gate.md#协议校验编辑字段契约)；validate 命令已自动校验唯一性与容器黑名单，无需手工统计）；
+  2. **渲染与布局验证**：运行 `powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<生成的_visual.html路径>" -OutputPdf "<生成的_visual.pdf路径>"`，脚本自动完成渲染、布局计算、生成 preview 与 manifest，并检验单页、有效占用率 $\ge 98\%$、上下留白差 $\le 20\text{mm}$、最大连续空隙 $\le 25\%$ 及底部 9mm 安全区（详见 [渲染与布局验证](references/delivery-gate.md#渲染与布局验证视觉模式)；若需版面调整，严格按 [版面调整顺序](references/delivery-gate.md#版面调整顺序) 处理）；
+  3. **整页截图复核**：AI 必须打开生成的 `*.preview.png`，严格按 [整页截图视觉复核（视觉模式强制执行）](references/delivery-gate.md#整页截图视觉复核视觉模式强制执行) 检查底部留白、上下平衡与双栏分布，失衡时必须调整并重新验证。
+- **ATS-safe HTML/PDF**：
+  - 运行 `python skills/resume-builder/scripts/validate_resume.py --html "<生成的_ats.html路径>" --mode ats`，核验单栏结构、标准标题、正文复制顺序以及 PDF 文本可提取性（详见 [ATS-safe 模式验证](references/delivery-gate.md#ats-safe-模式验证)）。
 
 ### 第五步：交付
 
-视觉模式完成 A4/PDF 验证后，先询问用户是否需要打开本地 Canvas 预览。Canvas 是视觉版的可选微调工具，不是 Skills、HTML 或 PDF 交付的前置条件：用户选择需要时才执行下面的命令；用户暂时不需要时直接交付已验证的 HTML/PDF，并说明之后可按需启用。
-
-```bash
-npx -p @chasen-liao/resume-skills@latest resume-skills editor "<生成的_visual.html路径>"
-```
-
-用户选择 Canvas 后，命令会在本机启动服务并打开浏览器。告知用户原始 HTML 和 PDF 的位置；Canvas 保存时会直接覆盖该 HTML，并将关联 PDF manifest 标为失效。保存后必须重新运行渲染脚本，只有新 manifest 的 hash 和验证结果有效才可交付。Canvas 只允许编辑已有字段的纯文本和受限排版，不能插入 HTML、做 JD 匹配或调整结构。如用户选择 Canvas 但当前环境无法执行 `npx`，明确报告未启动，并提供带实际 HTML 路径的完整命令，不得声称已启动。
-
-若用户需要深入排版微调（字号/间距/颜色/页边距）、利用 Live Preview 热重载协同或需要高级 CLI 自动化（`--json` / `--no-open` / `--port`），**路由至 `resume-canvas` 技能**。
-
-ATS-safe 模式不使用 Canvas（其单栏 HTML 不属于 Canvas 支持的视觉模板）；告知文件位置与浏览器打印 PDF 方法。两种模式都可在后续使用 `jd-tailorer` 针对 JD 定制。
+- **视觉模式**：
+  - 完成 A4 单页验证与视觉复核后，交付已验证的 HTML 与 PDF 产物；
+  - 询问用户是否需要打开本地 Canvas 预览。Canvas 是可选微调工具，用户不需要时直接交付；
+  - 用户确认需要预览微调、排版深入调整或高级 CLI 自动化时，**路由至 `resume-canvas` 技能**（由 `resume-canvas` 负责启动本地编辑器及环境降级处理）；
+  - Canvas 保存后必须按 [Canvas 保存后重验闭环](references/delivery-gate.md#canvas-保存后重验闭环) 执行事实核验、重新渲染与截图复核。
+- **ATS-safe 模式**：
+  - 不使用 Canvas；告知文件位置与浏览器打印导出 PDF 方法，不承诺 DOCX。
+- **后续流转**：
+  - 建议用户在本地私有 Git 仓库提交初始母版（详见 [本地 Git 提交建议](references/delivery-gate.md#本地-git-提交建议)）；
+  - 母版定稿后若需针对具体岗位定向定制，**路由至 `jd-tailorer`**。
 
 ## 参考文档索引
 
 `references/` 目录下按需读取：
-- `design-guidelines.md` — 设计美学、字体排版、单页参数细节
+- `delivery-gate.md` — 交付门禁与验证契约、整页截图视觉复核、Canvas 闭环与 Git 建议
+- `design-system.md` — 设计系统、美学要点、字体排版、配色策略与六大风格索引
 - `resume-contract.md` — 事实来源、证据、置信度、指标状态和输出门槛
 - `resume-facts.example.yaml` — 私有 `resume-facts.yaml` 的最小结构
-- `color-palettes.md` — 六大风格-配色索引
 - `content-writing.md` — 证据优先写作、ATS 两种输出模式、自检清单
-- `css/README.md` — CSS 使用方式与配色选择策略
 - `css/common.md` — 通用紧凑排版 CSS（每次必用）
 - `css/<style>.md` + `examples/<style>.html` — 每个风格一对参照文件
