@@ -2,6 +2,14 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.10.2] - 2026-11-14
+
+### Changed
+
+- 抽离四个技能（`resume-workflow`、`resume-builder`、`jd-tailorer`、`resume-canvas`）重复的 PDF 渲染、校验、整页截图复核与交付闭环说明为共享参考文档 `skills/resume-builder/references/delivery-gate.md`，显著降低技能提示词冗余与上下文消耗。
+- 合并 `design-guidelines.md`、`color-palettes.md` 与 `css/README.md` 为统一的 `skills/resume-builder/references/design-system.md`，并精简 `resume-contract.md` 与 `content-writing.md`。
+- 提取 `render_resume.mjs` 与 `measure_resume_layout.mjs` 共用的 A4 视口加载、打印媒体仿真与字体就绪等待逻辑至 `lib/resume-page.mjs`，并补充单元测试 `tests/resume-page.test.mjs`。
+
 ## [0.10.1] - 2026-10-11
 
 ### Fixed
