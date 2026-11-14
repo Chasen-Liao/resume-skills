@@ -84,6 +84,92 @@ def write_layout_pdf(path: Path, y: int | list[int]):
         writer.write(handle)
 
 
+def write_unicode_pdf(
+    path: Path,
+    entries: list[tuple[float, float, str]],
+    subtype: str = "/Type1",
+    use_form_xobject: bool = False,
+) -> None:
+    from pypdf import PdfWriter
+    from pypdf.generic import (
+        ArrayObject,
+        DecodedStreamObject,
+        DictionaryObject,
+        NameObject,
+        NumberObject,
+    )
+
+    chars: dict[str, int] = {}
+    for _, _, text in entries:
+        for ch in text:
+            if ch not in chars:
+                chars[ch] = len(chars) + 1
+                if chars[ch] > 255:
+                    raise ValueError("write_unicode_pdf supports up to 255 unique characters")
+
+    bfchar_lines = "\n".join(f"<{code:02X}> <{ord(ch):04X}>" for ch, code in chars.items())
+    cmap_data = (
+        "/CIDInit /ProcSet findresource begin\n"
+        "12 dict begin\n"
+        "begincmap\n"
+        "/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n"
+        "/CMapName /Adobe-Identity-UCS def\n"
+        "/CMapType 2 def\n"
+        "1 begincodespacerange\n<01> <FF>\nendcodespacerange\n"
+        f"{len(chars)} beginbfchar\n{bfchar_lines}\nendbfchar\n"
+        "endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend\n"
+    ).encode("ascii")
+
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=595.92, height=842.88)
+    cmap_stream = DecodedStreamObject()
+    cmap_stream.set_data(cmap_data)
+    font = DictionaryObject(
+        {
+            NameObject("/Type"): NameObject("/Font"),
+            NameObject("/Subtype"): NameObject(subtype),
+            NameObject("/BaseFont"): NameObject("/Helvetica"),
+            NameObject("/ToUnicode"): writer._add_object(cmap_stream),
+        }
+    )
+    font_ref = writer._add_object(font)
+
+    commands = []
+    for x, y, text in entries:
+        hex_codes = "".join(f"{chars[ch]:02X}" for ch in text)
+        commands.append(f"BT /F1 11 Tf {x:.2f} {y:.2f} Td <{hex_codes}> Tj ET")
+    stream_bytes = "\n".join(commands).encode("ascii")
+
+    if use_form_xobject:
+        form = DecodedStreamObject()
+        form[NameObject("/Type")] = NameObject("/XObject")
+        form[NameObject("/Subtype")] = NameObject("/Form")
+        form[NameObject("/BBox")] = ArrayObject(
+            [NumberObject(0), NumberObject(0), NumberObject(595), NumberObject(842)]
+        )
+        form[NameObject("/Resources")] = DictionaryObject(
+            {NameObject("/Font"): DictionaryObject({NameObject("/F1"): font_ref})}
+        )
+        form.set_data(stream_bytes)
+        form_ref = writer._add_object(form)
+        page[NameObject("/Resources")] = DictionaryObject(
+            {NameObject("/XObject"): DictionaryObject({NameObject("/Fm1"): form_ref})}
+        )
+        outer = DecodedStreamObject()
+        outer.set_data(b"/Fm1 Do")
+        page[NameObject("/Contents")] = writer._add_object(outer)
+    else:
+        page[NameObject("/Resources")] = DictionaryObject(
+            {NameObject("/Font"): DictionaryObject({NameObject("/F1"): font_ref})}
+        )
+        stream = DecodedStreamObject()
+        stream.set_data(stream_bytes)
+        page[NameObject("/Contents")] = writer._add_object(stream)
+
+    with path.open("wb") as handle:
+        writer.write(handle)
+
+
 class ValidateResumeTests(unittest.TestCase):
     def test_pdf_text_bounds_compose_current_and_text_matrices(self):
         class TransformedPage:
@@ -389,6 +475,227 @@ class ValidateResumeTests(unittest.TestCase):
             self.assertFalse(report["deliverable"])
             gaps = [item for item in report["checks"] if item["name"] == "vertical gaps"]
             self.assertEqual(gaps[0]["status"], "fail")
+
+    def test_pdf_rejects_type3_fallback_font_direct_and_in_form_xobject(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for use_form in (False, True):
+                with self.subTest(use_form=use_form):
+                    pdf = Path(directory) / f"type3-{use_form}.pdf"
+                    write_unicode_pdf(
+                        pdf,
+                        [(72, 720, "Chasen Zhang")],
+                        subtype="/Type3",
+                        use_form_xobject=use_form,
+                    )
+                    result = run_validator("--pdf", pdf, "--json")
+                    self.assertNotEqual(result.returncode, 0)
+                    report = json.loads(result.stdout)
+                    font_check = next(c for c in report["checks"] if c["name"] == "PDF fonts")
+                    self.assertEqual(font_check["status"], "fail")
+                    self.assertIn("Type3", font_check["message"])
+
+    def test_pdf_rejects_corrupted_unicode_ranges(self):
+        cases = (
+            ("kangxi", "⼀级研发工程师"),
+            ("cjk-supplement", "⺁补部首测试"),
+            ("replacement", "异常\ufffd字符"),
+            ("pua", "图标\ue001文本"),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            for label, sample in cases:
+                with self.subTest(label=label):
+                    pdf = Path(directory) / f"{label}.pdf"
+                    write_unicode_pdf(pdf, [(72, 720, sample)])
+                    result = run_validator("--pdf", pdf, "--json")
+                    self.assertNotEqual(result.returncode, 0, result.stdout)
+                    report = json.loads(result.stdout)
+                    quality = next(c for c in report["checks"] if c["name"] == "PDF text quality")
+                    self.assertEqual(quality["status"], "fail", quality["message"])
+
+    def test_pdf_rejects_unauthorized_minus_sign_and_template_markers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            html_no_minus = Path(directory) / "no-minus.html"
+            html_with_minus = Path(directory) / "with-minus.html"
+            base_html = (
+                "<!DOCTYPE html><html lang='zh-CN'><head><style>"
+                "h2::before{content:'</>'}"
+                "</style></head><body><main class='resume'>"
+                "<h1>Chasen Zhang</h1><section><h2>%s</h2><p>Experience</p></section>"
+                "</main></body></html>"
+            )
+            html_no_minus.write_text(base_html % "2024 - 2026", encoding="utf-8")
+            html_with_minus.write_text(base_html % "2024 − 2026", encoding="utf-8")
+
+            pdf_minus = Path(directory) / "minus.pdf"
+            write_unicode_pdf(pdf_minus, [(72, 720, "Chasen Zhang"), (72, 700, "2024 − 2026")])
+            # Unauthorized U+2212 fails both standalone and against HTML lacking U+2212
+            self.assertNotEqual(run_validator("--pdf", pdf_minus).returncode, 0)
+            against_no_minus = run_validator("--html", html_no_minus, "--pdf", pdf_minus, "--json")
+            self.assertNotEqual(against_no_minus.returncode, 0)
+            q1 = next(c for c in json.loads(against_no_minus.stdout)["checks"] if c["name"] == "PDF text quality")
+            self.assertEqual(q1["status"], "fail")
+            self.assertIn("U+2212", q1["message"])
+
+            # Authorized U+2212 present in HTML passes
+            against_with_minus = run_validator("--html", html_with_minus, "--pdf", pdf_minus, "--json")
+            self.assertEqual(against_with_minus.returncode, 0, against_with_minus.stdout)
+
+            # DEMO watermark and </> pseudo-element leakage fail
+            for name, line in (("demo", "DEMO · 虚构示例内容"), ("pseudo", "</> 专业技能")):
+                with self.subTest(marker=name):
+                    pdf_bad = Path(directory) / f"{name}.pdf"
+                    write_unicode_pdf(pdf_bad, [(72, 720, "Chasen Zhang"), (72, 700, line)])
+                    bad = run_validator("--html", html_no_minus, "--pdf", pdf_bad, "--json")
+                    self.assertNotEqual(bad.returncode, 0, bad.stdout)
+                    quality = next(c for c in json.loads(bad.stdout)["checks"] if c["name"] == "PDF text quality")
+                    self.assertEqual(quality["status"], "fail", quality["message"])
+
+    def test_pdf_reading_order_rejects_deferred_items_after_self_evaluation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            html_path = Path(directory) / "order.html"
+            html_path.write_text(
+                "<!DOCTYPE html><html lang='zh-CN'><head><title>Resume</title></head><body><main class='resume'>"
+                "<h1>张小明</h1>"
+                "<section><h2>实习经历</h2><ul><li>核心支付系统延迟降低百分之三十</li></ul></section>"
+                "<section><h2>自我评价</h2><p>结果导向，工程严谨。</p></section>"
+                "</main></body></html>",
+                encoding="utf-8",
+            )
+            pdf_bad = Path(directory) / "deferred.pdf"
+            write_unicode_pdf(
+                pdf_bad,
+                [
+                    (72, 780, "张小明"),
+                    (72, 120, "自我评价"),
+                    (72, 100, "结果导向，工程严谨。"),
+                    (72, 620, "实习经历"),
+                    (84, 595, "核心支付系统延迟降低百分之三十"),
+                ],
+            )
+            with_html = run_validator("--html", html_path, "--pdf", pdf_bad, "--json")
+            self.assertNotEqual(with_html.returncode, 0)
+            order1 = next(c for c in json.loads(with_html.stdout)["checks"] if c["name"] == "PDF reading order")
+            self.assertEqual(order1["status"], "fail", order1["message"])
+
+            pdf_only = run_validator("--pdf", pdf_bad, "--json")
+            self.assertNotEqual(pdf_only.returncode, 0)
+            order2 = next(c for c in json.loads(pdf_only.stdout)["checks"] if c["name"] == "PDF reading order")
+            self.assertEqual(order2["status"], "fail", order2["message"])
+
+            # Synthetic pypdf flush callback under cm[3] < 0 with identity tm must not false-fail
+            class FlippedFlushPage:
+                class MediaBox:
+                    width = 595.0
+                    height = 842.0
+
+                mediabox = MediaBox()
+
+                def extract_text(self, visitor_text):
+                    visitor_text("Heading", [1, 0, 0, -1, 0, 842], [1, 0, 0, 1, 72, 100], None, 12)
+                    visitor_text("Body line", [1, 0, 0, -1, 0, 842], [1, 0, 0, 1, 72, 140], None, 11)
+                    visitor_text("flush", [1, 0, 0, -1, 0, 842], [1, 0, 0, 1, 0, 0], None, 11)
+
+            spans = VALIDATOR.collect_pdf_stream_spans(FlippedFlushPage())
+            self.assertEqual(len(spans), 2)
+
+    def test_pdf_reading_order_allows_legitimate_two_column_layout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            html_path = Path(directory) / "two-col.html"
+            html_path.write_text(
+                "<!DOCTYPE html><html lang='zh-CN'><head><title>Resume</title></head><body><main class='resume'>"
+                "<h1>张小明</h1>"
+                "<aside><h2>教育背景</h2><p>计算机科学学士</p></aside>"
+                "<section><h2>实习经历</h2><ul><li>完成接口高可用改造与压测验收</li></ul></section>"
+                "<section><h2>自我评价</h2><p>严谨求真。</p></section>"
+                "</main></body></html>",
+                encoding="utf-8",
+            )
+            pdf_ok = Path(directory) / "two-col.pdf"
+            write_unicode_pdf(
+                pdf_ok,
+                [
+                    (40, 780, "张小明"),
+                    (40, 700, "教育背景"),
+                    (40, 680, "计算机科学学士"),
+                    (260, 700, "实习经历"),
+                    (272, 680, "完成接口高可用改造与压测验收"),
+                    (260, 200, "自我评价"),
+                    (260, 180, "严谨求真。"),
+                ],
+            )
+            result = run_validator("--html", html_path, "--pdf", pdf_ok, "--json")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            order = next(c for c in json.loads(result.stdout)["checks"] if c["name"] == "PDF reading order")
+            self.assertEqual(order["status"], "pass")
+
+    def test_required_text_tolerates_inline_html_and_pypdf_boundary_spacing_without_hiding_corrupt_spaces(self):
+        with tempfile.TemporaryDirectory() as directory:
+            html_path = Path(directory) / "mixed.html"
+            html_path.write_text(
+                "<!DOCTYPE html><html lang='zh-CN'><head><title>Resume</title></head><body><main class='resume'>"
+                "<h1>松本 雅人 / Matsumoto Masato</h1>"
+                "<section><h2>教育经历</h2>"
+                "<div><span>出生年月：</span><span>2002年3月</span></div>"
+                "<p><strong>GPA：</strong>3.6 (专业前10%)</p>"
+                "<p>高级产品经理 / Senior Product Manager · 交互原型 (Figma) · 张小可 测试</p>"
+                "<div><span>Python</span>\n  <span>SQL</span></div>"
+                "</section></main></body></html>",
+                encoding="utf-8",
+            )
+            pdf_ok = Path(directory) / "mixed.pdf"
+            write_unicode_pdf(
+                pdf_ok,
+                [
+                    (40, 760, "松本  雅人  / Matsumoto Masato"),
+                    (40, 740, "2002 年 3 月"),
+                    (40, 720, "GPA ：3.6 ( 专业前 10%)"),
+                    (40, 700, "高级产品经理  / Senior Product Manager"),
+                    (40, 680, "交互原型  (Figma)"),
+                    (40, 660, "张小可  测试"),
+                    (40, 640, "LINUX_FAN / 林向阳  测试"),
+                    (40, 620, "Python SQL"),
+                ],
+            )
+            passed = run_validator(
+                "--html",
+                html_path,
+                "--pdf",
+                pdf_ok,
+                "--required-text",
+                "松本 雅人 / Matsumoto Masato",
+                "2002年3月",
+                "GPA：3.6 (专业前10%)",
+                "高级产品经理 / Senior Product Manager",
+                "交互原型 (Figma)",
+                "张小可 测试",
+                "Python SQL",
+                "--json",
+            )
+            self.assertEqual(passed.returncode, 0, passed.stdout + passed.stderr)
+
+            # PDF-only check with LINUX_FAN double-space case
+            pdf_only = run_validator(
+                "--pdf",
+                pdf_ok,
+                "--required-text",
+                "LINUX_FAN / 林向阳 测试",
+                "--json",
+            )
+            self.assertEqual(pdf_only.returncode, 0, pdf_only.stdout + pdf_only.stderr)
+
+            # Must still reject Type3 intra-CJK pseudo-space ("松 本") and glued ASCII tokens ("PythonSQL")
+            pdf_bad = Path(directory) / "bad-spacing.pdf"
+            write_unicode_pdf(
+                pdf_bad,
+                [
+                    (40, 740, "松 本"),
+                    (40, 720, "PythonSQL"),
+                ],
+            )
+            bad_cjk = run_validator("--pdf", pdf_bad, "--required-text", "松本", "--json")
+            self.assertNotEqual(bad_cjk.returncode, 0)
+            bad_ascii = run_validator("--pdf", pdf_bad, "--required-text", "Python SQL", "--json")
+            self.assertNotEqual(bad_ascii.returncode, 0)
 
 if __name__ == "__main__":
     unittest.main()

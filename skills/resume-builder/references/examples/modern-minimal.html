@@ -5,7 +5,7 @@
   <title>简历 - 现代简约风格</title>
   <style>
     /* === 引入 Google 字体 === */
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
 
     /* === 现代简约风格配置 (基于 modern-minimal.md 整合与微调) === */
     :root {
@@ -62,7 +62,7 @@
 
     body {
       background-color: #E2E8F0;
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-body);
       line-height: var(--lh-body);
       color: var(--color-fg);
@@ -99,12 +99,13 @@
     }
 
     .header-info h1 {
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-name);
       font-weight: 700;
       color: var(--color-primary);
       margin: 0 0 2px 0;
       line-height: var(--lh-heading);
-      letter-spacing: -0.5px;
+      letter-spacing: 0.2px;
     }
 
     .header-info .job-title {
@@ -203,25 +204,24 @@
     }
 
     ul.item-details li {
-      position: relative;
-      padding-left: 10px;
+      padding-left: 14px;
+      text-indent: -11px;
       margin-bottom: 2px;
-      text-align: justify;
+      text-align: left;
       color: var(--color-fg);
     }
 
     ul.item-details li::before {
-      content: "—";
-      position: absolute;
-      left: 0;
+      content: "•\00a0\00a0";
       color: var(--color-accent);
-      font-weight: bold;
+      font-weight: 700;
     }
 
     /* 教育背景单行 */
     .education-line {
       display: flex;
       justify-content: space-between;
+      gap: 1em;
       font-weight: 700;
       color: var(--color-primary);
     }
@@ -240,13 +240,13 @@
     }
 
     .skill-tags-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
+      display: block;
       margin-top: 2px;
     }
 
     .skill-badge {
+      display: inline-block;
+      margin: 0 5px 5px 0;
       background-color: var(--color-card);
       border: 1px solid var(--color-border);
       padding: 2px 7px;
@@ -263,7 +263,7 @@
       padding: 6px 10px;
       font-size: var(--fs-body);
       line-height: 1.4;
-      text-align: justify;
+      text-align: left;
       color: var(--color-fg);
     }
 
@@ -278,11 +278,15 @@
         background-color: white;
         padding: 0;
         width: var(--page-width);
-        height: var(--page-height);
+        min-height: var(--page-height);
       }
       .resume {
         box-shadow: none;
         padding: var(--page-margin);
+      }
+      [data-resume-demo="true"] [role="note"],
+      .no-print {
+        display: none !important;
       }
       * {
         -webkit-print-color-adjust: exact !important;
@@ -314,7 +318,7 @@
   </style>
 </head>
 <body>
-  <div role="note" style="position:fixed;top:8px;right:8px;z-index:9999;padding:4px 8px;background:#7f1d1d;color:#fff;font:600 11px/1.3 sans-serif">DEMO · 虚构示例内容</div>
+  <div role="note" class="no-print" style="position:fixed;top:8px;right:8px;z-index:9999;padding:4px 8px;background:#7f1d1d;color:#fff;font:600 11px/1.3 sans-serif">DEMO · 虚构示例内容</div>
 
   <div class="resume">
     <!-- 顶部 Header -->

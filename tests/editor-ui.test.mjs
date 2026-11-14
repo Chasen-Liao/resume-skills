@@ -62,6 +62,8 @@ test("resume templates do not include deprecated export toolbars", () => {
   }
 });
 
+const appCss = readFileSync(`${root}/public/app.css`, "utf8");
+
 test("preview iframe sandbox allows the print dialog the export button opens", () => {
   // window.print() 属于 modal API：沙箱缺少 allow-modals 时浏览器会静默忽略调用，
   // “打印为 PDF” 点击后只在控制台留下 Ignored call to 'print()'。
@@ -72,5 +74,20 @@ test("preview iframe sandbox allows the print dialog the export button opens", (
   assert.ok(tokens.includes("allow-same-origin"), "父页面需要同源访问 contentDocument 才能编辑画布");
   assert.ok(tokens.includes("allow-modals"), "缺少 allow-modals 时打印为 PDF 会被浏览器忽略");
   assert.ok(!tokens.includes("allow-scripts"), "预览内容不可执行脚本，避免 allow-modals 被滥用弹窗");
-  assert.match(app, /#print-pdf"\)\.addEventListener\("click", \(\) => frame\.contentWindow\.print\(\)\)/);
+  assert.match(app, /printButton\.addEventListener\("click", async \(\) =>/);
+  assert.match(app, /clearSelection\(\)/);
+  assert.match(app, /doc\?\.fonts\?\.ready/);
+  assert.match(app, /fitResumeInBrowser\(/);
+  assert.match(app, /win\.print\(\)/);
+});
+
+test("editor chrome and host stylesheet include @media print isolation rules", () => {
+  assert.match(
+    app,
+    /resume-editor-chrome[\s\S]*@media print\{[\s\S]*outline:none !important/,
+    "#resume-editor-chrome must strip selection and hover outlines in @media print",
+  );
+  assert.match(appCss, /@media print\s*\{/, "public/app.css must declare @media print rules");
+  assert.match(appCss, /backdrop-filter:\s*none\s*!important/, "public/app.css print stylesheet must disable backdrop-filter");
+  assert.match(appCss, /#resume-frame\s*\{[\s\S]*transform:\s*none\s*!important/, "public/app.css print stylesheet must remove frame scaling transform");
 });

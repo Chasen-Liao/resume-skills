@@ -1,5 +1,5 @@
 import { stripLegacyToolbar } from "/editor-toolbar.js";
-import { appendOverrideRule, computedControlValues, configureSelectionTarget, createDraftController, restoreSelectedDefaults, rovingSelectionTargets, selectFromPointer, setRovingTabStop, setSelectionPressed, upsertRootToken } from "/editor-controls.js";
+import { appendOverrideRule, computedControlValues, configureSelectionTarget, createDraftController, fitResumeInBrowser, restoreSelectedDefaults, rovingSelectionTargets, selectFromPointer, setRovingTabStop, setSelectionPressed, upsertRootToken } from "/editor-controls.js";
 import { editorBlockChildTagNames, editorContainerClassNames, editorContainerTagNames, editorRuntimeInjectedAttributeNames } from "/editor-rules.js";
 
 const frame = document.querySelector("#resume-frame");
@@ -230,7 +230,7 @@ function bindImageErrorHints(doc) {
 }
 function bindCanvas() {
   const doc = frame.contentDocument;
-  doc.head.insertAdjacentHTML("beforeend", "<style id=\"resume-editor-chrome\">[data-resume-editor-id]{cursor:pointer}[data-resume-editor-id]:focus-visible{outline:2px solid #2563eb;outline-offset:2px}[data-resume-editor-selected]{outline:2px solid #2563eb;outline-offset:2px}</style>");
+  doc.head.insertAdjacentHTML("beforeend", "<style id=\"resume-editor-chrome\">[data-resume-editor-id]{cursor:pointer}[data-resume-editor-id]:focus-visible{outline:2px solid #2563eb;outline-offset:2px}[data-resume-editor-selected]{outline:2px solid #2563eb;outline-offset:2px}@media print{[data-resume-editor-id]{cursor:auto !important}[data-resume-editor-selected],[data-resume-editor-id]:hover,[data-resume-editor-id]:focus,[data-resume-editor-id]:focus-visible{outline:none !important;outline-offset:0 !important}}</style>");
   bindImageErrorHints(doc);
   const allNodes = [...doc.querySelectorAll("[data-resume-editor-id]")];
   if (allNodes.length === 0) {
@@ -301,17 +301,7 @@ function updateOverflow() {
   const overflow = resume.scrollHeight > resume.clientHeight + 1;
   document.querySelector("#overflow-status").textContent = overflow ? "注意：内容已超出一页 A4。HTML 仍可导出；打印 PDF 前请确认。" : "A4：当前未检测到垂直溢出。";
 }
-function cleanForExport() {
-  const doc = frame.contentDocument.cloneNode(true);
-  doc.querySelectorAll("img[data-resume-editor-original-src]").forEach((image) => {
-    image.setAttribute("src", image.getAttribute("data-resume-editor-original-src") || "");
-  });
-  doc.querySelectorAll("[data-resume-editor-selected], #resume-editor-chrome").forEach((node) => {
-    if (node.id === "resume-editor-chrome") node.remove(); else node.removeAttribute("data-resume-editor-selected");
-  });
-  doc.querySelectorAll(runtimeAttributeSelector).forEach((node) => {
-    for (const name of editorRuntimeInjectedAttrs) node.removeAttribute(name);
-  });
+function stripInjectedExtensionNodes(doc) {
   // 简历中绝不包含任何 script，主动清理浏览器扩展注入的脚本
   doc.querySelectorAll("script").forEach((node) => node.remove());
   // 清理浏览器插件在非编辑区域注入的外部自定义元素、浮层或样式节点
@@ -320,7 +310,7 @@ function cleanForExport() {
     const tag = node.tagName.toLowerCase();
     if (["html", "body"].includes(tag)) return;
     if (tag === "style") {
-      if (node.id === "resume-editor-overrides" || node.hasAttribute("data-resume-layout-contract")) return;
+      if (node.id === "resume-editor-overrides" || node.id === "resume-editor-chrome" || node.id === "resume-editor-print-layout" || node.hasAttribute("data-resume-layout-contract")) return;
       const marker = `${node.id || ""} ${node.className || ""}`;
       if (/grammarly|immersive[-_ ]?translate|language[-_ ]?tool|deepl|translate|notranslate|gtx|ydd|dict|monica|sider|extension|plugin|overlay|toolbar|darkreader|stylish|stylus/i.test(marker)) {
         node.remove();
@@ -340,6 +330,19 @@ function cleanForExport() {
       node.remove();
     }
   });
+}
+function cleanForExport() {
+  const doc = frame.contentDocument.cloneNode(true);
+  doc.querySelectorAll("img[data-resume-editor-original-src]").forEach((image) => {
+    image.setAttribute("src", image.getAttribute("data-resume-editor-original-src") || "");
+  });
+  doc.querySelectorAll("[data-resume-editor-selected], #resume-editor-chrome, #resume-editor-print-layout").forEach((node) => {
+    if (node.id === "resume-editor-chrome" || node.id === "resume-editor-print-layout") node.remove(); else node.removeAttribute("data-resume-editor-selected");
+  });
+  doc.querySelectorAll(runtimeAttributeSelector).forEach((node) => {
+    for (const name of editorRuntimeInjectedAttrs) node.removeAttribute(name);
+  });
+  stripInjectedExtensionNodes(doc);
   return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
 }
 function bindControl(control, handler) {
@@ -398,7 +401,63 @@ document.querySelector("#reset-selected").addEventListener("click", () => {
   saveDraft(true);
   syncControlsFromSelection(selected);
 });
-document.querySelector("#print-pdf").addEventListener("click", () => frame.contentWindow.print());
+const printButton = document.querySelector("#print-pdf");
+const DEFAULT_PRINT_FONT_TIMEOUT_MS = 5000;
+function resolvePrintFontTimeoutMs() {
+  const override = Number(window.__RESUME_SKILLS_FONT_TIMEOUT_MS);
+  return Number.isFinite(override) && override >= 0 ? override : DEFAULT_PRINT_FONT_TIMEOUT_MS;
+}
+async function waitForPrintFonts(doc, win, timeoutMs) {
+  if (!doc?.fonts?.ready || win?.__resumeFontsTimedOut) return Boolean(win?.__resumeFontsTimedOut);
+  let timerId;
+  let timedOut = false;
+  try {
+    await Promise.race([
+      Promise.resolve(doc.fonts.ready).catch(() => {}),
+      new Promise((resolve) => {
+        timerId = setTimeout(() => {
+          timedOut = true;
+          resolve();
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timerId !== undefined) clearTimeout(timerId);
+  }
+  if (win && timedOut) win.__resumeFontsTimedOut = true;
+  return timedOut;
+}
+let printing = false;
+printButton.addEventListener("click", async () => {
+  const win = frame.contentWindow;
+  const doc = frame.contentDocument;
+  if (!win || !doc || printing) return;
+  printing = true;
+  printButton.disabled = true;
+  try {
+    doc.querySelectorAll("[contenteditable]").forEach((node) => finishTextEdit(node, true));
+    clearSelection();
+    if (doc.activeElement && typeof doc.activeElement.blur === "function") {
+      doc.activeElement.blur();
+    }
+    stripInjectedExtensionNodes(doc);
+
+    const fontTimeoutMs = resolvePrintFontTimeoutMs();
+    await waitForPrintFonts(doc, win, fontTimeoutMs);
+    await fitResumeInBrowser({ fontTimeoutMs, useStyleElement: true }, doc, win, window);
+    fitFrame();
+    updateOverflow();
+
+    win.addEventListener("afterprint", () => {
+      doc.getElementById("resume-editor-print-layout")?.remove();
+      updateOverflow();
+    }, { once: true });
+    win.print();
+  } finally {
+    printing = false;
+    printButton.disabled = false;
+  }
+});
 window.addEventListener("beforeunload", (event) => { if (localStorage.getItem(draftKey())) { event.preventDefault(); event.returnValue = ""; } });
 async function reloadDocument({ isHotReload = false } = {}) {
   const response = await fetch("/api/document");

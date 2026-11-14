@@ -71,13 +71,12 @@
 
 ## 推荐字体
 
-| 方案 | 标题 | 正文 | Google Fonts Import |
+| 方案 | 标题 | 正文 / 等宽 | Google Fonts Import |
 |------|------|------|---------------------|
-| Tech Startup | Space Grotesk (500-700) | DM Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');` |
-| Developer Mono | JetBrains Mono (500-700) | IBM Plex Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');` |
-| Fashion Forward | Syne (500-700) | Manrope (400) | `@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700&display=swap');` |
+| Tech Startup | Barlow (400-700) | Fira Sans / IBM Plex Mono (400-700) | `@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Fira+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');` |
+| Developer Clean | Poppins (500-700) | Fira Sans / Space Mono (400-700) | `@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&family=Poppins:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap');` |
 
-中文: `PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif`
+中文: `"PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif`（所有英文与等宽字体声明均须附带该中文回退栈，防止中文落入 `NSimSun`）
 
 ## 组件级 CSS
 
@@ -99,17 +98,16 @@
 }
 
 .header-info h1 {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Barlow', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
   font-size: var(--fs-name);
   font-weight: 700;
   color: var(--color-on-primary);
   margin: 0 0 2px 0;
-  letter-spacing: -0.5px;
-  text-shadow: 0 0 1px rgba(255,255,255,0.3);
+  letter-spacing: 0.2px;
 }
 
 .header-info .job-title {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'IBM Plex Mono', Consolas, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", monospace;
   font-size: 11px;
   font-weight: 500;
   color: var(--color-accent);
@@ -117,7 +115,7 @@
 }
 
 .header-contacts {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'IBM Plex Mono', Consolas, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", monospace;
   font-size: var(--fs-meta);
   color: var(--color-muted-fg);
   text-align: left;
@@ -148,29 +146,18 @@
   object-fit: cover;
 }
 
-/* === 章节标题（霓虹色 + 终端后缀） === */
+/* === 章节标题 === */
 .section-title {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Barlow', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
   font-size: var(--fs-section-title);
   font-weight: 700;
   color: var(--color-accent);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   border-bottom: 1px solid var(--color-border);
   padding-bottom: 2px;
   margin-top: 0;
   margin-bottom: 4mm;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.section-title::after {
-  content: "</>";
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  color: var(--color-border);
-  font-weight: normal;
 }
 
 /* === 章节与内容排版 === */
@@ -204,7 +191,7 @@
 }
 
 .item-meta {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'IBM Plex Mono', Consolas, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", monospace;
   font-size: var(--fs-meta);
   color: var(--color-muted-fg);
   font-weight: normal;
@@ -216,25 +203,24 @@ ul.item-details {
 }
 
 ul.item-details li {
-  position: relative;
-  padding-left: 14px;
+  padding-left: 16px;
+  text-indent: -16px;
   margin-bottom: 2px;
-  text-align: justify;
+  text-align: left;
 }
 
 ul.item-details li::before {
-  content: ">";
-  position: absolute;
-  left: 0;
+  content: ">\00a0\00a0";
   color: var(--color-accent);
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: bold;
+  font-family: 'IBM Plex Mono', Consolas, "PingFang SC", "Microsoft YaHei", monospace;
+  font-weight: 700;
 }
 
 /* 教育背景（代码风格卡片） */
 .education-line {
   display: flex;
   justify-content: space-between;
+  gap: 1em;
   font-weight: 700;
   color: var(--color-on-primary);
   padding: 4px 8px;
@@ -243,7 +229,7 @@ ul.item-details li::before {
 }
 
 .education-meta {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'IBM Plex Mono', Consolas, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", monospace;
   font-weight: normal;
   color: var(--color-muted-fg);
   font-size: var(--fs-meta);
@@ -251,14 +237,14 @@ ul.item-details li::before {
 
 /* 技能标签（代码底色徽章） */
 .skill-tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  display: block;
   margin-top: 2px;
 }
 
 .skill-badge {
-  font-family: 'JetBrains Mono', monospace;
+  display: inline-block;
+  margin: 0 5px 5px 0;
+  font-family: 'IBM Plex Mono', Consolas, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", monospace;
   background-color: var(--color-muted);
   border: 1px solid var(--color-border);
   padding: 1px 6px;
@@ -277,7 +263,43 @@ ul.item-details li::before {
   padding: 8px 10px;
   font-size: var(--fs-body);
   line-height: 1.45;
-  text-align: justify;
+  text-align: left;
+}
+
+/* === 打印浅色反转与阴影清除 === */
+@media print {
+  :root {
+    --color-bg: #FFFFFF !important;
+    --color-fg: #0F172A !important;
+    --color-card: #FFFFFF !important;
+    --color-card-fg: #0F172A !important;
+    --color-muted: #F1F5F9 !important;
+    --color-muted-fg: #475569 !important;
+    --color-border: #E2E8F0 !important;
+    --color-on-primary: #0F172A !important;
+  }
+
+  body {
+    background-color: white;
+    color: var(--color-fg);
+  }
+
+  .resume {
+    box-shadow: none;
+    border: none;
+    color-scheme: light;
+  }
+
+  .header-info h1,
+  .photo-wrapper {
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+
+  [data-resume-demo="true"] [role="note"],
+  .no-print {
+    display: none !important;
+  }
 }
 
 ```

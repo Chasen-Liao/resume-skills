@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import html as html_lib
 import json
 import math
 import re
 import struct
 import subprocess
 import sys
+import unicodedata
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
@@ -30,6 +32,14 @@ class Check:
         return {"name": self.name, "status": self.status, "message": self.message}
 
 
+HTML_BLOCK_TAGS = {
+    "address", "article", "aside", "blockquote", "br", "dd", "div", "dl", "dt",
+    "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6",
+    "header", "hgroup", "hr", "li", "main", "nav", "ol", "p", "pre", "section",
+    "table", "tbody", "td", "tfoot", "th", "thead", "tr", "ul",
+}
+
+
 class ResumeHTMLParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -42,12 +52,22 @@ class ResumeHTMLParser(HTMLParser):
         self._section_stack: list[dict[str, Any]] = []
         self._h1_depth = 0
 
+    def _append_block_separator(self) -> None:
+        if self._ignored_depth or self._svg_depth:
+            return
+        if self.visible_parts and not self.visible_parts[-1].endswith(" "):
+            self.visible_parts.append(" ")
+        if self._h1_depth and self.h1_text and not self.h1_text[-1].endswith(" "):
+            self.h1_text.append(" ")
+
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         tag = tag.lower()
         if tag in {"script", "style", "template"}:
             self._ignored_depth += 1
         if tag == "svg":
             self._svg_depth += 1
+        if tag in HTML_BLOCK_TAGS:
+            self._append_block_separator()
         if tag == "h1":
             self.h1_count += 1
             self._h1_depth += 1
@@ -68,6 +88,8 @@ class ResumeHTMLParser(HTMLParser):
             self._section_stack.pop()
         if tag == "h1" and self._h1_depth:
             self._h1_depth -= 1
+        if tag in HTML_BLOCK_TAGS:
+            self._append_block_separator()
         if tag == "svg" and self._svg_depth:
             self._svg_depth -= 1
         if tag in {"script", "style", "template"} and self._ignored_depth:
@@ -76,10 +98,11 @@ class ResumeHTMLParser(HTMLParser):
     def handle_data(self, data: str) -> None:
         if self._ignored_depth or self._svg_depth:
             return
-        if data.strip():
-            self.visible_parts.append(data)
+        collapsed = re.sub(r"\s+", " ", data)
+        if collapsed:
+            self.visible_parts.append(collapsed)
             if self._h1_depth:
-                self.h1_text.append(data)
+                self.h1_text.append(collapsed)
 
 
 def add(checks: list[Check], name: str, status: str, message: str) -> None:
@@ -273,14 +296,16 @@ def validate_html(html: str, mode: str, required: list[str], checks: list[Check]
     else:
         add(checks, "section headings", "warn", "no section elements found")
 
-    visible_text = " ".join(parser.visible_parts).strip()
-    if visible_text and " ".join(parser.h1_text).strip():
+    visible_text = re.sub(r"\s+", " ", "".join(parser.visible_parts)).strip()
+    h1_text = re.sub(r"\s+", " ", "".join(parser.h1_text)).strip()
+    if visible_text and h1_text:
         add(checks, "text content", "pass", "key content is present as HTML text, not only img/svg")
     else:
         add(checks, "text content", "fail", "key content must be extractable HTML text, not only img/svg")
 
     for text in required:
-        if text in visible_text:
+        normalized_required = re.sub(r"\s+", " ", text).strip()
+        if text in visible_text or (normalized_required and normalized_required in visible_text):
             add(checks, f"required text: {text}", "pass", "found in HTML text")
         else:
             add(checks, f"required text: {text}", "fail", "required text is missing from HTML text")
@@ -363,6 +388,348 @@ def measure_pdf_text_bounds(page: Any, spans: list[tuple[float, float]] | None =
     return max(item[0] for item in bounds), min(item[1] for item in bounds)
 
 
+VOID_HTML_TAGS = {
+    "area", "base", "br", "col", "embed", "hr", "img", "input",
+    "link", "meta", "param", "source", "track", "wbr",
+}
+CORRUPTED_CHAR_RANGES = (
+    (0x2F00, 0x2FDF, "Kangxi Radical (U+2F00..U+2FDF)"),
+    (0x2E80, 0x2EFF, "CJK Radicals Supplement (U+2E80..U+2EFF)"),
+    (0xE000, 0xF8FF, "Private Use Area (U+E000..U+F8FF)"),
+)
+DEMO_MARKER_RE = re.compile(r"DEMO\s*[·・.]\s*虚构示例内容")
+
+
+class HTMLReadingOrderParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.landmarks: list[dict[str, Any]] = []
+        self._open_tags: list[tuple[str, bool]] = []
+        self._ignored_depth = 0
+        self._landmark_stack: list[dict[str, Any]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        tag = tag.lower()
+        if tag in VOID_HTML_TAGS:
+            if tag == "br" and self._landmark_stack and self._ignored_depth == 0:
+                self._landmark_stack[-1]["parts"].append(" ")
+            return
+        attr_map = {name.lower(): (value or "") for name, value in attrs}
+        classes = set(attr_map.get("class", "").split())
+        ignored_here = (
+            tag in {"script", "style", "template", "svg"}
+            or "hidden" in attr_map
+            or attr_map.get("aria-hidden", "").lower() == "true"
+            or "no-print" in classes
+            or attr_map.get("role", "").lower() == "note"
+        )
+        self._open_tags.append((tag, ignored_here))
+        if ignored_here:
+            self._ignored_depth += 1
+            return
+        if self._ignored_depth == 0 and (
+            tag in {"h1", "h2", "li", "p"}
+            or ("summary-text" in classes and not self._landmark_stack)
+            or ("summary-block" in classes and not self._landmark_stack)
+        ):
+            entry: dict[str, Any] = {"tag": tag, "parts": []}
+            self.landmarks.append(entry)
+            self._landmark_stack.append(entry)
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+        if tag.lower() not in VOID_HTML_TAGS:
+            self.handle_endtag(tag)
+
+    def handle_endtag(self, tag: str) -> None:
+        tag = tag.lower()
+        if tag in VOID_HTML_TAGS:
+            return
+        for idx in range(len(self._open_tags) - 1, -1, -1):
+            if self._open_tags[idx][0] == tag:
+                popped = self._open_tags[idx:]
+                del self._open_tags[idx:]
+                for popped_tag, ignored_here in reversed(popped):
+                    if ignored_here and self._ignored_depth:
+                        self._ignored_depth -= 1
+                    elif self._landmark_stack and self._landmark_stack[-1]["tag"] == popped_tag:
+                        self._landmark_stack.pop()
+                break
+
+    def handle_data(self, data: str) -> None:
+        if self._ignored_depth or not self._landmark_stack:
+            return
+        if data:
+            self._landmark_stack[-1]["parts"].append(data)
+
+
+def _normalize_order_key(value: str) -> str:
+    normalized = unicodedata.normalize("NFKC", value)
+    cleaned = re.sub(r"[\s\u200b-\u200f\ufeff\xad]+", "", normalized)
+    return re.sub(r"^[•·▪▫◦‣⁃–—\-\*\u2022]+", "", cleaned)
+
+
+def extract_html_landmarks(html_text: str) -> list[tuple[str, str]]:
+    parser = HTMLReadingOrderParser()
+    parser.feed(html_text)
+    parser.close()
+    items: list[tuple[str, str]] = []
+    for entry in parser.landmarks:
+        text = "".join(entry["parts"]).strip()
+        if _normalize_order_key(text):
+            items.append((entry["tag"], text))
+    return items
+
+
+def _deref_pdf_obj(obj: Any) -> Any:
+    return obj.get_object() if hasattr(obj, "get_object") else obj
+
+
+def _collect_fonts_from_resources(
+    resources: Any,
+    page_number: int,
+    found: list[dict[str, Any]],
+    visited_refs: set[tuple[int, int]],
+) -> None:
+    res = _deref_pdf_obj(resources)
+    if not isinstance(res, dict):
+        return
+    fonts = _deref_pdf_obj(res.get("/Font"))
+    if isinstance(fonts, dict):
+        for alias, raw_font in fonts.items():
+            font = _deref_pdf_obj(raw_font)
+            if isinstance(font, dict):
+                found.append(
+                    {
+                        "page": page_number,
+                        "alias": str(alias),
+                        "subtype": str(font.get("/Subtype", "")),
+                        "base_font": str(font.get("/BaseFont", "")),
+                    }
+                )
+    xobjects = _deref_pdf_obj(res.get("/XObject"))
+    if isinstance(xobjects, dict):
+        for raw_xobj in xobjects.values():
+            if hasattr(raw_xobj, "idnum") and hasattr(raw_xobj, "generation"):
+                ref_key = (raw_xobj.idnum, raw_xobj.generation)
+            else:
+                ref = getattr(raw_xobj, "indirect_reference", None)
+                ref_key = (ref.idnum, ref.generation) if ref is not None else (id(raw_xobj), 0)
+            if ref_key in visited_refs:
+                continue
+            visited_refs.add(ref_key)
+            xobj = _deref_pdf_obj(raw_xobj)
+            if not isinstance(xobj, dict):
+                continue
+            if str(xobj.get("/Subtype", "")) in {"/Form", "Form"} and "/Resources" in xobj:
+                _collect_fonts_from_resources(xobj.get("/Resources"), page_number, found, visited_refs)
+
+
+def collect_pdf_fonts(reader: Any) -> list[dict[str, Any]]:
+    found: list[dict[str, Any]] = []
+    visited_refs: set[tuple[int, int]] = set()
+    for page_number, page in enumerate(reader.pages, start=1):
+        _collect_fonts_from_resources(page.get("/Resources"), page_number, found, visited_refs)
+    return found
+
+
+def _is_identity_matrix(matrix: Any) -> bool:
+    try:
+        values = [float(matrix[i]) for i in range(6)]
+    except (TypeError, ValueError, IndexError):
+        return False
+    expected = (1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+    return all(abs(values[i] - expected[i]) < 1e-4 for i in range(6))
+
+
+def collect_pdf_stream_spans(page: Any) -> list[tuple[float, float, str]]:
+    """Extract PDF text spans in content-stream emission order as (x, y, text)."""
+    spans: list[tuple[float, float, str]] = []
+    mediabox = getattr(page, "mediabox", None)
+    page_width = float(mediabox.width) if mediabox is not None else None
+    page_height = float(mediabox.height) if mediabox is not None else None
+
+    def visit_text(
+        text: str,
+        cm: Any,
+        tm: Any,
+        _font_dict: Any,
+        _font_size: Any,
+    ) -> None:
+        if not text.strip():
+            return
+        try:
+            cm_vals = [float(cm[i]) for i in range(6)]
+            tm_vals = [float(tm[i]) for i in range(6)]
+        except (TypeError, ValueError, IndexError):
+            return
+        # pypdf fires synthetic flush callbacks with identity tm under flipped cm (cm[3] < 0).
+        if cm_vals[3] < 0 and _is_identity_matrix(tm_vals):
+            return
+        x = (tm_vals[4] * cm_vals[0]) + (tm_vals[5] * cm_vals[2]) + cm_vals[4]
+        y = (tm_vals[4] * cm_vals[1]) + (tm_vals[5] * cm_vals[3]) + cm_vals[5]
+        if page_width is not None and (x < -2.0 or x > page_width + 2.0):
+            return
+        if page_height is not None and (y < -2.0 or y > page_height + 2.0):
+            return
+        spans.append((x, y, text.strip()))
+
+    try:
+        page.extract_text(visitor_text=visit_text)
+    except Exception:
+        return []
+    return spans
+
+
+def check_pdf_fonts(reader: Any, raw_data: bytes, checks: list[Check]) -> None:
+    if reader is not None:
+        fonts = collect_pdf_fonts(reader)
+        type3 = [item for item in fonts if item["subtype"] in {"/Type3", "Type3"}]
+        if type3:
+            details = ", ".join(
+                f"p{item['page']} {item['alias']} ({item['base_font'] or 'Type3'})"
+                for item in type3[:4]
+            )
+            add(
+                checks,
+                "PDF fonts",
+                "fail",
+                f"detected Type3 fallback font(s): {details}; likely glyph/spacing corruption",
+            )
+        else:
+            add(checks, "PDF fonts", "pass", f"checked {len(fonts)} font resource(s); no Type3 fallback fonts")
+        return
+
+    if re.search(rb"/Subtype\s*/Type3\b", raw_data):
+        add(checks, "PDF fonts", "fail", "detected /Subtype /Type3 fallback font in PDF stream")
+    else:
+        add(checks, "PDF fonts", "pass", "no uncompressed Type3 fallback font markers detected")
+
+
+def check_pdf_text_quality(text: str, source_html: str | None, checks: list[Check]) -> None:
+    if not text.strip():
+        return
+    issues: list[str] = []
+
+    if "\ufffd" in text:
+        issues.append("replacement character U+FFFD")
+    for low, high, label in CORRUPTED_CHAR_RANGES:
+        hits = [ch for ch in text if low <= ord(ch) <= high]
+        if hits:
+            sample = "".join(dict.fromkeys(hits[:4]))
+            codes = ", ".join(f"U+{ord(ch):04X}" for ch in dict.fromkeys(hits[:4]))
+            issues.append(f"{label}: {sample!r} ({codes})")
+
+    source_visible_text: str | None = None
+    decoded_source: str | None = None
+    if source_html is not None:
+        parser = ResumeHTMLParser()
+        parser.feed(source_html)
+        parser.close()
+        source_visible_text = "".join(parser.visible_parts)
+        decoded_source = html_lib.unescape(source_html)
+
+    if "\u2212" in text and (decoded_source is None or "\u2212" not in decoded_source):
+        issues.append("unexpected U+2212 minus sign (−) substituted in PDF text")
+    if DEMO_MARKER_RE.search(text):
+        issues.append("template placeholder watermark 'DEMO · 虚构示例内容' leaked into PDF")
+    if "</>" in text and (source_visible_text is None or "</>" not in source_visible_text):
+        issues.append("template pseudo-element artifact '</>' leaked into PDF text")
+
+    if issues:
+        add(checks, "PDF text quality", "fail", "; ".join(issues))
+    else:
+        add(checks, "PDF text quality", "pass", "no corrupted glyphs, unauthorized U+2212, or template markers detected")
+
+
+def check_pdf_reading_order(reader: Any, text: str, source_html: str | None, checks: list[Check]) -> None:
+    if not text.strip():
+        return
+
+    if source_html is not None:
+        norm_pdf = _normalize_order_key(text)
+        landmarks = extract_html_landmarks(source_html)
+        located: list[tuple[str, str, str, int, int]] = []
+        for tag, raw_text in landmarks:
+            key = _normalize_order_key(raw_text)
+            if len(key) < (2 if tag in {"h1", "h2"} else 4):
+                continue
+            first_pos = norm_pdf.find(key)
+            if first_pos == -1:
+                continue
+            located.append((tag, raw_text, key, first_pos, norm_pdf.rfind(key)))
+
+        for i in range(len(located)):
+            tag_a, raw_a, key_a, first_a, _ = located[i]
+            if tag_a not in {"h1", "h2", "li"}:
+                continue
+            for j in range(i + 1, len(located)):
+                tag_b, raw_b, key_b, _, last_b = located[j]
+                if key_a in key_b or key_b in key_a:
+                    continue
+                if first_a > last_b:
+                    add(
+                        checks,
+                        "PDF reading order",
+                        "fail",
+                        f"HTML <{tag_a}> '{raw_a[:24]}' appears after later <{tag_b}> '{raw_b[:24]}' in extracted PDF text",
+                    )
+                    return
+
+    if reader is not None:
+        for page_idx, page in enumerate(reader.pages, start=1):
+            spans = collect_pdf_stream_spans(page)
+            anchors: list[tuple[float, float, str]] = []
+            for x, y, snippet in spans:
+                if anchors and abs(y - anchors[-1][1]) <= 4.0 and x >= anchors[-1][0] - 2.0:
+                    continue
+                for prev_x, prev_y, prev_snippet in anchors:
+                    if abs(x - prev_x) <= 45.0 and (y - prev_y) > 36.0:
+                        add(
+                            checks,
+                            "PDF reading order",
+                            "fail",
+                            f"page {page_idx} PDF stream jumps upward to '{snippet[:24]}' (x={x:.1f}, y={y:.1f}) after lower '{prev_snippet[:24]}' (x={prev_x:.1f}, y={prev_y:.1f})",
+                        )
+                        return
+                anchors.append((x, y, snippet))
+
+    add(checks, "PDF reading order", "pass", "PDF text stream matches expected reading order")
+
+
+CJK_OR_FULLWIDTH_CLASS = (
+    r"\u3000-\u303f"
+    r"\u3040-\u309f"
+    r"\u30a0-\u30ff"
+    r"\u3400-\u4dbf"
+    r"\u4e00-\u9fff"
+    r"\uf900-\ufaff"
+    r"\uff00-\uffef"
+)
+_CJK_TO_NON_CJK_SPACE_RE = re.compile(
+    rf"([{CJK_OR_FULLWIDTH_CLASS}])\s+([^\s{CJK_OR_FULLWIDTH_CLASS}])"
+)
+_NON_CJK_TO_CJK_SPACE_RE = re.compile(
+    rf"([^\s{CJK_OR_FULLWIDTH_CLASS}])\s+([{CJK_OR_FULLWIDTH_CLASS}])"
+)
+
+
+def normalize_pdf_matching_text(value: str) -> str:
+    """Collapse repeated whitespace and pypdf's CJK/non-CJK boundary spaces without erasing real intra-script spaces."""
+    collapsed = re.sub(r"\s+", " ", value).strip()
+    collapsed = _CJK_TO_NON_CJK_SPACE_RE.sub(r"\1\2", collapsed)
+    return _NON_CJK_TO_CJK_SPACE_RE.sub(r"\1\2", collapsed)
+
+
+def text_contains_required(haystack: str, needle: str) -> bool:
+    if needle in haystack:
+        return True
+    normalized_needle = normalize_pdf_matching_text(needle)
+    if not normalized_needle:
+        return False
+    return normalized_needle in normalize_pdf_matching_text(haystack)
+
+
 def validate_pdf(
     path: Path,
     required: list[str],
@@ -371,6 +738,7 @@ def validate_pdf(
     min_fill_ratio: float = 0.98,
     page_margin_pt: float = 10 * 72 / 25.4,
     bottom_margin_pt: float = 9 * 72 / 25.4,
+    source_html: str | None = None,
 ) -> dict[str, Any] | None:
     try:
         data = path.read_bytes()
@@ -408,10 +776,13 @@ def validate_pdf(
     else:
         add(checks, "PDF text extraction", "fail", "no extractable text found")
     for value in required:
-        if value in text:
+        if text_contains_required(text, value):
             add(checks, f"required text: {value}", "pass", "found in PDF text")
         else:
             add(checks, f"required text: {value}", "fail", "required text is missing from PDF text")
+    check_pdf_fonts(reader, data, checks)
+    check_pdf_text_quality(text, source_html, checks)
+    check_pdf_reading_order(reader, text, source_html, checks)
 
     if check_layout:
         if reader is None:
@@ -529,6 +900,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     checks: list[Check] = []
+    html: str | None = None
     html_layout = None
     pdf_layout = None
     if not math.isfinite(args.min_fill_ratio) or not 0 < args.min_fill_ratio <= 1:
@@ -561,6 +933,7 @@ def main(argv: list[str] | None = None) -> int:
             min_fill_ratio=args.min_fill_ratio,
             page_margin_pt=top_margin_mm * 72 / 25.4,
             bottom_margin_pt=bottom_margin_mm * 72 / 25.4,
+            source_html=html,
         )
     preview = validate_preview(args.preview, checks) if args.preview else None
 

@@ -167,3 +167,26 @@ hr { margin: 24px 0; border: 0; border-top: 1px solid rgba(0,0,0,0.08); }
 
 @keyframes springPop { 0% { transform: scale(0.95); opacity: 0.6; } 100% { transform: scale(1); opacity: 1; } }
 .animate-pop { animation: springPop 400ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+@media print {
+  @page { size: A4; margin: 0; }
+  :root { background: #fff !important; background-image: none !important; }
+  body { min-width: 0 !important; background: #fff !important; }
+  .skip-link, .app-header, .guide, .inspector {
+    display: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .layout { display: block !important; min-height: 0 !important; }
+  .canvas { display: block !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; }
+  #resume-stage { width: auto !important; height: auto !important; margin: 0 !important; }
+  #resume-frame {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+}

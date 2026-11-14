@@ -5,7 +5,7 @@
   <title>简历 - 简约蓝色商务风格</title>
   <style>
     /* === 引入 Google 字体 === */
-    @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
 
     /* === 通用紧凑排版 CSS (基于 common.md 整合与微调) === */
     :root {
@@ -62,7 +62,7 @@
 
     body {
       background-color: #F1F5F9;
-      font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-body);
       line-height: var(--lh-body);
       color: var(--color-fg);
@@ -92,24 +92,29 @@
       background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-accent) 100%);
     }
 
-    /* === 顶部三栏 Header === */
+    /* === 顶部双栏 Header (信息两行 + 右侧照片) === */
     .resume-header {
       display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 15px;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+      column-gap: 15px;
+      row-gap: 4px;
+      align-items: center;
       border-bottom: 2px solid var(--color-primary);
       padding-bottom: 8px;
       margin-bottom: var(--gap-section);
     }
 
     .header-info {
+      grid-column: 1;
+      grid-row: 1;
       display: flex;
       flex-direction: column;
       justify-content: center;
     }
 
     .header-info h1 {
-      font-family: 'Lexend', sans-serif;
+      font-family: 'Poppins', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-name);
       font-weight: 700;
       color: var(--color-primary);
@@ -125,13 +130,14 @@
     }
 
     .header-contacts {
+      grid-column: 1;
+      grid-row: 2;
       font-size: var(--fs-meta);
       color: var(--color-muted-fg);
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: flex-end;
-      gap: 2px;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 2px 14px;
     }
 
     .header-contacts a {
@@ -144,6 +150,9 @@
     }
 
     .header-photo {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      align-self: center;
       width: 66px;
       height: 84px;
       border: 1px solid var(--color-border);
@@ -167,7 +176,7 @@
     .section-title {
       display: flex;
       align-items: center;
-      font-family: 'Lexend', sans-serif;
+      font-family: 'Poppins', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-section-title);
       font-weight: 700;
       color: var(--color-primary);
@@ -179,11 +188,11 @@
     .section-title::before {
       content: "";
       display: inline-block;
-      width: 4px;
-      height: 13px;
+      width: 8px;
+      height: 2px;
       background-color: var(--color-accent);
-      margin-right: 8px;
-      border-radius: 2px;
+      margin-right: 7px;
+      border-radius: 1px;
     }
 
     .section-title::after {
@@ -245,24 +254,23 @@
     }
 
     ul.item-details li {
-      position: relative;
-      padding-left: 10px;
+      padding-left: 14px;
+      text-indent: -11px;
       margin-bottom: 2px;
-      text-align: justify;
-      text-justify: inter-word;
+      text-align: left;
     }
 
     ul.item-details li::before {
-      content: "•";
-      position: absolute;
-      left: 0;
+      content: "•\00a0\00a0";
       color: var(--color-accent);
+      font-weight: 700;
     }
 
     /* 教育背景单行 */
     .education-line {
       display: flex;
       justify-content: space-between;
+      gap: 1em;
       font-weight: 600;
       color: var(--color-primary);
       padding-left: 4px;
@@ -274,27 +282,27 @@
       font-size: var(--fs-meta);
     }
 
-    /* === 底部双栏信息区 === */
+    /* === 底部单栏垂直流信息区 === */
     .footer-layout {
-      display: grid;
-      grid-template-columns: 48% 48%;
-      gap: 4%;
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap-section);
       margin-top: var(--gap-item);
     }
 
     /* 轻量标签系统 */
     .skill-tags-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
+      display: block;
       margin-top: 4px;
     }
 
     .skill-badge {
+      display: inline-block;
+      margin: 0 5px 5px 0;
       background-color: var(--color-card);
       border: 1px solid var(--color-border);
-      border-left: 3px solid var(--color-accent);
-      padding: 1px 6px;
+      border-bottom: 2px solid var(--color-accent);
+      padding: 1px 7px;
       font-size: var(--fs-meta);
       color: var(--color-fg);
       border-radius: 2px;
@@ -304,12 +312,12 @@
     /* 自我评价 summary：浅蓝背景与左边强调线 */
     .summary-block {
       background-color: var(--color-card);
-      border-left: 4px solid var(--color-primary);
+      border-left: 2.5px solid var(--color-primary);
       padding: 8px 10px;
       border-radius: 0 4px 4px 0;
       font-size: var(--fs-body);
       line-height: 1.4;
-      text-align: justify;
+      text-align: left;
     }
 
     /* === 打印媒体查询 === */
@@ -323,11 +331,15 @@
         background-color: white;
         padding: 0;
         width: var(--page-width);
-        height: var(--page-height);
+        min-height: var(--page-height);
       }
       .resume {
         box-shadow: none;
         padding: var(--page-margin) var(--page-margin) var(--page-margin) calc(var(--page-margin) + 8px);
+      }
+      [data-resume-demo="true"] [role="note"],
+      .no-print {
+        display: none !important;
       }
       /* 强制打印背景和彩色属性 */
       * {
@@ -360,7 +372,7 @@
   </style>
 </head>
 <body>
-  <div role="note" style="position:fixed;top:8px;right:8px;z-index:9999;padding:4px 8px;background:#7f1d1d;color:#fff;font:600 11px/1.3 sans-serif">DEMO · 虚构示例内容</div>
+  <div role="note" class="no-print" style="position:fixed;top:8px;right:8px;z-index:9999;padding:4px 8px;background:#7f1d1d;color:#fff;font:600 11px/1.3 sans-serif">DEMO · 虚构示例内容</div>
 
   <div class="resume">
     <!-- 顶部 Header -->
@@ -371,8 +383,8 @@
       </div>
       <div class="header-contacts">
         <div data-resume-editor-id="profile-phone">电话：138-0000-0000</div>
-        <div data-resume-editor-id="profile-email-label">邮箱：<a href="mailto:alex.li@example.com" data-resume-editor-id="profile-email">alex.li@example.com</a></div>
-        <div data-resume-editor-id="profile-portfolio-label">个人主页：<a href="https://github.com" target="_blank" data-resume-editor-id="profile-portfolio">github.com/alex-li</a></div>
+        <div><span data-resume-editor-id="profile-email-label">邮箱：</span><a href="mailto:alex.li@example.com" data-resume-editor-id="profile-email">alex.li@example.com</a></div>
+        <div><span data-resume-editor-id="profile-portfolio-label">个人主页：</span><a href="https://github.com" target="_blank" data-resume-editor-id="profile-portfolio">github.com/alex-li</a></div>
       </div>
       <div class="header-photo">
         <img src="avatar.png" alt="头像">

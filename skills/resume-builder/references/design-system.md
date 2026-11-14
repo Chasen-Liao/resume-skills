@@ -47,20 +47,21 @@
 ## 四、字体原则与搭配速查
 
 ### 字体设计原则
-- **拒绝通用 AI 审美**：避免无目的堆砌 Inter、Roboto、Arial 等泛用无衬线体；若选用需搭配个性化标题字体（如 Playfair Display + Inter）。
-- **中文回退安全网**：中文简历始终包含系统回退字体：`PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif`。
+- **拒绝通用 AI 审美**：避免无目的堆砌 Inter、Roboto、Arial 等泛用无衬线体；同时在 Chromium PDF 导出中避免使用可变 Google 字体与触发 `Type3` / 康熙部首 / `U+2212` 的字体，统一选用已验证可嵌入 `Type0` CID 字体的静态 TrueType 字体栈。
+- **中文回退安全网**：中文简历始终包含系统安全回退字体：`"PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif`（避免回退至 `Noto Serif SC`、`DengXian` 或 `NSimSun` 触发康熙部首或合成粗体 Type3）；所有英文与等宽 `font-family` 也必须显式附带中文回退。
+- **字重实有原则**：字体声明仅使用该字体族实际存在的字重（例如 `Bebas Neue` 仅有 `400`，禁止设为 `700`/`900`）。
 - **字阶清晰对比**：建立严格的层次阶梯：`姓名 > 板块标题 > 公司/学校/职位名 > 正文 > 辅助信息/时间`。
-- **字体加载性能**：优先系统字体栈；追求高质感时使用风格文件中的 Web 字体引入。
+- **字体加载性能**：优先系统字体栈；追求高质感时使用风格文件中的静态字重 Google Fonts 引入。
 
 ### 推荐搭配速查
 
 | 风格方向 | 标题字体 | 正文字体 | 调性与场景 |
 |----------|----------|----------|------------|
-| 经典商务 | Playfair Display / Lexend / Cormorant Garamond | Inter / Source Sans 3 | 高端稳重、专业信赖 |
-| 现代专业 | Poppins / Plus Jakarta Sans / Outfit | Open Sans / Work Sans | 清晰现代、高可读性 |
-| 科技前沿 | Space Grotesk / JetBrains Mono | DM Sans / IBM Plex Sans | 极客硬核、结构严谨 |
-| 创意活力 | Bebas Neue / Varela Round | Source Sans 3 / Nunito Sans | 个性鲜明、视觉先锋 |
-| 东方雅致 | Noto Serif SC / Lora | Noto Sans SC / Raleway | 空灵留白、人文温度 |
+| 经典商务 | Fira Sans / Lato | Fira Sans | 高端稳重、专业信赖 |
+| 现代专业 | Poppins / Fira Sans | Fira Sans / Lato | 清晰现代、高可读性 |
+| 科技前沿 | Barlow / IBM Plex Mono | Fira Sans / IBM Plex Mono | 极客硬核、结构严谨 |
+| 创意活力 | Bebas Neue (400) / Barlow | Fira Sans | 个性鲜明、视觉先锋 |
+| 东方雅致 | Spectral / Georgia | Fira Sans | 空灵留白、人文温度 |
 
 > 以各风格 `css/<style>.md` 与对应 `examples/<style>.html` 中的设定为准，上表供调整扩展参考。
 

@@ -5,7 +5,7 @@
   <title>简历 - 创意个性风格</title>
   <style>
     /* === 引入 Google 字体 === */
-    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
 
     /* === 创意个性风格配置 (基于 creative-bold.md 整合与微调) === */
     :root {
@@ -62,7 +62,7 @@
 
     body {
       background-color: #E2E8F0;
-      font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-body);
       line-height: var(--lh-body);
       color: var(--color-fg);
@@ -101,12 +101,13 @@
     }
 
     .header-info h1 {
-      font-family: 'Bebas Neue', "PingFang SC", sans-serif;
+      font-family: 'Bebas Neue', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-name);
+      font-weight: 400;
       color: var(--color-primary);
       margin: 0;
       line-height: var(--lh-heading);
-      letter-spacing: 1.5px;
+      letter-spacing: 0.8px;
     }
 
     .header-info .job-title {
@@ -114,7 +115,7 @@
       font-weight: 700;
       color: var(--color-accent);
       text-transform: uppercase;
-      letter-spacing: 1.5px;
+      letter-spacing: 1px;
       margin-top: 1px;
     }
 
@@ -129,7 +130,9 @@
       color: var(--color-fg);
       text-decoration: underline;
       text-decoration-color: var(--color-accent);
-      text-decoration-thickness: 1.5px;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+      text-decoration-skip-ink: auto;
     }
 
     .header-contacts a:hover {
@@ -156,12 +159,12 @@
 
     /* === 章节标题 (带有粉色几何方块点缀) === */
     .section-title {
-      font-family: 'Bebas Neue', "PingFang SC", sans-serif;
+      font-family: 'Bebas Neue', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-section-title);
-      font-weight: 900;
+      font-weight: 400;
       color: var(--color-primary);
       text-transform: uppercase;
-      letter-spacing: 1.5px;
+      letter-spacing: 0.8px;
       margin-top: 0;
       margin-bottom: 3mm;
       display: flex;
@@ -173,10 +176,11 @@
     .section-title::before {
       content: "";
       display: inline-block;
-      width: 10px;
-      height: 10px;
+      width: 14px;
+      height: 3px;
       background: var(--color-accent);
-      margin-right: 6px;
+      margin-right: 7px;
+      border-radius: 1px;
     }
 
     /* === 章节内容 === */
@@ -223,19 +227,18 @@
     }
 
     ul.item-details li {
-      position: relative;
-      padding-left: 10px;
+      padding-left: 14px;
+      text-indent: -11px;
       margin-bottom: 2px;
-      text-align: justify;
+      text-align: left;
       font-size: 9.5px;
     }
 
     ul.item-details li::before {
-      content: "▪";
-      position: absolute;
-      left: 0;
+      content: "•\00a0\00a0";
       color: var(--color-accent);
-      font-size: 8px;
+      font-size: 9px;
+      font-weight: 700;
     }
 
     /* 教育背景单行 */
@@ -259,31 +262,33 @@
 
     /* 技能标签列表 (粗黑边框小卡片) */
     .skill-tags-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
+      display: block;
       margin-top: 2px;
     }
 
     .skill-badge {
+      display: inline-block;
+      margin: 0 5px 5px 0;
       background-color: var(--color-card);
-      border: 1.5px solid var(--color-border);
-      padding: 1px 6px;
+      border: 1px solid #A1A1AA;
+      padding: 2px 7px;
       font-size: var(--fs-meta);
       color: var(--color-fg);
       white-space: nowrap;
-      font-weight: 700;
+      font-weight: 600;
+      border-radius: 2px;
     }
 
-    /* 自我评价高亮卡片 (右下倾斜阴影效果) */
+    /* 自我评价高亮卡片 */
     .summary-block {
       background-color: var(--color-card);
-      border: 1.5px solid var(--color-border);
+      border: 1px solid #A1A1AA;
+      border-left: 3px solid var(--color-accent);
       padding: 8px 10px;
       font-size: 9.5px;
       line-height: 1.4;
-      text-align: justify;
-      box-shadow: 3px 3px 0px var(--color-accent); /* 粗色块硬阴影 */
+      text-align: left;
+      box-shadow: 3px 3px 0px var(--color-accent);
       margin-top: 4px;
       margin-right: 3px;
     }
@@ -299,11 +304,20 @@
         background-color: white;
         padding: 0;
         width: var(--page-width);
-        height: var(--page-height);
+        min-height: var(--page-height);
       }
       .resume {
+        border: none;
         box-shadow: none;
         padding: var(--page-margin);
+      }
+      .photo-wrapper,
+      .summary-block {
+        box-shadow: none;
+      }
+      [data-resume-demo="true"] [role="note"],
+      .no-print {
+        display: none !important;
       }
       * {
         -webkit-print-color-adjust: exact !important;
@@ -330,7 +344,7 @@
   </style>
 </head>
 <body>
-  <div role="note" style="position:fixed;top:8px;right:8px;z-index:9999;padding:4px 8px;background:#7f1d1d;color:#fff;font:600 11px/1.3 sans-serif">DEMO · 虚构示例内容</div>
+  <div role="note" class="no-print" style="position:fixed;top:8px;right:8px;z-index:9999;padding:4px 8px;background:#7f1d1d;color:#fff;font:600 11px/1.3 sans-serif">DEMO · 虚构示例内容</div>
 
   <div class="resume">
     <!-- 顶部 Header -->

@@ -71,17 +71,18 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .no-print { display: none !important; }
+  .no-print,
+  [data-resume-demo="true"] [role="note"] { display: none !important; }
 }
 
 /* === 技能标签 badge 排列 === */
 .skill-tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  display: block;
   margin-top: 2px;
 }
 .skill-badge {
+  display: inline-block;
+  margin: 0 5px 5px 0;
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
   padding: 1px 6px;
@@ -157,9 +158,8 @@ html[data-resume-layout="full-page"] .resume > .layout-grid > .right-col {
 p, li {
   widows: 2;
   orphans: 2;
-  text-align: justify;
-  text-justify: inter-word;
-  hyphens: auto;
+  text-align: left;
+  hyphens: none;
 }
 ```
 

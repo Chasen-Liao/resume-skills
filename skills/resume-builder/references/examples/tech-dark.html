@@ -5,7 +5,7 @@
   <title>简历 - 科技感风格</title>
   <style>
     /* === 引入 Google 字体 === */
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Fira+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
 
     /* === 科技感风格配置 (基于 tech-dark.md 整合与微调) === */
     :root {
@@ -62,7 +62,7 @@
 
     body {
       background-color: #0B0F19;
-      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-body);
       line-height: var(--lh-body);
       color: var(--color-fg);
@@ -102,17 +102,16 @@
     }
 
     .header-info h1 {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Barlow', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-name);
       font-weight: 700;
       color: var(--color-on-primary);
       margin: 0 0 2px 0;
-      letter-spacing: -0.5px;
-      text-shadow: 0 0 1px rgba(255,255,255,0.3); /* 微妙的发光 */
+      letter-spacing: 0.2px;
     }
 
     .header-info .job-title {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'IBM Plex Mono', Consolas, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", monospace;
       font-size: 11px;
       font-weight: 500;
       color: var(--color-accent);
@@ -120,7 +119,7 @@
     }
 
     .header-contacts {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'IBM Plex Mono', Consolas, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", monospace;
       font-size: var(--fs-meta);
       color: var(--color-muted-fg);
       text-align: left;
@@ -157,27 +156,16 @@
 
     /* === 章节标题 === */
     .section-title {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Barlow', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-section-title);
       font-weight: 700;
       color: var(--color-accent); /* 霓虹色标题 */
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.04em;
       border-bottom: 1px solid var(--color-border);
       padding-bottom: 2px;
       margin-top: 0;
       margin-bottom: 4mm;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .section-title::after {
-      content: "</>";
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      color: var(--color-border);
-      font-weight: normal;
     }
 
     /* === 章节与内容排版 === */
@@ -211,7 +199,7 @@
     }
 
     .item-meta {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'IBM Plex Mono', Consolas, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", monospace;
       font-size: var(--fs-meta);
       color: var(--color-muted-fg);
       font-weight: normal;
@@ -224,20 +212,18 @@
     }
 
     ul.item-details li {
-      position: relative;
-      padding-left: 14px;
+      padding-left: 16px;
+      text-indent: -16px;
       margin-bottom: 2px;
-      text-align: justify;
+      text-align: left;
       color: var(--color-fg);
     }
 
     ul.item-details li::before {
-      content: ">";
-      position: absolute;
-      left: 0;
+      content: ">\00a0\00a0";
       color: var(--color-accent);
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: bold;
+      font-family: 'IBM Plex Mono', Consolas, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", monospace;
+      font-weight: 700;
     }
 
     /* 教育背景单行 */
@@ -252,7 +238,7 @@
     }
 
     .education-meta {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'IBM Plex Mono', Consolas, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", monospace;
       font-weight: normal;
       color: var(--color-muted-fg);
       font-size: var(--fs-meta);
@@ -260,14 +246,14 @@
 
     /* 技能标签列表 (代码底色徽章) */
     .skill-tags-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
+      display: block;
       margin-top: 2px;
     }
 
     .skill-badge {
-      font-family: 'JetBrains Mono', monospace;
+      display: inline-block;
+      margin: 0 5px 5px 0;
+      font-family: 'IBM Plex Mono', Consolas, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", monospace;
       background-color: var(--color-muted);
       border: 1px solid var(--color-border);
       padding: 1px 6px;
@@ -286,7 +272,7 @@
       padding: 8px 10px;
       font-size: var(--fs-body);
       line-height: 1.45;
-      text-align: justify;
+      text-align: left;
       color: var(--color-fg);
     }
 
@@ -312,7 +298,7 @@
         background-color: white;
         padding: 0;
         width: var(--page-width);
-        height: var(--page-height);
+        min-height: var(--page-height);
         color: var(--color-fg);
       }
       .resume {
@@ -320,6 +306,15 @@
         padding: var(--page-margin);
         border: none;
         color-scheme: light;
+      }
+      .header-info h1,
+      .photo-wrapper {
+        text-shadow: none !important;
+        box-shadow: none !important;
+      }
+      [data-resume-demo="true"] [role="note"],
+      .no-print {
+        display: none !important;
       }
       * {
         -webkit-print-color-adjust: exact !important;
@@ -351,7 +346,7 @@
   </style>
 </head>
 <body>
-  <div role="note" style="position:fixed;top:8px;right:8px;z-index:9999;padding:4px 8px;background:#7f1d1d;color:#fff;font:600 11px/1.3 sans-serif">DEMO · 虚构示例内容</div>
+  <div role="note" class="no-print" style="position:fixed;top:8px;right:8px;z-index:9999;padding:4px 8px;background:#7f1d1d;color:#fff;font:600 11px/1.3 sans-serif">DEMO · 虚构示例内容</div>
 
   <div class="resume">
     <!-- 顶部 Header -->
@@ -362,8 +357,8 @@
           <div class="job-title" data-resume-editor-id="profile-role">DevOps Engineer / 运维开发工程师</div>
         </div>
         <div class="header-contacts">
-          <div data-resume-editor-id="profile-contact-phone-label">TEL: 188-1111-2222 | MAIL: <a href="mailto:xy.lin@example.com" data-resume-editor-id="profile-email">xy.lin@example.com</a></div>
-          <div data-resume-editor-id="profile-contact-github-label">GITHUB: <a href="https://github.com" target="_blank" data-resume-editor-id="profile-github">github.com/xiangyang-ops</a> | BASE: 北京</div>
+          <div><span data-resume-editor-id="profile-contact-phone-label">TEL: 188-1111-2222 | MAIL: </span><a href="mailto:xy.lin@example.com" data-resume-editor-id="profile-email">xy.lin@example.com</a></div>
+          <div><span data-resume-editor-id="profile-contact-github-label">GITHUB: </span><a href="https://github.com" target="_blank" data-resume-editor-id="profile-github">github.com/xiangyang-ops</a><span data-resume-editor-id="profile-contact-base"> | BASE: 北京</span></div>
         </div>
       </div>
       <div class="header-right">

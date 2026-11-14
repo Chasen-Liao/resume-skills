@@ -73,11 +73,11 @@
 
 | 方案 | 标题 | 正文 | Google Fonts Import |
 |------|------|------|---------------------|
-| Bold Statement | Bebas Neue (display) | Source Sans 3 (400) | `@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');` |
-| Tech Startup | Space Grotesk (500-700) | DM Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');` |
-| Developer Mono | JetBrains Mono (500-700) | IBM Plex Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');` |
+| Bold Statement | Bebas Neue (400) | Fira Sans (300-700) | `@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fira+Sans:wght@300;400;500;600;700&display=swap');` |
+| Tech Startup | Barlow (500-700) | Fira Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');` |
+| Developer Mono | IBM Plex Mono (500-700) | Fira Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');` |
 
-中文: `PingFang SC, Microsoft YaHei, sans-serif`
+中文: `"PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif`（`Bebas Neue` 仅存在 `400` 字重，严禁设置为 `700`/`900`）
 
 ## 组件级 CSS
 
@@ -102,12 +102,13 @@
 }
 
 .header-info h1 {
-  font-family: 'Bebas Neue', "PingFang SC", sans-serif;
+  font-family: 'Bebas Neue', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
   font-size: var(--fs-name);
+  font-weight: 400;
   color: var(--color-primary);
   margin: 0;
   line-height: var(--lh-heading);
-  letter-spacing: 1.5px;
+  letter-spacing: 0.8px;
 }
 
 .header-info .job-title {
@@ -115,7 +116,7 @@
   font-weight: 700;
   color: var(--color-accent);
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   margin-top: 1px;
 }
 
@@ -130,7 +131,9 @@
   color: var(--color-fg);
   text-decoration: underline;
   text-decoration-color: var(--color-accent);
-  text-decoration-thickness: 1.5px;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-skip-ink: auto;
 }
 
 .header-right {
@@ -151,14 +154,14 @@
   object-fit: cover;
 }
 
-/* === 章节标题（粉色几何方块点缀） === */
+/* === 章节标题（横向细条点缀，避免方块误识为 0） === */
 .section-title {
-  font-family: 'Bebas Neue', "PingFang SC", sans-serif;
+  font-family: 'Bebas Neue', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
   font-size: var(--fs-section-title);
-  font-weight: 900;
+  font-weight: 400;
   color: var(--color-primary);
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 0.8px;
   margin-top: 0;
   margin-bottom: 3mm;
   display: flex;
@@ -170,10 +173,11 @@
 .section-title::before {
   content: "";
   display: inline-block;
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 3px;
   background: var(--color-accent);
-  margin-right: 6px;
+  margin-right: 7px;
+  border-radius: 1px;
 }
 
 /* === 章节内容 === */
@@ -219,19 +223,18 @@ ul.item-details {
 }
 
 ul.item-details li {
-  position: relative;
-  padding-left: 10px;
+  padding-left: 14px;
+  text-indent: -11px;
   margin-bottom: 2px;
-  text-align: justify;
+  text-align: left;
   font-size: 9.5px;
 }
 
 ul.item-details li::before {
-  content: "▪";
-  position: absolute;
-  left: 0;
+  content: "•\00a0\00a0";
   color: var(--color-accent);
-  font-size: 8px;
+  font-size: 9px;
+  font-weight: 700;
 }
 
 /* 教育背景（线框卡片） */
@@ -253,35 +256,65 @@ ul.item-details li::before {
   margin-top: 1px;
 }
 
-/* 技能标签（粗黑边框小卡片） */
+/* 技能标签（轻量边框卡片，避免重黑框影响 OCR） */
 .skill-tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  display: block;
   margin-top: 2px;
 }
 
 .skill-badge {
+  display: inline-block;
+  margin: 0 5px 5px 0;
   background-color: var(--color-card);
-  border: 1.5px solid var(--color-border);
-  padding: 1px 6px;
+  border: 1px solid #A1A1AA;
+  padding: 2px 7px;
   font-size: var(--fs-meta);
   color: var(--color-fg);
   white-space: nowrap;
-  font-weight: 700;
+  font-weight: 600;
+  border-radius: 2px;
 }
 
 /* 自我评价（右下倾斜阴影） */
 .summary-block {
   background-color: var(--color-card);
-  border: 1.5px solid var(--color-border);
+  border: 1px solid #A1A1AA;
+  border-left: 3px solid var(--color-accent);
   padding: 8px 10px;
   font-size: 9.5px;
   line-height: 1.4;
-  text-align: justify;
+  text-align: left;
   box-shadow: 3px 3px 0px var(--color-accent);
   margin-top: 4px;
   margin-right: 3px;
+}
+
+/* === 打印清除阴影/外框；若使用配色 C 深色主题，须启用浅色反转 === */
+@media print {
+  /* 若选用配色 C (深色 + 霓虹绿)，取消下行注释实现打印浅色反转：
+  :root {
+    --color-bg: #FFFFFF !important;
+    --color-fg: #09090B !important;
+    --color-card: #FFFFFF !important;
+    --color-card-fg: #09090B !important;
+    --color-muted: #F4F4F5 !important;
+    --color-muted-fg: #475569 !important;
+    --color-border: #E4E4E7 !important;
+    --color-primary: #18181B !important;
+  }
+  */
+  .resume {
+    border: none;
+    box-shadow: none;
+  }
+  .photo-wrapper,
+  .summary-block {
+    box-shadow: none;
+  }
+  [data-resume-demo="true"] [role="note"],
+  .no-print {
+    display: none !important;
+  }
 }
 
 ```

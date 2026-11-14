@@ -5,7 +5,7 @@
   <title>简历 - 日式极简风格</title>
   <style>
     /* === 引入 Google 字体 === */
-    @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Raleway:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=Spectral:wght@400;500;600;700&display=swap');
 
     /* === 日式极简风格配置 (基于 japanese-minimal.md 整合与微调) === */
     :root {
@@ -20,11 +20,11 @@
       --page-margin: 10mm;
       --content-width: 190mm;
 
-      /* 字号 (日式极简偏小以创造留白感) */
+      /* 字号 */
       --fs-name: calc(22px * var(--resume-density));
       --fs-section-title: calc(12.5px * var(--resume-density));
-      --fs-body: calc(9.8px * var(--resume-density));
-      --fs-meta: calc(9px * var(--resume-density));
+      --fs-body: calc(10px * var(--resume-density));
+      --fs-meta: calc(9.5px * var(--resume-density));
 
       /* 间距 */
       --gap-section: calc(6mm * var(--resume-density));
@@ -46,7 +46,7 @@
       --color-card: #FFFFFF;
       --color-card-fg: #1E293B;
       --color-muted: #F5F4F0;
-      --color-muted-fg: #64748B;
+      --color-muted-fg: #475569;
       --color-border: #EEEDED;
       --color-destructive: #DC2626;
       --color-on-destructive: #FFFFFF;
@@ -62,20 +62,13 @@
 
     body {
       background-color: #E2E8F0;
-      font-family: 'Raleway', 'Noto Serif SC', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-body);
       line-height: var(--lh-body);
       color: var(--color-fg);
       display: flex;
       justify-content: center;
       padding: 20px 0;
-    }
-
-    /* 打印微调：确保打印时字体清晰 */
-    @media print {
-      .resume, p, span, li, .section-title {
-        font-weight: 400 !important;
-      }
     }
 
     .resume {
@@ -106,19 +99,19 @@
     }
 
     .header-info h1 {
-      font-family: 'Noto Serif SC', serif;
+      font-family: 'Spectral', Georgia, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", serif;
       font-size: var(--fs-name);
-      font-weight: 500;
+      font-weight: 600;
       color: var(--color-primary);
       margin: 0 0 3px 0;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.02em;
     }
 
     .header-info .job-title {
       font-size: 11px;
       font-weight: 500;
       color: var(--color-accent);
-      letter-spacing: 1.5px;
+      letter-spacing: 0.8px;
     }
 
     .header-contacts {
@@ -126,7 +119,7 @@
       color: var(--color-muted-fg);
       text-align: left;
       line-height: 1.4;
-      font-family: 'Raleway', sans-serif;
+      font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
     }
 
     .header-contacts a {
@@ -160,12 +153,12 @@
 
     /* === 章节标题 === */
     .section-title {
-      font-family: 'Noto Serif SC', serif;
+      font-family: 'Spectral', Georgia, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", serif;
       font-size: var(--fs-section-title);
-      font-weight: 500;
+      font-weight: 600;
       color: var(--color-primary);
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.03em;
       margin-top: 0;
       margin-bottom: 4mm;
     }
@@ -221,25 +214,24 @@
     }
 
     ul.item-details li {
-      position: relative;
-      padding-left: 10px;
+      padding-left: 14px;
+      text-indent: -11px;
       margin-bottom: 2px;
-      text-align: justify;
+      text-align: left;
       color: var(--color-fg);
     }
 
     ul.item-details li::before {
-      content: "▫";
-      position: absolute;
-      left: 0;
+      content: "•\00a0\00a0";
       color: var(--color-accent);
-      font-weight: bold;
+      font-weight: 700;
     }
 
     /* 教育背景单行 */
     .education-line {
       display: flex;
       justify-content: space-between;
+      gap: 1em;
       font-weight: 700;
       color: var(--color-primary);
     }
@@ -252,13 +244,13 @@
 
     /* 技能标签列表 (日式极简：极简灰色轻量标签) */
     .skill-tags-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
+      display: block;
       margin-top: 2px;
     }
 
     .skill-badge {
+      display: inline-block;
+      margin: 0 5px 5px 0;
       background-color: var(--color-muted);
       border: 1px solid rgba(87, 83, 78, 0.15);
       padding: 1px 6px;
@@ -274,7 +266,7 @@
       padding: 4px 8px;
       font-size: var(--fs-body);
       line-height: 1.4;
-      text-align: justify;
+      text-align: left;
       color: var(--color-fg);
     }
 
@@ -289,11 +281,18 @@
         background-color: white;
         padding: 0;
         width: var(--page-width);
-        height: var(--page-height);
+        min-height: var(--page-height);
       }
       .resume {
         box-shadow: none;
         padding: var(--page-margin);
+      }
+      .profile-photo {
+        filter: none;
+      }
+      [data-resume-demo="true"] [role="note"],
+      .no-print {
+        display: none !important;
       }
       * {
         -webkit-print-color-adjust: exact !important;
@@ -325,7 +324,7 @@
   </style>
 </head>
 <body>
-  <div role="note" style="position:fixed;top:8px;right:8px;z-index:9999;padding:4px 8px;background:#7f1d1d;color:#fff;font:600 11px/1.3 sans-serif">DEMO · 虚构示例内容</div>
+  <div role="note" class="no-print" style="position:fixed;top:8px;right:8px;z-index:9999;padding:4px 8px;background:#7f1d1d;color:#fff;font:600 11px/1.3 sans-serif">DEMO · 虚构示例内容</div>
 
   <div class="resume">
     <!-- 顶部 Header -->
@@ -336,8 +335,8 @@
           <div class="job-title" data-resume-editor-id="profile-role">茶道文化策划人 / Cultural Project Manager</div>
         </div>
         <div class="header-contacts">
-          <div data-resume-editor-id="profile-contact-phone-label">TEL: 186-0000-0000 | MAIL: <a href="mailto:masato@example.com" data-resume-editor-id="profile-email">masato@example.com</a></div>
-          <div data-resume-editor-id="profile-contact-portfolio-label">PORTFOLIO: <a href="https://cultureshaper.jp" target="_blank" data-resume-editor-id="profile-portfolio">cultureshaper.jp</a> | BASE: 京都</div>
+          <div><span data-resume-editor-id="profile-contact-phone-label">TEL: 186-0000-0000 | MAIL: </span><a href="mailto:masato@example.com" data-resume-editor-id="profile-email">masato@example.com</a></div>
+          <div><span data-resume-editor-id="profile-contact-portfolio-label">PORTFOLIO: </span><a href="https://cultureshaper.jp" target="_blank" data-resume-editor-id="profile-portfolio">cultureshaper.jp</a><span data-resume-editor-id="profile-contact-base"> | BASE: 京都</span></div>
         </div>
       </div>
       <div class="header-right">

@@ -81,11 +81,10 @@
 
 | 方案 | 标题 | 正文 | Google Fonts Import |
 |------|------|------|---------------------|
-| Corporate Trust | Lexend (500-700) | Source Sans 3 (400) | `@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');` |
-| Geometric Modern | Outfit (500-700) | Work Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&display=swap');` |
-| Modern Professional | Poppins (500-700) | Open Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');` |
+| Modern Professional | Poppins (500-700) | Fira Sans (300-700) | `@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');` |
+| Clean Corporate | Lato (700) | Lato (300-700) | `@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');` |
 
-中文: `Noto Sans SC, PingFang SC, Microsoft YaHei, sans-serif`
+中文: `"PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif`（所有英文标题/正文字体声明均须附带完整中文回退栈）
 
 ## 风格 CSS 要点
 
@@ -93,7 +92,7 @@
 /* 简约边距微调以适应左侧竖带 */
 .resume {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
   padding-left: calc(var(--page-margin) + 8px) !important;
 }
@@ -109,58 +108,69 @@
   background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-accent) 100%);
 }
 
-/* 顶部三栏 Header */
+/* 顶部双栏 Header (信息两行 + 右侧照片，防止窄右栏跨栏串行) */
 .resume-header {
   display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 15px;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 15px;
+  row-gap: 4px;
+  align-items: center;
   border-bottom: 2px solid var(--color-primary);
   padding-bottom: 8px;
   margin-bottom: var(--gap-section);
 }
 
 .header-info {
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
 .header-info h1 {
-  font-family: 'Lexend', 'Noto Sans SC', sans-serif;
+  font-family: 'Poppins', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
   font-size: var(--fs-name);
   font-weight: 700;
   color: var(--color-primary);
-  margin: 0 0 4px 0;
+  margin: 0 0 3px 0;
   line-height: var(--lh-heading);
 }
 
 .header-info .job-title {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-accent);
+  letter-spacing: 0.5px;
 }
 
 .header-contacts {
+  grid-column: 1;
+  grid-row: 2;
   font-size: var(--fs-meta);
   color: var(--color-muted-fg);
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 3px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 14px;
 }
 
 .header-photo {
-  width: 48px;
-  height: 60px;
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+  width: 66px;
+  height: 84px;
   border: 1px solid var(--color-border);
   background-color: var(--color-card);
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 9px;
+  font-size: 8px;
   color: var(--color-muted-fg);
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .header-photo img {
@@ -169,27 +179,27 @@
   object-fit: cover;
 }
 
-/* 线性章节标题：左侧色块 + 右侧延展线 */
+/* 线性章节标题：左侧轻量横条 + 右侧延展线 */
 .section-title {
   display: flex;
   align-items: center;
-  font-family: 'Lexend', 'Noto Sans SC', sans-serif;
+  font-family: 'Poppins', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
   font-size: var(--fs-section-title);
   font-weight: 700;
   color: var(--color-primary);
   text-transform: uppercase;
   margin-top: 0;
-  margin-bottom: 6px;
+  margin-bottom: 5mm;
 }
 
 .section-title::before {
   content: "";
   display: inline-block;
-  width: 4px;
-  height: 14px;
+  width: 8px;
+  height: 2px;
   background-color: var(--color-accent);
-  margin-right: 8px;
-  border-radius: 2px;
+  margin-right: 7px;
+  border-radius: 1px;
 }
 
 .section-title::after {
@@ -237,19 +247,55 @@
   font-weight: normal;
 }
 
+ul.item-details {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+ul.item-details li {
+  padding-left: 14px;
+  text-indent: -11px;
+  margin-bottom: 2px;
+  text-align: left;
+}
+
+ul.item-details li::before {
+  content: "•\00a0\00a0";
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+/* 教育背景单行 */
+.education-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  font-weight: 600;
+  color: var(--color-primary);
+  padding-left: 4px;
+}
+
+/* 底部单栏垂直流信息区 */
+.footer-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-section);
+  margin-top: var(--gap-item);
+}
+
 /* 轻量标签系统 */
 .skill-tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: block;
   margin-top: 4px;
 }
 
 .skill-badge {
+  display: inline-block;
+  margin: 0 5px 5px 0;
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
-  border-left: 3px solid var(--color-accent);
-  padding: 1px 6px;
+  border-bottom: 2px solid var(--color-accent);
+  padding: 1px 7px;
   font-size: var(--fs-meta);
   color: var(--color-fg);
   border-radius: 2px;
@@ -259,9 +305,18 @@
 /* 自我评价 summary：浅蓝背景与左边强调线 */
 .summary-block {
   background-color: var(--color-card);
-  border-left: 4px solid var(--color-primary);
-  padding: 8px 12px;
+  border-left: 2.5px solid var(--color-primary);
+  padding: 8px 10px;
   border-radius: 0 4px 4px 0;
-  margin-top: var(--gap-item);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+  text-align: left;
+}
+
+@media print {
+  [data-resume-demo="true"] [role="note"],
+  .no-print {
+    display: none !important;
+  }
 }
 ```

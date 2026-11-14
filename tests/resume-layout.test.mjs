@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import test from "node:test";
 import { chromium } from "playwright";
 import { fitResumeLayout } from "../lib/resume-layout.mjs";
+import { waitForResumeFonts } from "../lib/resume-page.mjs";
 
 test("all visual templates reserve nine mm total at the bottom and retain other margins", async () => {
   const browser = await chromium.launch({ headless: true });
@@ -174,6 +175,50 @@ test("layout accepts evenly spaced content with safe margins", async () => {
       .resume { width: 794px; height: 1123px; padding: 38px 38px 55px; display: flex; flex-direction: column; }
     </style><div class="resume">${Array.from({ length: 12 }, () => '<p>Confirmed content</p>').join('')}</div></html>`);
     assert.equal((await fitResumeLayout(page)).status, "pass");
+  } finally {
+    await browser.close();
+  }
+});
+
+test("fitResumeLayout enforces fontTimeoutMs and skips redundant waits after waitForResumeFonts times out", async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const html = `<html data-resume-layout="full-page"><style>
+      :root { --resume-density: 1; --resume-density-min: 0.84; }
+      * { box-sizing: border-box; margin: 0; }
+      .resume { width: 794px; height: 1123px; padding: 38px 38px 34px; display: flex; flex-direction: column; }
+      p { font-size: calc(18px * var(--resume-density)); line-height: 1.5; }
+    </style><div class="resume">${Array.from({ length: 45 }, (_, i) => `<p>Overflow row ${i}</p>`).join("")}</div></html>`;
+
+    const standalonePage = await browser.newPage({ viewport: { width: 794, height: 1123 } });
+    await standalonePage.setContent(html);
+    await standalonePage.evaluate(() => {
+      Object.defineProperty(document.fonts, "ready", {
+        get: () => new Promise(() => {}),
+        configurable: true,
+      });
+    });
+    const standaloneStart = Date.now();
+    const standaloneResult = await fitResumeLayout(standalonePage, { fontTimeoutMs: 120 });
+    const standaloneElapsed = Date.now() - standaloneStart;
+    assert.ok(standaloneElapsed < 1500, `Expected bounded font wait (~120ms), took ${standaloneElapsed}ms`);
+    assert.ok(standaloneResult.iterations > 0);
+    assert.equal(await standalonePage.evaluate(() => window.__resumeFontsTimedOut), true);
+
+    const chainedPage = await browser.newPage({ viewport: { width: 794, height: 1123 } });
+    await chainedPage.setContent(html);
+    await chainedPage.evaluate(() => {
+      Object.defineProperty(document.fonts, "ready", {
+        get: () => new Promise(() => {}),
+        configurable: true,
+      });
+    });
+    const waitOutcome = await waitForResumeFonts(chainedPage, 100);
+    assert.equal(waitOutcome.timedOut, true);
+    const chainedStart = Date.now();
+    await fitResumeLayout(chainedPage, { fontTimeoutMs: 4000 });
+    const chainedElapsed = Date.now() - chainedStart;
+    assert.ok(chainedElapsed < 1500, `Expected chained fitResumeLayout to skip 4s wait after timeout, took ${chainedElapsed}ms`);
   } finally {
     await browser.close();
   }

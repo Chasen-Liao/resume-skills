@@ -669,3 +669,110 @@ test("saves cleanly in real browser when extensions inject styles/widgets into h
   }
 });
 
+test("#print-pdf clears selection outlines, handles hanging fonts with timeout fallback, fits layout, and preserves #save-html", { skip: !chromiumAvailable }, async () => {
+  const fullPageHtml = `<!DOCTYPE html><html data-resume-editor-template="modern-minimal" data-resume-editor-version="1" data-resume-layout="full-page"><head><meta charset="UTF-8"><style>:root{--resume-density:1;--resume-density-min:0.84;--resume-density-max:1.2}*{box-sizing:border-box;margin:0}.resume{width:210mm;height:297mm;padding:10mm 10mm 9mm;display:flex;flex-direction:column}p{font-size:calc(16px * var(--resume-density));line-height:1.5}</style></head><body><div class="resume"><h1 data-resume-editor-id="profile-name">张小明</h1>${Array.from({ length: 46 }, (_, i) => `<p data-resume-editor-id="row-${i}">第 ${i} 行工作经历描述用于触发打印前自适应密度收敛验证。</p>`).join("")}</div></body></html>`;
+  const r = await openEditableCanvas(chromium, fullPageHtml);
+  try {
+    const field = r.frame.locator('[data-resume-editor-id="profile-name"]');
+    await field.click();
+    await r.frame.waitForFunction(() => document.querySelector('[data-resume-editor-id="profile-name"]')?.hasAttribute("data-resume-editor-selected"));
+
+    // Verify @media print suppresses selection outline even when selected attribute is still set
+    await r.page.emulateMedia({ media: "print" });
+    const printOutline = await field.evaluate((el) => getComputedStyle(el).outlineStyle);
+    assert.equal(printOutline, "none", "@media print in #resume-editor-chrome must disable outline on selected elements");
+    await r.page.emulateMedia({ media: "screen" });
+
+    await r.page.evaluate(() => {
+      window.__RESUME_SKILLS_FONT_TIMEOUT_MS = 100;
+      const iframe = document.querySelector("#resume-frame");
+      const frameDoc = iframe.contentDocument;
+      const frameWin = iframe.contentWindow;
+
+      const style = frameDoc.createElement("style");
+      style.id = "immersive-translate-style";
+      style.textContent = ".notranslate { color: red; }";
+      frameDoc.head.appendChild(style);
+
+      Object.defineProperty(frameDoc.fonts, "ready", {
+        get: () => new Promise(() => {}),
+        configurable: true,
+      });
+
+      window.__printCalls = [];
+      frameWin.print = () => {
+        window.__printCalls.push({
+          selectedCount: frameDoc.querySelectorAll("[data-resume-editor-selected]").length,
+          editableCount: frameDoc.querySelectorAll("[contenteditable]").length,
+          hasExtensionStyle: Boolean(frameDoc.getElementById("immersive-translate-style")),
+          hasPrintLayoutStyle: Boolean(frameDoc.getElementById("resume-editor-print-layout")),
+          printLayoutCss: frameDoc.getElementById("resume-editor-print-layout")?.textContent || "",
+          density: frameWin.getComputedStyle(frameDoc.documentElement).getPropertyValue("--resume-density").trim(),
+        });
+      };
+    });
+
+    await r.page.locator("#print-pdf").click();
+    await r.page.waitForFunction(() => (window.__printCalls || []).length === 1, null, { timeout: 5000 });
+    const snapshot = await r.page.evaluate(() => window.__printCalls[0]);
+
+    assert.equal(snapshot.selectedCount, 0, "selection must be cleared before calling frame.contentWindow.print()");
+    assert.equal(snapshot.editableCount, 0, "active contenteditable edits must finish before printing");
+    assert.equal(snapshot.hasExtensionStyle, false, "injected extension styles must be stripped before printing");
+    assert.equal(snapshot.hasPrintLayoutStyle, true, "print layout contract style must be applied before printing");
+    assert.match(snapshot.printLayoutCss, /justify-content:\s*space-between/);
+    assert.ok(Number(snapshot.density) < 1, `expected density shrink < 1 for overflowing resume, got ${snapshot.density}`);
+    assert.equal(await r.page.locator("#selected-text-editor").evaluate((el) => el.hidden), true);
+    assert.equal(await r.page.locator("#selection-name").textContent(), "请选择一段文字");
+
+    await r.page.evaluate(() => {
+      const iframe = document.querySelector("#resume-frame");
+      iframe.contentWindow.dispatchEvent(new Event("afterprint"));
+    });
+    assert.equal(await r.page.evaluate(() => Boolean(document.querySelector("#resume-frame").contentDocument.getElementById("resume-editor-print-layout"))), false);
+
+    // Edit text and confirm #save-html still saves cleanly without attribute/style mismatch
+    await field.click();
+    await r.page.locator("#selected-text").fill("张大明");
+    await r.page.locator("#save-html").click();
+    await r.page.waitForFunction(() => document.querySelector("#save-status")?.textContent.includes("已成功保存"));
+    assert.match(await readFile(r.sourcePath, "utf8"), /张大明/);
+  } finally {
+    await closeEditableCanvas(r);
+  }
+});
+
+test("host page @media print hides editor chrome, disables backdrop-filter, and resets frame scale transform", { skip: !chromiumAvailable }, async () => {
+  const r = await openEditableCanvas(chromium, sampleHtml);
+  try {
+    await r.page.setViewportSize({ width: 960, height: 800 });
+    await r.page.evaluate(() => window.dispatchEvent(new Event("resize")));
+    const screenState = await r.page.evaluate(() => ({
+      headerDisplay: getComputedStyle(document.querySelector(".app-header")).display,
+      frameTransform: getComputedStyle(document.querySelector("#resume-frame")).transform,
+    }));
+    assert.equal(screenState.headerDisplay, "flex");
+    assert.notEqual(screenState.frameTransform, "none");
+
+    await r.page.emulateMedia({ media: "print" });
+    const printState = await r.page.evaluate(() => ({
+      skipDisplay: getComputedStyle(document.querySelector(".skip-link")).display,
+      headerDisplay: getComputedStyle(document.querySelector(".app-header")).display,
+      guideDisplay: getComputedStyle(document.querySelector(".guide")).display,
+      inspectorDisplay: getComputedStyle(document.querySelector(".inspector")).display,
+      headerBackdrop: getComputedStyle(document.querySelector(".app-header")).backdropFilter,
+      frameTransform: getComputedStyle(document.querySelector("#resume-frame")).transform,
+      frameBorder: getComputedStyle(document.querySelector("#resume-frame")).borderTopStyle,
+    }));
+    assert.equal(printState.skipDisplay, "none");
+    assert.equal(printState.headerDisplay, "none");
+    assert.equal(printState.guideDisplay, "none");
+    assert.equal(printState.inspectorDisplay, "none");
+    assert.equal(printState.headerBackdrop, "none");
+    assert.equal(printState.frameTransform, "none");
+    assert.equal(printState.frameBorder, "none");
+  } finally {
+    await closeEditableCanvas(r);
+  }
+});
+

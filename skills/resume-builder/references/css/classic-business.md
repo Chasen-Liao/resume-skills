@@ -73,10 +73,10 @@
 
 | 方案 | 标题 | 正文 | Google Fonts Import |
 |------|------|------|---------------------|
-| Modern Sans | Inter (600-700) | Inter (400) | `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');` |
-| Corporate Bold | Lexend (500-700) | Source Sans 3 (400) | `@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');` |
+| Modern Sans | Fira Sans (600-700) | Fira Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&display=swap');` |
+| Corporate Clean | Lato (700) | Lato (400) | `@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');` |
 
-中文优先使用系统默认无衬线字体：`PingFang SC, Microsoft YaHei, sans-serif`，以确保高清晰度和易读性。
+中文优先使用系统默认安全无衬线字体栈：`"PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif`，以确保高清晰度、完整 `Type0` 嵌入与可读性。
 
 ## 风格 CSS 要点
 
@@ -95,7 +95,7 @@
   font-size: 26px;
   font-weight: bold;
   color: var(--color-primary);
-  letter-spacing: 2px;
+  letter-spacing: 0.8px;
 }
 .job-intent {
   font-size: 15px;
@@ -108,10 +108,11 @@
   width: 100%;
 }
 
-/* === 章节标题：带斜切角黑底白字标签 === */
+/* === 章节标题：黑底白字标签（禁用 clip-path 以防 PDF 乱序） === */
 .section-header {
   display: flex;
   align-items: flex-end;
+  gap: 12px;
   border-bottom: 2px solid var(--color-primary);
   margin-bottom: 3.5mm;
   padding-bottom: 0;
@@ -119,11 +120,10 @@
 .section-title-tag {
   background-color: var(--color-primary);
   color: var(--color-on-primary);
-  padding: 4px 22px 4px 10px;
+  padding: 4px 14px 4px 12px;
   font-weight: bold;
   font-size: 13.5px;
-  letter-spacing: 1px;
-  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  letter-spacing: 0.5px;
   display: inline-block;
   line-height: 1.25;
 }
@@ -131,7 +131,6 @@
   font-size: 11.5px;
   font-weight: bold;
   color: var(--color-primary);
-  margin-left: 12px;
   padding-bottom: 2px;
   text-transform: capitalize;
 }
@@ -156,10 +155,15 @@
   font-size: var(--fs-body);
 }
 .info-icon {
-  width: 13px;
-  height: 13px;
-  margin-right: 6px;
-  fill: var(--color-primary);
+  width: 11px;
+  height: 11px;
+  margin-right: 10px;
+  fill: none;
+  stroke: var(--color-muted-fg);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.75;
   flex-shrink: 0;
 }
 .info-label {
@@ -177,6 +181,40 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* === 经历与列表（禁用 position: relative/absolute 以防 PDF 乱序） === */
+.experience-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+ul.item-details {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+ul.item-details li {
+  padding-left: 14px;
+  text-indent: -11px;
+  margin-bottom: 2px;
+  text-align: left;
+}
+
+ul.item-details li::before {
+  content: "•\00a0\00a0";
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+@media print {
+  [data-resume-demo="true"] [role="note"],
+  .no-print {
+    display: none !important;
+  }
 }
 ```
 

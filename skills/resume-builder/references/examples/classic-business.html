@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <title>简历 - 经典商务风格</title>
   <style>
-    /* === 引入 Google 字体 === */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    /* === 引入 Google 字体（静态字重，确保 PDF 嵌入 Type0 字体） === */
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&display=swap');
 
     /* === 经典商务配置 === */
     :root {
@@ -59,7 +59,7 @@
 
     body {
       background-color: #E2E8F0;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
       font-size: var(--fs-body);
       line-height: var(--lh-body);
       color: var(--color-fg);
@@ -96,7 +96,7 @@
       font-size: var(--fs-name);
       font-weight: 700;
       color: var(--color-primary);
-      letter-spacing: 2px;
+      letter-spacing: 0.8px;
       line-height: var(--lh-heading);
     }
 
@@ -113,10 +113,11 @@
       width: 100%;
     }
 
-    /* === 章节标题 (斜切标签 + 底横线) === */
+    /* === 章节标题 (色块标签 + 底横线) === */
     .section-header {
       display: flex;
       align-items: flex-end;
+      gap: 12px;
       border-bottom: 2px solid var(--color-primary);
       margin-bottom: 3.5mm;
       padding-bottom: 0;
@@ -126,11 +127,10 @@
     .section-title-tag {
       background-color: var(--color-primary);
       color: var(--color-on-primary);
-      padding: 4px 24px 4px 12px;
+      padding: 4px 14px 4px 12px;
       font-weight: 700;
       font-size: var(--fs-section-title);
-      letter-spacing: 1.5px;
-      clip-path: polygon(0 0, 100% 0, calc(100% - 15px) 100%, 0 100%);
+      letter-spacing: 0.5px;
       display: inline-block;
       line-height: 1.2;
       margin: 0;
@@ -140,10 +140,9 @@
       font-size: 11.5px;
       font-weight: 700;
       color: var(--color-primary);
-      margin-left: 12px;
       padding-bottom: 2px;
       text-transform: none;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Fira Sans', "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
     }
 
     /* === 章节排版 === */
@@ -184,10 +183,15 @@
     }
 
     .info-icon {
-      width: 14px;
-      height: 14px;
-      margin-right: 8px;
-      fill: var(--color-primary);
+      width: 11px;
+      height: 11px;
+      margin-right: 10px;
+      fill: none;
+      stroke: var(--color-muted-fg);
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0.75;
       flex-shrink: 0;
     }
 
@@ -223,6 +227,7 @@
       display: flex;
       justify-content: space-between;
       align-items: baseline;
+      gap: 12px;
       font-weight: 700;
       font-size: var(--fs-body);
       color: var(--color-fg);
@@ -261,25 +266,23 @@
     }
 
     ul.item-details li {
-      position: relative;
       padding-left: 14px;
+      text-indent: -11px;
       margin-bottom: 3px;
-      text-align: justify;
+      text-align: left;
       font-size: var(--fs-body);
       color: var(--color-fg);
     }
 
     ul.item-details li::before {
-      content: "•";
-      position: absolute;
-      left: 3px;
-      font-weight: bold;
+      content: "•\00a0\00a0";
+      font-weight: 700;
       color: var(--color-primary);
     }
 
     /* 自我评价段落 */
     .summary-text {
-      text-align: justify;
+      text-align: left;
       font-size: var(--fs-body);
       line-height: var(--lh-body);
       color: var(--color-fg);
@@ -296,11 +299,15 @@
         background-color: white;
         padding: 0;
         width: var(--page-width);
-        height: var(--page-height);
+        min-height: var(--page-height);
       }
       .resume {
         box-shadow: none;
         padding: var(--page-margin);
+      }
+      [data-resume-demo="true"] [role="note"],
+      .no-print {
+        display: none !important;
       }
       * {
         -webkit-print-color-adjust: exact !important;
@@ -332,7 +339,7 @@
   </style>
 </head>
 <body>
-  <div role="note" style="position:fixed;top:8px;right:8px;z-index:9999;padding:4px 8px;background:#7f1d1d;color:#fff;font:600 11px/1.3 sans-serif">DEMO · 虚构示例内容</div>
+  <div role="note" class="no-print" style="position:fixed;top:8px;right:8px;z-index:9999;padding:4px 8px;background:#7f1d1d;color:#fff;font:600 11px/1.3 sans-serif">DEMO · 虚构示例内容</div>
 
   <div class="resume">
     <!-- 顶部 Header -->
@@ -354,32 +361,32 @@
         <div class="info-details-grid">
           <div class="info-detail-item">
             <!-- 姓名图标：人形 -->
-            <svg class="info-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/></svg>
             <span class="info-label" data-resume-editor-id="profile-name-label">姓名：</span><span class="info-value" data-resume-editor-id="profile-name">张小可</span>
           </div>
           <div class="info-detail-item">
             <!-- 籍贯图标：定位/房子 -->
-            <svg class="info-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M6 9.5V20h12V9.5"/></svg>
             <span class="info-label" data-resume-editor-id="profile-location-label">籍贯：</span><span class="info-value" data-resume-editor-id="profile-location">广东省深圳市</span>
           </div>
           <div class="info-detail-item">
             <!-- 出生年月图标：日历 -->
-            <svg class="info-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+            <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
             <span class="info-label" data-resume-editor-id="profile-birth-label">出生年月：</span><span class="info-value" data-resume-editor-id="profile-birth">2002年3月</span>
           </div>
           <div class="info-detail-item">
             <!-- 毕业院校图标：毕业帽 -->
-            <svg class="info-icon" viewBox="0 0 24 24"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+            <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 10l10-5 10 5-10 5-10-5z"/><path d="M6 12.5V17c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/></svg>
             <span class="info-label" data-resume-editor-id="profile-school-label">毕业院校：</span><span class="info-value" data-resume-editor-id="profile-school">可瓦大学</span>
           </div>
           <div class="info-detail-item">
             <!-- 手机号码图标：听筒 -->
-            <svg class="info-icon" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
             <span class="info-label" data-resume-editor-id="profile-phone-label">手机号码：</span><span class="info-value" data-resume-editor-id="profile-phone">13066668888</span>
           </div>
           <div class="info-detail-item">
             <!-- 邮箱图标：信封 -->
-            <svg class="info-icon" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
             <span class="info-label" data-resume-editor-id="profile-email-label">邮箱：</span><span class="info-value" data-resume-editor-id="profile-email">cnsupport@canva.com</span>
           </div>
         </div>

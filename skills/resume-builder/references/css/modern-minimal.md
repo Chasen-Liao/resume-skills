@@ -73,10 +73,10 @@
 
 | 方案 | 标题 | 正文 | Google Fonts Import |
 |------|------|------|---------------------|
-| Minimal Swiss | Plus Jakarta Sans (600-700) | Plus Jakarta Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');` |
-| Geometric Modern | Outfit (500-700) | Work Sans (400) | `@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&display=swap');` |
+| Minimal Swiss | Poppins (500-700) | Fira Sans (300-700) | `@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');` |
+| Clean Corporate | Lato (700) | Lato (300-700) | `@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');` |
 
-中文: `PingFang SC, Microsoft YaHei, Noto Sans SC, sans-serif`
+中文: `"PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif`
 
 ## 组件级 CSS
 
@@ -98,12 +98,13 @@
 }
 
 .header-info h1 {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
   font-size: var(--fs-name);
   font-weight: 700;
   color: var(--color-primary);
   margin: 0 0 2px 0;
   line-height: var(--lh-heading);
-  letter-spacing: -0.5px;
+  letter-spacing: 0.2px;
 }
 
 .header-info .job-title {
@@ -198,24 +199,23 @@ ul.item-details {
 }
 
 ul.item-details li {
-  position: relative;
-  padding-left: 10px;
+  padding-left: 14px;
+  text-indent: -11px;
   margin-bottom: 2px;
-  text-align: justify;
+  text-align: left;
 }
 
 ul.item-details li::before {
-  content: "—";
-  position: absolute;
-  left: 0;
+  content: "•\00a0\00a0";
   color: var(--color-accent);
-  font-weight: bold;
+  font-weight: 700;
 }
 
 /* 教育背景单行 */
 .education-line {
   display: flex;
   justify-content: space-between;
+  gap: 1em;
   font-weight: 700;
   color: var(--color-primary);
 }
@@ -228,13 +228,13 @@ ul.item-details li::before {
 
 /* 技能标签排列 */
 .skill-tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  display: block;
   margin-top: 2px;
 }
 
 .skill-badge {
+  display: inline-block;
+  margin: 0 5px 5px 0;
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
   padding: 2px 7px;
@@ -251,7 +251,14 @@ ul.item-details li::before {
   padding: 6px 10px;
   font-size: var(--fs-body);
   line-height: 1.4;
-  text-align: justify;
+  text-align: left;
+}
+
+@media print {
+  [data-resume-demo="true"] [role="note"],
+  .no-print {
+    display: none !important;
+  }
 }
 
 ```

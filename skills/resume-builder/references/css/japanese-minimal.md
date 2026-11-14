@@ -20,8 +20,8 @@
   --color-fg: #0F172A;
   --color-card: #FFFFFF;
   --color-card-fg: #0F172A;
-  --color-muted: #F6F6F6;
-  --color-muted-fg: #64748B;
+  --color-muted: #F5F4F0;
+  --color-muted-fg: #475569;
   --color-border: #EEEDED;
   --color-destructive: #DC2626;
   --color-on-destructive: #FFFFFF;
@@ -42,7 +42,7 @@
   --color-card: #FFFFFF;
   --color-card-fg: #0F172A;
   --color-muted: #F6F6F7;
-  --color-muted-fg: #64748B;
+  --color-muted-fg: #475569;
   --color-border: #EDEEEF;
   --color-destructive: #DC2626;
   --color-on-destructive: #FFFFFF;
@@ -63,7 +63,7 @@
   --color-card: #FFFFFF;
   --color-card-fg: #1E1B4B;
   --color-muted: #F7F3FD;
-  --color-muted-fg: #64748B;
+  --color-muted-fg: #475569;
   --color-border: #EFE7FC;
   --color-destructive: #DC2626;
   --color-on-destructive: #FFFFFF;
@@ -75,10 +75,10 @@
 
 | 方案 | 标题 | 正文 | Google Fonts Import |
 |------|------|------|---------------------|
-| Japanese Elegant | Noto Serif JP / SC (400-700) | Noto Sans JP / SC (300-400) | `@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');` |
-| Wellness Calm | Lora (400-700) | Raleway (300-400) | `@import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Raleway:wght@300;400;500;600;700&display=swap');` |
+| Japanese Calm | Spectral (500-700) | Fira Sans (300-700) | `@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=Spectral:wght@400;500;600;700&display=swap');` |
+| Editorial Serif | PT Serif (400/700) | Lato (300-700) | `@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=PT+Serif:wght@400;700&display=swap');` |
 
-中文: `Noto Serif SC, Noto Sans SC, PingFang SC, Microsoft YaHei, sans-serif`
+中文: `"PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif`（避免优先回退至 `Noto Serif SC` 导致康熙部首乱码与 Type3 伪空格；不要在 `@media print` 强制覆盖 `font-weight: 400 !important`）
 
 ## 组件级 CSS
 
@@ -100,22 +100,23 @@
 }
 
 .header-info h1 {
-  font-family: 'Noto Serif SC', serif;
+  font-family: 'Spectral', Georgia, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", serif;
   font-size: var(--fs-name);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-primary);
   margin: 0 0 3px 0;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .header-info .job-title {
   font-size: 11px;
   font-weight: 500;
   color: var(--color-accent);
-  letter-spacing: 1.5px;
+  letter-spacing: 0.8px;
 }
 
 .header-contacts {
+  font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
   font-size: var(--fs-meta);
   color: var(--color-muted-fg);
   text-align: left;
@@ -149,12 +150,12 @@
 
 /* === 章节标题 === */
 .section-title {
-  font-family: 'Noto Serif SC', serif;
+  font-family: 'Spectral', Georgia, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", serif;
   font-size: var(--fs-section-title);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-primary);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.03em;
   margin-top: 0;
   margin-bottom: 4mm;
 }
@@ -208,24 +209,23 @@ ul.item-details {
 }
 
 ul.item-details li {
-  position: relative;
-  padding-left: 10px;
+  padding-left: 14px;
+  text-indent: -11px;
   margin-bottom: 2px;
-  text-align: justify;
+  text-align: left;
 }
 
 ul.item-details li::before {
-  content: "▫";
-  position: absolute;
-  left: 0;
+  content: "•\00a0\00a0";
   color: var(--color-accent);
-  font-weight: bold;
+  font-weight: 700;
 }
 
 /* 教育背景单行 */
 .education-line {
   display: flex;
   justify-content: space-between;
+  gap: 1em;
   font-weight: 700;
   color: var(--color-primary);
 }
@@ -238,13 +238,13 @@ ul.item-details li::before {
 
 /* 技能标签（极简灰色轻量标签） */
 .skill-tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  display: block;
   margin-top: 2px;
 }
 
 .skill-badge {
+  display: inline-block;
+  margin: 0 5px 5px 0;
   background-color: var(--color-muted);
   border: 1px solid rgba(87, 83, 78, 0.15);
   padding: 1px 6px;
@@ -260,7 +260,17 @@ ul.item-details li::before {
   padding: 4px 8px;
   font-size: var(--fs-body);
   line-height: 1.4;
-  text-align: justify;
+  text-align: left;
+}
+
+@media print {
+  .profile-photo {
+    filter: none;
+  }
+  [data-resume-demo="true"] [role="note"],
+  .no-print {
+    display: none !important;
+  }
 }
 
 ```
