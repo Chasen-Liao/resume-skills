@@ -46,7 +46,7 @@ npx skills add Chasen-Liao/resume-skills --list
 - GitHub 仓库中的 `SKILL.md`：提供简历采访、JD 定制、ATS 检查和版本管理流程
 - npm 包：提供 `resume-skills` CLI 和本地 Canvas 编辑器
 
-仓库当前版本为 **0.10.2**。此版本在 0.10.1（统一 9mm 总底部边距、短内容自动排版及 HTML/PDF 边距校验）基础上，收敛了四个技能共享的交付门禁（`delivery-gate.md`）、合并设计规范与色板为 `design-system.md`，并抽离浏览器页面加载模块 `lib/resume-page.mjs`；GitHub 推送与 npm 发布独立进行，`@latest` 是否包含这些能力以 npm 实际版本为准。完整 PDF 渲染环境及命令路径见 [运行时初始化说明](skills/resume-builder/references/runtime-setup.md)。
+仓库当前版本为 **0.10.3**。此版本在 0.10.2 基础上，全面修复了 6 套视觉模板导出 PDF 时的 `Type3` 轮廓字体退化（康熙部首乱码、`U+2212` 减号替换、伪空格）、定位/裁剪导致的 PDF 内容流乱序、技能词粘连以及 300 DPI OCR 视觉干扰，完善了 Canvas 打印链路，并在 `validate_resume.py` 与交付门禁中内置了 PDF 字体、文本质量与默认阅读顺序自动校验；GitHub 推送与 npm 发布独立进行，`@latest` 是否包含这些能力以 npm 实际版本为准。完整 PDF 渲染环境及命令路径见 [运行时初始化说明](skills/resume-builder/references/runtime-setup.md)。
 
 Skill 的安装不依赖 npm 包；只有需要手动打开本地 Canvas 时才需要使用 npm CLI：
 

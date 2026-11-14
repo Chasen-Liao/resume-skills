@@ -2,6 +2,22 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.10.3] - 2026-11-14
+
+### Fixed
+
+- **消除 PDF `Type3` 轮廓字体退化、康熙部首乱码与 `U+2212` 减号替换**：
+  - 将 6 套内置视觉模板及 CSS 参考文档中的字体栈统一替换为可稳定嵌入 `Type0` CID 的静态字体，并为所有英文与等宽声明补齐 `"PingFang SC", "Microsoft YaHei", "Hiragino Sans GB"` 中文回退，彻底消除因可变字体、本地 CFF/OTF `Noto Serif SC` 或 `NSimSun` 合成粗体触发的 `Type3` 轮廓字体、63 个常用汉字映射至康熙部首（`U+2F00..U+2FDF`）、手机号连字符变数学减号（`U+2212`）及中文字间伪空格问题。
+- **恢复 PDF 内容流自然阅读顺序与清除伪元素/阴影污染**：
+  - 移除 6 套模板 `ul.item-details li` 的 `position: relative` 与 `li::before` 的绝对定位、以及 `classic-business` `.section-title-tag` 的 `clip-path`，修复列表要点与章节标题被 Chromium 推迟到整份 PDF 流末尾的错序问题；
+  - 移除 `tech-dark` 的 `h1` `text-shadow`（消除双份姓名提取）与 `.section-title::after` 的 `</>` 文本注入；在 `@media print` 中隐藏示例浮标 `DEMO · 虚构示例内容`；
+  - 将 `.skill-tags-container` 改为 `display: block` + `inline-block` 排布以保留复制与提取时的词边界空格；优化 `minimal-blue-business`、`creative-bold`、`modern-minimal`、`japanese-minimal`、`classic-business` 的边框、图标与字重对比度，消除 300 DPI OCR 下的典型字符误识与技能标签漏识。
+- **修复 Canvas 编辑器打印链路与字体等待时序**：
+  - `#resume-editor-chrome` 与 `public/app.css` 新增 `@media print` 隐藏与重置规则；点击 `#print-pdf` 打印前自动同步编辑态、清除选中框、剥离扩展注入节点、带超时等待 `document.fonts.ready` 并执行 `fitResumeInBrowser()` 排版适配。
+- **增强 `validate_resume.py` PDF 质量门禁与交付规范**：
+  - `validate_pdf()` 新增 `PDF fonts`（拦截 `/Subtype /Type3` 字体）、`PDF text quality`（拦截康熙部首、部首补充、`U+FFFD`、PUA、非原文 `U+2212`、`DEMO` 与 `</>` 泄漏）及 `PDF reading order`（HTML 地标与 PDF 文本流顺序对照 + 同栏逆序检测）；
+  - 合并并完善 `delivery-gate.md` 与 `skills/resume-canvas/SKILL.md` 中的 PDF 文字提取、默认阅读顺序与 OCR 重验闭环规范（PR #14）。
+
 ## [0.10.2] - 2026-11-14
 
 ### Changed

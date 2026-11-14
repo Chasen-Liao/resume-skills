@@ -90,8 +90,9 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor "<最终_visual.ht
      ```powershell
      powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<最终_visual.html路径>" -OutputPdf "<交付目录/自定义文件名.pdf>"
      ```
+   - **文字提取与 OCR 验证**：按 [交付门禁与验证契约](../resume-builder/references/delivery-gate.md#pdf-文字提取与-ocr-验证两种模式)检查最终 PDF 的文字完整性与默认阅读顺序；
    - **整页截图视觉复核**：AI 必须打开重新渲染生成的 `*.preview.png`，完整遵循 [交付门禁与验证契约](../resume-builder/references/delivery-gate.md#整页截图视觉复核视觉模式强制执行)。重点检查留白是否均匀、上下是否平衡；明显底部空缺或留白失衡时，即使自动校验通过也不得交付，须在 Canvas 支持的排版项内调整并重新渲染、校验与复核。若需要结构重排，回到 `resume-builder` 或 `jd-tailorer` 处理，不扩展 Canvas 的编辑边界。
-   - 确认 PDF 页数恰好为 1 页，有效利用率 ≥ 98%，manifest 恢复有效状态，且视觉复核通过后，微调闭环才算完成。无法查看截图时必须说明视觉复核未完成。
+   - 确认 PDF 页数恰好为 1 页，有效利用率 ≥ 98%，manifest 恢复有效状态，PDF 文字提取与阅读顺序检查通过且视觉复核通过后，微调闭环才算完成。无法查看截图时必须说明视觉复核未完成。
 
 ---
 
