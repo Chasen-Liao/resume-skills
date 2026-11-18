@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { once } from "node:events";
+import { realpathSync } from "node:fs";
 import { copyFile, mkdtemp, readFile, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -58,8 +59,8 @@ test("real template save invalidates delivery and re-render verifies edited text
     const verified = JSON.parse(await readFile(manifest, "utf8"));
     assert.equal(verified.status, "valid");
     assert.equal(verified.validation.deliverable, true);
-    assert.equal(verified.html.path, html);
-    assert.equal(verified.pdf.path, pdf);
+    assert.equal(realpathSync.native(verified.html.path), realpathSync.native(html));
+    assert.equal(realpathSync.native(verified.pdf.path), realpathSync.native(pdf));
     const extracted = spawnSync("python", ["-X", "utf8", "skills/resume-builder/scripts/validate_resume.py",
       "--pdf", pdf, "--required-text", "DEMO 编辑后姓名"], { encoding: "utf8" });
     assert.equal(extracted.status, 0, extracted.stdout + extracted.stderr);
