@@ -1,4 +1,4 @@
 interface:
   display_name: "Resume Workflow"
-  short_description: "Build and tailor a traceable resume"
-  default_prompt: "Use $resume-workflow to create or update my master resume and tailor it for a job."
+  short_description: "选择母版、岗位评估、定制或微调流程"
+  default_prompt: "使用 $resume-workflow，根据我需要的交付物选择简历工作流程。"

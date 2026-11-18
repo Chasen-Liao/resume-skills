@@ -5,7 +5,10 @@ import { fitResumeLayout } from "../../../lib/resume-layout.mjs";
 import { openResumePage } from "../../../lib/resume-page.mjs";
 
 const { values } = parseArgs({
-  options: { html: { type: "string" } },
+  options: {
+    html: { type: "string" },
+    "min-fill-ratio": { type: "string" },
+  },
 });
 
 if (!values.html) {
@@ -15,10 +18,15 @@ if (!values.html) {
 
 let browser;
 try {
+  const targetFillRatio = values["min-fill-ratio"] === undefined ? undefined : Number(values["min-fill-ratio"]);
+  if (targetFillRatio !== undefined && !(targetFillRatio > 0 && targetFillRatio <= 1)) {
+    console.log(JSON.stringify({ status: "fail", message: "--min-fill-ratio 必须大于 0 且不超过 1。" }));
+    process.exit(1);
+  }
   const { chromium } = await import("playwright");
   browser = await chromium.launch({ headless: true });
   const page = await openResumePage(browser, values.html);
-  const layout = await fitResumeLayout(page);
+  const layout = await fitResumeLayout(page, targetFillRatio === undefined ? {} : { targetFillRatio });
   if (layout.status === "degraded") {
     console.log(JSON.stringify(layout));
   } else {

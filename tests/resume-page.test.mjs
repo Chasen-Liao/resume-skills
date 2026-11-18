@@ -68,7 +68,7 @@ test("render_resume.mjs and measure_resume_layout.mjs share the page loader with
 });
 
 test("measure_resume_layout CLI produces valid layout JSON and exit code 0 for valid resume", () => {
-  const result = spawnSync(process.execPath, [measureScript, "--html", exampleResume], {
+  const result = spawnSync(process.execPath, [measureScript, "--html", exampleResume, "--min-fill-ratio", "0.9"], {
     encoding: "utf8",
   });
   assert.equal(result.status, 0, result.stderr);
@@ -76,4 +76,5 @@ test("measure_resume_layout CLI produces valid layout JSON and exit code 0 for v
   assert.equal(parsed.status, "pass");
   assert.ok(parsed.layout, "Output must contain layout object");
   assert.equal(parsed.layout.status, "pass");
+  assert.equal(parsed.layout.targetFillRatio, 0.9);
 });

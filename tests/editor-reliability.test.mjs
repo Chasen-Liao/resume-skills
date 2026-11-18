@@ -2,12 +2,30 @@ import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { closeSync, copyFileSync, existsSync, fsyncSync, openSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { once } from "node:events";
+import { request } from "node:http";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import test from "node:test";
 import { atomicSave, startEditor } from "../bin/resume-skills.mjs";
 
 const sourceHtml = '<html data-resume-editor-template="modern-minimal" data-resume-editor-version="1"><head></head><body><div class="resume"><h1 data-resume-editor-id="profile-name">安全内容</h1></div></body></html>';
+
+test("saving a Chinese character split between HTTP chunks preserves the original text", async () => {
+  await withEditor(async (sourcePath, url) => {
+    const { documentId } = await (await fetch(`${url}/api/document`)).json();
+    const body = Buffer.from(JSON.stringify({ documentId, html: sourceHtml.replace("安全内容", "新名字") }));
+    const split = body.indexOf(Buffer.from("新名字")) + 1;
+    const reply = await new Promise((resolve, reject) => {
+      const req = request(`${url}/api/save`, { method: "POST" }, resolve);
+      req.on("error", reject);
+      req.write(body.subarray(0, split));
+      req.end(body.subarray(split));
+    });
+    reply.resume();
+    assert.equal(reply.statusCode, 200);
+    assert.match(await readFile(sourcePath, "utf8"), /新名字/);
+  });
+});
 
 test("save rejects an expired document version without changing the resume", async () => {
   await withEditor(async (sourcePath, url) => {
@@ -272,11 +290,13 @@ test("save preserves the HTML when its associated manifest cannot be invalidated
   }
 });
 
-test("save auto-invalidates a same-prefix manifest without an explicit --manifest flag", async () => {
+test("save discovers a same-prefix manifest even when rendered after the editor started", async () => {
   const directory = await mkdtemp(join(tmpdir(), "resume-skills-manifest-auto-"));
   const sourcePath = join(directory, "resume.html");
   const manifestPath = join(directory, "resume.resume-manifest.json");
   await writeFile(sourcePath, sourceHtml);
+  const server = startEditor(sourcePath, { open: false, log: false });
+  await once(server, "listening");
   await writeFile(manifestPath, JSON.stringify({
     schemaVersion: 1,
     status: "valid",
@@ -285,8 +305,6 @@ test("save auto-invalidates a same-prefix manifest without an explicit --manifes
     renderer: { name: "playwright", version: "1.62.1" },
     validation: { ok: true, deliverable: true, checks: [], summary: { pass: 1, warn: 0, fail: 0, degraded: 0 } },
   }));
-  const server = startEditor(sourcePath, { open: false, log: false });
-  await once(server, "listening");
   const { port } = server.address();
 
   try {
@@ -322,6 +340,20 @@ test("save succeeds when no manifest is present anywhere", async () => {
     assert.equal(response.status, 200);
     assert.match(await readFile(sourcePath, "utf8"), /font-size: 12px !important/);
   });
+});
+
+test("save stops if an automatically discovered manifest cannot be updated", async () => {
+  await withEditor(async (sourcePath, url) => {
+    const manifestPath = join(dirname(sourcePath), "resume.resume-manifest.json");
+    await writeFile(manifestPath, JSON.stringify({ status: "valid", html: { path: sourcePath } }));
+    const { documentId } = await (await fetch(`${url}/api/document`)).json();
+    const response = await fetch(`${url}/api/save`, {
+      method: "POST",
+      body: JSON.stringify({ documentId, html: withFontSize(sourceHtml, "12") }),
+    });
+    assert.equal(response.status, 500);
+    assert.equal(await readFile(sourcePath, "utf8"), sourceHtml);
+  }, { invalidateManifest() { throw new Error("manifest write failed"); } });
 });
 
 test("directory watch keeps sending reloads after the resume is replaced by rename", async () => {

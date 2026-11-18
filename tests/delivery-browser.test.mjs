@@ -13,12 +13,12 @@ test("real template save invalidates delivery and re-render verifies edited text
 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), "resume-delivery-"));
   const html = join(directory, "resume.html");
-  const pdf = join(directory, "resume.pdf");
-  const manifest = join(directory, "resume.resume-manifest.json");
+  const pdf = join(directory, "姓名-测试公司-岗位 2027.pdf");
+  const manifest = join(directory, "姓名-测试公司-岗位 2027.resume-manifest.json");
   const render = () => {
     const result = spawnSync("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
       resolve("skills/resume-builder/scripts/render_resume.ps1"), "-HTML", html, "-OutputPdf", pdf], {
-      encoding: "utf8", timeout: 60000, env: { ...process.env, PYTHONIOENCODING: "utf-8" }, windowsHide: true,
+      cwd: directory, encoding: "utf8", timeout: 60000, env: { ...process.env, PYTHONIOENCODING: "utf-8" }, windowsHide: true,
     });
     assert.equal(result.status, 0, result.stdout + result.stderr);
   };
@@ -58,6 +58,8 @@ test("real template save invalidates delivery and re-render verifies edited text
     const verified = JSON.parse(await readFile(manifest, "utf8"));
     assert.equal(verified.status, "valid");
     assert.equal(verified.validation.deliverable, true);
+    assert.equal(verified.html.path, html);
+    assert.equal(verified.pdf.path, pdf);
     const extracted = spawnSync("python", ["-X", "utf8", "skills/resume-builder/scripts/validate_resume.py",
       "--pdf", pdf, "--required-text", "DEMO 编辑后姓名"], { encoding: "utf8" });
     assert.equal(extracted.status, 0, extracted.stdout + extracted.stderr);

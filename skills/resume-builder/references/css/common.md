@@ -165,16 +165,9 @@ p, li {
 
 ## 页面密度验证
 
-生成后必须对实际导出的 PDF 运行：
+内置 full-page 视觉模板的 PDF 验收与版面调整顺序见[交付契约](../delivery-gate.md#渲染与布局验证视觉模式)。内置渲染脚本会执行布局校验。
 
-```bash
-python skills/resume-builder/scripts/validate_resume.py --html <resume.html> --pdf <resume.pdf> --check-layout --min-fill-ratio 0.98 --json
-```
-
-- 目标是 1 页、有效区域页面占用率至少 98%；默认总底部边距为 **9mm**，上/左右边距仍由 `--page-margin` 控制，不额外叠加安全区。
 - 短内容先自动增大 `--resume-density`（最多 `--resume-density-max: 1.2`），同步放大变量控制的字号、行距和条目/板块间距，直到自然内容高度达到有效高度的约 90% 或触达上限；剩余空间再由 `space-between` 均匀分配。不可仅将孤立文字推到底部伪造饱满度。
 - 长内容在 `--resume-density-min` 之上自动压缩；扩张导致溢出时回退到上一个安全值。内容太少、单栏偏空或内部空隙过大时仍须明确失败，不通过超大字号或虚构内容填白。
 - HTML 的实际 computed padding 是布局政策来源；同时传入 `--html --pdf --check-layout` 时，PDF 校验读取同一配置，并在 manifest 中记录有效边距、实际底部距离和密度。Canvas 调整 `--page-margin` 只影响上/左右边距，总底部边距独立保持 9mm。
 - 自定义底部边距修改 `--resume-bottom-margin` 后重新渲染；仅校验 PDF 时可显式传 `--bottom-margin-mm 9` / `--page-margin-mm 10`（8–20mm）。同时提供 HTML 时，CLI 参数必须与实测 padding 一致，不允许改校验参数掩盖实际布局。PDF 文本边界估算允许 0.25mm 舍入容差，校验同时报告实际物理底部距离；100% 不等于没有物理边距。
-- 页面溢出时，先缩小页边距（不低于 8mm），再压缩间距和行高（不低于 1.25），最后才考虑正文缩小（不低于 9.5px）或精简低相关内容。每次调整后重新导出和验证。
-- `bottom safety` 失败或 PDF 页数大于 1 时，输出不可交付；必须修复后再进入 Canvas 预览或交付。

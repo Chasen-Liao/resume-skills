@@ -73,11 +73,9 @@ resume-skills editor "<resume_visual.html路径>"
 ## Agent 的正确交付流程
 
 1. 先完成事实确认、HTML 生成和 PDF 验证。
-2. 对视觉版询问用户是否需要打开 Canvas：
-   - 用户选择“不需要”：交付 HTML/PDF，并说明之后可按需启用 Canvas。
-   - 用户选择“需要”：再检查 Node/npm/npx，并执行路径 B；用户明确要求长期安装时才建议路径 C。
-3. 用户未选择或当前环境不支持时，不自动反复安装、不声称已启动；报告实际状态并给出完整手动命令。
-4. Canvas 保存文字或排版后，必须重新确认文字事实并重新渲染、验证 PDF；旧 manifest 失效后不能直接交付。
+2. 视觉版完成验证即可交付。用户要求微调时，检查 Node/npm/npx 并执行路径 B；长期安装可选路径 C。
+3. 若当前环境无法启动，报告实际状态并给出完整手动命令。
+4. 保存后检查文字事实变动，重新导出 PDF 并更新验证清单。
 5. ATS-safe HTML 不使用 Canvas，直接按 ATS 流程检查和打印/渲染 PDF。
 
 ## 安装失败的处理顺序
@@ -100,7 +98,7 @@ resume-skills editor "<resume_visual.html路径>"
 
 1. `README.md`
    - 保留“安装 Skills”和“npm Canvas CLI”两个独立小节。
-   - 把视觉版交付中的“必须启动 Canvas”改成“询问用户是否需要；选择需要时再启动”。
+   - 把视觉版交付中的“必须启动 Canvas”改成“用户提出微调时启动”。
    - 明确列出路径 A、B、C，以及 Node.js `>=20` 前置条件。
 2. `skills/resume-builder/SKILL.md`
    - 视觉版生成和 PDF 验证不依赖 Canvas。
@@ -124,5 +122,5 @@ resume-skills editor "<resume_visual.html路径>"
 - 新用户只执行 `npx skills add ...` 时，可以正常使用 Skills，不会被 Canvas 阻塞。
 - 需要 Canvas 的用户能看到按需运行和全局安装两种清晰方案。
 - Node/npm/npx 缺失、版本过低、权限、网络和证书错误都有具体的手动处理建议。
-- Agent 不会在未询问用户时自动启动 Canvas，也不会声称未成功的安装已经完成。
+- Agent 不会在用户未要求时自动启动 Canvas，也不会声称未成功的安装已经完成。
 - Canvas 保存后的事实复核、PDF 重渲染、manifest 失效和重新验证规则保持不变。

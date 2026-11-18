@@ -16,7 +16,7 @@ $env:npm_config_loglevel = 'error'
 
 try {
     $htmlPath = (Resolve-Path -LiteralPath $HTML -ErrorAction Stop).Path
-    $outputPath = [System.IO.Path]::GetFullPath($OutputPdf)
+    $outputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPdf)
     $outputDirectory = Split-Path -Parent $outputPath
     if (-not (Test-Path -LiteralPath $outputDirectory -PathType Container)) {
         New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
@@ -27,10 +27,10 @@ try {
     $renderOutput = (& node $rendererScript --html $htmlPath --pdf $outputPath --preview $previewPath --json | Out-String).Trim()
     $renderExitCode = $LASTEXITCODE
     Write-Output $renderOutput
+    $renderReport = $renderOutput | ConvertFrom-Json
     if ($renderExitCode -ne 0) {
         # A measured layout failure still produced diagnostic artifacts. Run
         # validation below to write an invalid manifest for those artifacts.
-        $renderReport = $renderOutput | ConvertFrom-Json
         if ($renderReport.status -ne 'fail') {
             exit $renderExitCode
         }
@@ -39,11 +39,10 @@ try {
         throw "Playwright completed without creating '$outputPath'."
     }
 
-    $versionOutput = (& node -e "console.log(require('playwright/package.json').version)" 2>&1 | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0 -or $versionOutput -notmatch '^(\d+\.\d+\.\d+)$') {
-        throw "Unable to determine the installed Playwright version."
+    $renderer = $renderReport.renderer
+    if (-not $renderer) {
+        throw "The PDF renderer did not report its identity."
     }
-    $renderer = "playwright@$versionOutput"
     $manifestPath = Join-Path $outputDirectory "$([System.IO.Path]::GetFileNameWithoutExtension($outputPath)).resume-manifest.json"
     $validator = Join-Path $PSScriptRoot 'validate_resume.py'
     & python $validator --html $htmlPath --pdf $outputPath --mode visual --check-overflow --check-layout --min-fill-ratio 0.98 --preview $previewPath --manifest $manifestPath --renderer $renderer --json

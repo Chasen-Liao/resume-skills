@@ -11,13 +11,14 @@
 - `resume-builder` 负责母版经历采访、事实确权、就地 STAR/量化打磨与 6 套视觉模板渲染。
 - `jd-tailorer` 负责 JD 结构化解构、匹配度诊断、定向定制、ATS 门禁与版本归档。
 - `resume-skills editor <resume.html>`（由 `resume-canvas` 驱动）负责已生成简历的文字与排版微调，不生成新经历；保存文字修改后必须重新确认事实并验证 PDF。
-- 简历以独立 HTML 为主输出，浏览器打印为 PDF；为确保工作流中具有单一的事实来源 (Source of Truth)，Canvas 编辑器保存时将直接覆盖并固化原始 HTML 文件。
+- 简历以独立 HTML 为主输出，浏览器打印为 PDF；Canvas 保存会原子更新当前 HTML 并使关联清单失效。候选人事实由私有 `resume-facts.yaml` 管理，有事实变更时需核实并同步事实库。
 
 ## 关键边界
 
 - 不编造候选人的经历、指标、技能、证书或 JD 匹配结果。
 - `resume-builder` 必须先完成信息采访，再让用户选择视觉风格，最后生成简历。
-- `jd-tailorer` 仅在已有简历事实和 JD 的基础上定制；JD 关键词不是候选人事实。
+- `jd-tailorer` 仅在已有简历事实和 JD 的基础上定制；JD 关键词不是候选人事实。仅做匹配时在对话中返回诊断；定制时遵守展示限制，继承母版样式，确认变更后独立归档。
+- 交付规则见 `skills/resume-builder/references/delivery-gate.md`。HTML 草稿检查通过仅代表已运行的静态检查通过；PDF 成品验证传入实际交付的 HTML 和 PDF。
 - Canvas 支持编辑已有字段的纯文本，以及字号、字重、颜色、对齐、行高、段后距、页边距、主题色等排版项；不支持插入 HTML、AI 改写、JD 匹配、结构重排、自由拖拽或图片编辑。
 - Canvas 保存时以源文件为白名单自动过滤日常浏览器插件（如翻译、深色模式等）向 `<head>` 和 `<body>` 注入的外部样式、脚本及挂件，确保写回 HTML 纯净无污染。
 - 内置模板必须带 `data-resume-editor-template`、`data-resume-editor-version="1"` 和唯一稳定的 `data-resume-editor-id`；不再依赖运行时 fallback ID。

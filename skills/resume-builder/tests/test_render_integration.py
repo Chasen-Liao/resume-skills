@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -58,6 +59,7 @@ class RenderIntegrationTests(unittest.TestCase):
             source = (EXAMPLES / "classic-business.html").read_text(encoding="utf-8")
             html = output_dir / "custom-margin.html"
             html.write_text(source.replace("--resume-bottom-margin: 9mm;", "--resume-bottom-margin: 11mm;"), encoding="utf-8")
+            shutil.copyfile(EXAMPLES / "avatar.png", output_dir / "avatar.png")
             result = render(html, output_dir / "custom.pdf")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             record = json.loads((output_dir / "custom.resume-manifest.json").read_text(encoding="utf-8"))
@@ -74,6 +76,19 @@ class RenderIntegrationTests(unittest.TestCase):
             self.assertNotEqual(mismatch.returncode, 0)
             checks = json.loads(mismatch.stdout)["checks"]
             self.assertTrue(any(check["name"] == "layout configuration" and check["status"] == "fail" for check in checks))
+
+    def test_missing_portrait_fails_visual_delivery(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output_dir = Path(directory)
+            html = output_dir / "resume.html"
+            shutil.copyfile(EXAMPLES / "classic-business.html", html)
+            pdf = output_dir / "delivery.pdf"
+            result = render(html, pdf)
+            record = json.loads((output_dir / "delivery.resume-manifest.json").read_text(encoding="utf-8"))
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(record["status"], "invalid")
+            self.assertTrue(any(check["status"] == "fail" and "avatar.png" in check["message"]
+                                for check in record["validation"]["checks"]))
 
     def test_sparse_short_fixture_is_rejected_and_balanced_fixtures_pass(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -105,6 +120,7 @@ class RenderIntegrationTests(unittest.TestCase):
             closing = source.rfind("</div>")
             html = output_dir / "overflow.html"
             html.write_text(source[:closing] + overflow_rows + source[closing:], encoding="utf-8")
+            shutil.copyfile(EXAMPLES / "avatar.png", output_dir / "avatar.png")
             pdf = output_dir / "overflow.pdf"
 
             result = render(html, pdf)

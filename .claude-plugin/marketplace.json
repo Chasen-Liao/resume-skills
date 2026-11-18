@@ -11,7 +11,7 @@
     {
       "name": "resume-skills",
       "source": "./",
-      "description": "简历生成与JD匹配工具集：resume-builder 和 jd-tailorer 两个技能，支持精美的 A4 HTML 简历制作、PDF 导出，以及根据职位描述定制简历",
+      "description": "四个简历技能支持母版构建、JD 匹配与定制、HTML/PDF 验收和 Canvas 本地微调，可按本次任务直接进入对应流程",
       "category": "productivity"
     }
   ]

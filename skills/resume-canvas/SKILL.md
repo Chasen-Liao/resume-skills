@@ -1,105 +1,32 @@
 ---
 name: resume-canvas
-description: 指导与驱动 resume-canvas (本地 HTML 简历可视化微调编辑器) 的运行、编辑协议验证、文本与排版微调以及保存后的事实重验闭环。当用户需要预览视觉简历、进行文字小修小补、排版微调（字号/间距/颜色/页边距）、启动本地编辑器或排查编辑协议时使用。
+description: 打开已有视觉 HTML 简历的本地 Canvas 编辑器，调整已有文字、字号、间距和页边距，或排查编辑字段协议。保存后核对修改并重新验证实际交付 PDF。
 ---
 
-# 简历 Canvas 微调器 (resume-canvas)
+# Canvas 本地微调
 
-专职负责已生成的独立视觉 HTML 简历的本地可视化微调、编辑协议检验与保存重验闭环。
+用户明确要编辑或预览已有视觉 HTML 时进入。Canvas 编辑已有文本和排版，结构重排交给母版或定制技能。ATS-safe 模式不使用 Canvas。
 
-## 定位与协作入口
+## 打开指定文件
 
-- **角色定位**：AI 生成视觉简历后的“最后小修小补”工具。提供所见即所得的本地 Web 界面，供用户快速修正错别字、微调字号、字重、颜色、对齐、行高、段后距与页边距。
-- **职责边界**：
-  - **允许**：编辑已有字段的纯文本，调整受限排版样式。
-  - **禁止**：不用于经历采访与生成、无中生有编造事实、JD 匹配分析、结构重排、插入任意 HTML 或图片编辑。
-  - **模式限制**：仅适用于 6 套内置视觉模板（`modern-minimal`、`classic-business`、`creative-bold`、`japanese-minimal`、`minimal-blue-business`、`tech-dark`）。**ATS-safe 模式不使用 Canvas**（单栏纯文本结构无需也未接入编辑协议）。
-- **上游来源**：
-  - `resume-builder`：生成母版视觉 HTML 且完成初始 PDF 渲染验证后，若用户需要微调排版或文字，路由至本技能。
-  - `jd-tailorer`：生成岗位定制版视觉 HTML 且完成初始 PDF 渲染验证后，若用户需要微调，路由至本技能。
-  - `resume-workflow`：完整编排工作流在交付阶段按需调用本技能。
+1. 视觉简历需符合[编辑字段协议](../resume-builder/references/delivery-gate.md#协议校验编辑字段契约)。内置模板包含 `data-resume-editor-template`、`data-resume-editor-version="1"` 和可独立编辑的叶子字段 `data-resume-editor-id`。禁止把字段 ID 放在容器上。对实际文件执行：
 
----
+   ```bash
+   npx -p @chasen-liao/resume-skills@latest resume-skills validate "<最终_visual.html路径>"
+   ```
 
-## 核心工作流
+2. 校验通过后启动。已交付文件使用实际关联的 manifest，尤其是 PDF 与 HTML 使用不同文件名前缀时；没有交付记录的 HTML 草稿省略该参数。
 
-首次执行校验或保存后重验前，读取 [渲染环境与命令路径](../resume-builder/references/runtime-setup.md)。Canvas CLI 可独立启动，保存后的 PDF/截图重验则需要完整运行时；使用实际脚本和私有产物的绝对路径。
+   ```bash
+   npx -p @chasen-liao/resume-skills@latest resume-skills editor "<最终_visual.html路径>" --manifest "<实际交付记录路径>"
+   ```
 
-### 第一步：验收编辑协议契约
+   `--json` 输出 NDJSON 事件，`server_started` 提供实际地址。`--no-open` 仅启动服务；`--port` 指定端口时占用即报错。环境缺少 Node.js ≥20 或无法执行 CLI 时，明确报告未启动，并给出替换为本地绝对路径和实际 manifest 的命令。
 
-在启动 Canvas 或交付视觉 HTML 之前，必须确保目标 HTML 符合编辑字段协议并执行静态校验（门禁命令）：
+## 编辑与保存
 
-```bash
-npx -p @chasen-liao/resume-skills@latest resume-skills validate "<最终_visual.html路径>"
-```
+点击或双击已有字段即可编辑纯文本；也可用 Tab 进入画布，方向键选中字段，Enter 进入编辑，Ctrl/Cmd+Enter 完成，Esc 撤销本次文字修改。右侧调整字段样式和页边距。左侧显示排版状态。Live Preview 可响应源文件的外部修改。
 
-- 重复执行直到输出“校验通过”；若出现错误，必须对照报错节点在 HTML 中修复，严禁在校验未通过时启动 Canvas。
-- 完整的编辑协议契约（包含 `data-resume-editor-template`、`data-resume-editor-version="1"`、`data-resume-layout="full-page"`、叶子字段可独立编辑、唯一语义化 `data-resume-editor-id`、禁止把编辑 ID 放在容器上等规则），统一遵循 [交付门禁与验证契约](../resume-builder/references/delivery-gate.md#协议校验编辑字段契约)。校验规则以 `validate` 命令及 lib 实现为准。
+点击“保存修改”会原子写回源 HTML，并使关联 manifest 失效（`status: invalid`，失效原因在 `invalidated` 中）。先将修改与私有事实库对照，新增或变更事实要由用户确认并同步相应记录；仅改样式时直接重验。随后按[Canvas 保存后重验闭环](../resume-builder/references/delivery-gate.md#canvas-保存后重验闭环)重新渲染并验证当前文件。使用原来的交付路径和导出方式；内置视觉导出使用 `render_resume.ps1`。检查实际 PDF 和新的整页预览后再更新该版本记录。
 
----
-
-### 第二步：启动本地编辑器
-
-校验通过后，调用 CLI 启动本地服务：
-
-```bash
-npx -p @chasen-liao/resume-skills@latest resume-skills editor "<最终_visual.html路径>" --manifest "<交付目录/自定义文件名.resume-manifest.json>"
-```
-
-#### CLI 参数与运行模式说明
-
-- `--manifest <path>`：显式关联验证清单文件。当用户在 Canvas 中保存时，该 manifest 会被自动置为失效，保障产物真实性。
-- `--json`：NDJSON 流式输出机器可读事件（`server_started`、`error`、`update_available`、`validation_passed`）。适合 Agent 后台集成或自动化流水线，脚本逐行 `JSON.parse`。
-- `--no-open`：禁止自动拉起系统默认浏览器。适合无 GUI 环境、远程 SSH 容器或开发者自行手动打开网页。
-- `--port <number>`：显式指定服务端口（严格模式，若端口被占用直接报错；未指定时默认从 8848 尝试顺延至 8853，仍被占用则使用随机端口）。
-
-#### 环境降级与异常处理
-
-若当前执行环境缺少 Node.js（`< 20`）或无法执行 `npx` 命令：
-- **必须明确报告未启动**：严禁向用户虚假声称“已在后台打开编辑器”；
-- **提供完整命令**：向用户输出包含其实际 HTML 路径的完整命令，提示用户在其本机终端中手动执行启动：
-  ```bash
-  npx -p @chasen-liao/resume-skills@latest resume-skills editor "<实际生成的_visual.html绝对路径>"
-  ```
-
----
-
-### 第三步：交互协同与 Live Preview
-
-1. **界面交互指引**：
-   - **中间画布**：单选选中字段可直接打字编辑（纯文本），双击同样可编辑；支持 `Tab`/方向键切换字段焦点，`Ctrl/Cmd+Enter` 确认，`Esc` 撤销。
-   - **右侧面板**：选中具体字段后可调整字号、字重、颜色、行高、段后间距；可调整页面边距与全局主题色。
-   - **左侧状态**：实时显示 A4 页面垂直溢出与高度占用指示。
-2. **Live Preview 热重载**：
-   - 编辑器通过 SSE 与本地服务保持长连接；
-   - 当 Agent 在后台根据用户反馈修改并重新保存该 HTML 时，前端画布会自动触发热重载刷新最新内容，用户无需手动刷新页面。
-
----
-
-### 第四步：保存与重验闭环（强制关键防线）
-
-当用户在编辑器中完成修改并点击“**保存修改**”后：
-
-1. **状态变化**：
-   - 编辑器将修改原子写回源 HTML，并自动将关联的 `*.resume-manifest.json` 状态置为失效（`invalidated`）；
-   - 旧的 PDF 不再匹配当前最新的 HTML 内容。
-2. **必须回到 Agent 工作流执行重验闭环**：
-   - **事实核验**：检查 HTML 中的修改内容是否涉及关键经历、时间、职位、数据或技能。若发现未经确认的新事实，必须向用户核实，不可直接交付；
-   - **重新渲染与验证 PDF**：
-     必须重新执行渲染脚本生成有效的新 PDF 与 manifest：
-     ```powershell
-     powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<最终_visual.html路径>" -OutputPdf "<交付目录/自定义文件名.pdf>"
-     ```
-   - **文字提取与 OCR 验证**：按 [交付门禁与验证契约](../resume-builder/references/delivery-gate.md#pdf-文字提取与-ocr-验证两种模式)检查最终 PDF 的文字完整性与默认阅读顺序；
-   - **整页截图视觉复核**：AI 必须打开重新渲染生成的 `*.preview.png`，完整遵循 [交付门禁与验证契约](../resume-builder/references/delivery-gate.md#整页截图视觉复核视觉模式强制执行)。重点检查留白是否均匀、上下是否平衡；明显底部空缺或留白失衡时，即使自动校验通过也不得交付，须在 Canvas 支持的排版项内调整并重新渲染、校验与复核。若需要结构重排，回到 `resume-builder` 或 `jd-tailorer` 处理，不扩展 Canvas 的编辑边界。
-   - 确认 PDF 页数恰好为 1 页，有效利用率 ≥ 98%，manifest 恢复有效状态，PDF 文字提取与阅读顺序检查通过且视觉复核通过后，微调闭环才算完成。无法查看截图时必须说明视觉复核未完成。
-
----
-
-## 协作出口与下游路由
-
-- **微调完成并重新验证后**：交付最终的视觉 HTML、PDF 及 manifest。
-- **区分母版与定制版后续流转**：
-  - **若微调的是母版简历**：微调并重验通过后作为最新母版；后续若需针对新目标岗位投递，以母版事实为基准**路由至 `jd-tailorer`**。
-  - **若微调的是岗位定制版简历**：仅作为当前特定公司/岗位的独立交付物（保存在 `tailored/<公司名>-<岗位>/` 目录下），**严禁将已定制版直接作为新母版去派生其他岗位**；投递其他岗位必须回到唯一母版事实。
-  - **版本归档**：无论母版还是定制版，微调定稿并重验通过后，更新对应版本的 `version-notes.md` 并建议用户在本地私有 Git 仓库完成语义化提交，不自动执行 Git 提交。
+母版继续作为后续岗位版本的来源；岗位定制文件仅对应当前岗位。

@@ -111,9 +111,6 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, por
   }
   if (!existsSync(sourcePath)) throw new Error(`找不到 HTML 文件：${sourcePath}`);
 
-  // 显式 --manifest 保持严格校验；未传时按同前缀发现同目录 manifest（存在且关联当前 HTML 才失效）。
-  const effectiveManifestPath = manifestPath || defaultResumeManifestPath(sourcePath);
-
   let original = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
   let documentId = documentVersion(sourcePath, original);
   let assetReferences = collectLocalImageSources(original);
@@ -224,18 +221,18 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, por
         return rejectOversizedSave();
       }
 
-      let body = "";
+      const chunks = [];
       let bodySize = 0;
       request.on("data", (chunk) => {
         bodySize += chunk.length;
         if (bodySize > maxSaveBodyBytes) return rejectOversizedSave({ destroy: true });
-        body += chunk;
+        chunks.push(chunk);
       });
       request.on("end", () => {
         if (response.writableEnded) return;
         let exportHtml;
         try {
-          const { html, documentId: submittedDocumentId } = JSON.parse(body);
+          const { html, documentId: submittedDocumentId } = JSON.parse(Buffer.concat(chunks).toString("utf8"));
           const diskOriginal = prepareEditorDocument(readFileSync(sourcePath, "utf8"));
           const diskDocumentId = documentVersion(sourcePath, diskOriginal);
           original = diskOriginal;
@@ -249,11 +246,8 @@ export function startEditor(sourcePath, { log = true, open = true, port = 0, por
           return send(response, 400, "application/json; charset=utf-8", JSON.stringify({ error: error.message }));
         }
         try {
-          try {
-          invalidateManifest(sourcePath, effectiveManifestPath);
-        } catch (error) {
-          if (manifestPath) throw error; // 显式 --manifest 严格失败；同前缀自动发现的非关联/损坏 manifest 静默跳过，不阻断保存
-        }
+          const associatedPath = manifestPath || defaultResumeManifestPath(sourcePath);
+          invalidateManifest(sourcePath, associatedPath, undefined, { optional: !manifestPath });
           writeAtomically(sourcePath, exportHtml);
           original = exportHtml;
           documentId = documentVersion(sourcePath, original);

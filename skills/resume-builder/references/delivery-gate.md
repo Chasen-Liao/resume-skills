@@ -37,7 +37,7 @@ npx -p @chasen-liao/resume-skills@latest resume-skills validate "<生成的_visu
 
 ## 渲染与布局验证（视觉模式）
 
-视觉模式生成最终 HTML 且通过协议校验后，运行渲染与校验一体化脚本导出 PDF：
+先按私有工作区的命名约定确定最终 PDF 路径。内置视觉模板通过字段协议校验后，使用以下一体化命令。脚本与输入输出文件均可使用绝对路径。
 
 ```bash
 powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/scripts/render_resume.ps1 -HTML "<生成的_visual.html路径>" -OutputPdf "<生成的_visual.pdf路径>"
@@ -45,16 +45,24 @@ powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/script
 
 > **注意**：`render_resume.ps1` 内部已自动调用 Playwright 渲染、计算 full-page 自动布局（短内容扩张/长内容压缩 `--resume-density`）、生成同名前缀的 `*.preview.png`，并自动调用 `validate_resume.py` 执行溢出与布局检查并生成 `*.resume-manifest.json`。**不要再单独调用 `validate_resume.py`**。
 
+若工作区已指定导出工具，沿用该工具生成最终命名的 PDF，保存同一版本的整页 PNG，并使用实际导出器名称和版本执行以下成品检查。验证和版本记录均指向实际交付路径。对内置 full-page 版式保留布局检查；自定义版式使用已约定的版面要求，记录所用参数和未覆盖项。工作区明确约定占用率时，用 `--min-fill-ratio` 传入该值；内置满页模板默认使用 0.98。
+
+```powershell
+python skills/resume-builder/scripts/validate_resume.py --mode visual --html "<源 HTML>" --pdf "<最终 PDF>" --check-layout --preview "<整页 PNG>" --manifest "<岗位目录/最终名称.resume-manifest.json>" --renderer "<导出器>@<版本>" --json
+```
+
+内置渲染器默认生成 794 × 1123 px 的整页预览。下游可提供更高分辨率的整页 PNG；manifest 记录实际用于复核的文件及哈希。图片尺寸本身无法证明页面完整或文字清晰。
+
 ### 验收规则
 
-排版参数以 `references/css/common.md` 为唯一定义源：
+以下阈值适用于内置 full-page 视觉模板。模板 CSS 参数见 [通用排版](css/common.md)。ATS 单栏只执行本契约中的 ATS 验收。
 
 - **PDF page count**：必须恰好是 `1 page`；超过 1 页直接失败，严禁用 `overflow: hidden` 或裁切伪装成单页。
 - **page fill**：以 PDF 可提取文本纵向范围估算的有效页面占用率，目标至少 `98%`；默认低于 98% 直接失败，严禁为填白编造事实。
 - **vertical balance**：可打印区域上下留白差不得超过 20mm，避免内容挤在顶部或底部。
 - **vertical gaps**：PDF 文本行之间的最大连续空隙不得超过有效高度的 25%，防止底部孤立文字掩盖正文偏空。
 - **bottom safety**：底部安全区检查不得失败；默认总底部边距为 9mm（不再叠加额外安全区），校验使用 HTML 实测边距验证并报告实际底部距离。
-- **manifest 状态**：包含 HTML/PDF/preview SHA-256、renderer 版本、边距与密度；状态为 `fail`、`degraded` 或 hash 不一致均不可交付。
+- **manifest 状态**：包含 HTML/PDF/preview SHA-256、renderer 版本、边距与密度；清单状态须为 `valid`，任一检查失败、降级或哈希不一致均须重新核验。
 
 ---
 
@@ -82,7 +90,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/script
    - 正文字号微调（不小于 9.5px）；
    - 精简低相关度或次要描述；
    - 在适合时切换单栏或双栏布局。
-5. 上下间距尽量相近；严禁新增未确认经历、指标或虚构占位文本，严禁用难以阅读的极小字号硬塞一页。任何一次调整后都必须重新运行 `render_resume.ps1` 全量重验。
+5. 上下间距尽量相近；严禁新增未确认经历、指标或虚构占位文本，严禁用难以阅读的极小字号硬塞一页。调整后使用同一导出路径重新生成并校验实际 PDF。
 
 ---
 
@@ -97,10 +105,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/script
 
 ## 可选 Canvas 预览与路由
 
-视觉模式完成上述 A4 单页验证与视觉复核后，向用户询问是否需要打开本地 Canvas 预览微调。
+视觉模式完成上述检查后即可交付。用户提出本地微调时，再启动 Canvas。
 
 - **可选工具定位**：Canvas 是视觉版的可选微调工具，不是 HTML 或 PDF 交付的前置门槛；用户不需要时直接交付已验证的产物。
-- **技能路由**：用户选择需要 Canvas 或需要深度排版微调时，**路由至 `resume-canvas` 技能**。
+- **技能路由**：用户提出使用 Canvas 或需要在编辑器中微调时，**路由至 `resume-canvas` 技能**。
 - **职责划分**：由 `resume-canvas` 负责启动本地编辑器、CLI 参数说明（`--manifest` / `--json` / `--no-open` / `--port`）以及环境缺少 Node/npx 时的降级说明；其他技能不要自行启动编辑器或贴 editor 命令。
 - **编辑边界**：Canvas 仅支持编辑已有字段纯文本与受限排版项，不支持插入 HTML、无中生有编造经历、JD 匹配或结构重排。
 
@@ -110,10 +118,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/script
 
 当用户在 Canvas 中点击“保存修改”后：
 
-1. **状态变化**：Canvas 会直接覆盖源 HTML，并将关联的 `*.resume-manifest.json` 自动标记为失效（`invalidated`），旧 PDF 不再匹配当前 HTML；
+1. **状态变化**：Canvas 会直接覆盖源 HTML，并将关联的 `*.resume-manifest.json` 自动置为 `status: invalid` 并记录失效原因，旧 PDF 不再匹配当前 HTML；
 2. **重验闭环**：必须回到工作流执行重验：
    - **事实核验**：检查修改内容是否涉及关键经历、时间、职位、数据或技能，未确认的新事实必须向用户核实；
-   - **重新渲染与验证**：重新运行 `render_resume.ps1` 渲染新 PDF 并生成新 manifest；
+   - **重新渲染与验证**：沿用本次导出方式与最终文件名，重新生成 PDF、预览和 manifest；
    - **文字提取与 OCR 验证**：按 [PDF 文字提取与 OCR 验证](#pdf-文字提取与-ocr-验证两种模式)检查最终 PDF；
    - **重新整页截图复核**：AI 必须重新打开新生成的 `*.preview.png`，完整执行 [整页截图视觉复核（视觉模式强制执行）](#整页截图视觉复核视觉模式强制执行)；
    - 只有新 manifest 状态有效、PDF 文字提取与阅读顺序检查通过且视觉复核通过，才可正式交付。
@@ -124,15 +132,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File skills/resume-builder/script
 
 适用模式：ATS-safe HTML/PDF 输出。
 
-1. **静态规则审计**：
+1. **检查 HTML 草稿**。检查标题结构、单栏与正文文本。草稿通过时 `ok` 为真，`deliverable` 为假。
    ```bash
-   python skills/resume-builder/scripts/validate_resume.py --html "<生成的_ats.html路径>" --mode ats
+   python skills/resume-builder/scripts/validate_resume.py --mode ats --html "<源 HTML>" --json
    ```
-2. **验证要点**：
-   - 必须为单栏布局、无复杂分栏 CSS、无图片承载重要文字；
-   - 标题层级规范、时间/组织/职位结构清晰；
-   - 正文文本可完整复制且阅读顺序正确；
-   - 导出 PDF 文本必须可正常提取（可配合 `--pdf` 与 `--required-text` 验证关键事实）。
+2. **验收最终 PDF**。使用下游约定的导出方式或浏览器打印到最终文件名，传入同版 HTML 与实际 PDF。按需追加 `--required-text` 指定必须保留的文字。检查单栏、提取内容与默认阅读顺序。缺文件、缺少提取依赖或检查失败时，报告未通过的项目。
+   ```bash
+   python skills/resume-builder/scripts/validate_resume.py --mode ats --html "<源 HTML>" --pdf "<最终 PDF>" --json
+   ```
 3. **边界约束**：
    - ATS-safe 模式单栏纯文本结构未接入 Canvas 协议，**不启动 Canvas**；
    - 交付文件位置并说明通过浏览器打印导出 PDF；

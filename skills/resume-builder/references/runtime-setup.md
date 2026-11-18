@@ -1,6 +1,6 @@
 # 渲染环境与命令路径
 
-视觉版的 PDF、截图和布局校验依赖完整运行时；只安装技能说明不代表渲染环境已经就绪。第一次渲染前，先定位并检查运行时，后续复用，不要每次重新安装。
+仅做 JD 匹配时直接使用事实与匹配规则。内置视觉渲染和布局校验依赖完整运行时；只安装技能说明不代表渲染环境已经就绪。第一次渲染前，先定位并检查运行时，后续复用，不要每次重新安装。
 
 ## 路径约定
 
@@ -18,7 +18,7 @@ python -m pip install -r requirements-test.txt
 npx playwright install chromium
 ```
 
-然后按实际路径运行：
+工作区已有导出方式时，沿用其最终文件名，并按[交付契约](delivery-gate.md)核验同版 HTML 与 PDF。使用内置导出器时按实际路径运行：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "<运行时根目录>/skills/resume-builder/scripts/render_resume.ps1" -HTML "<私有目录>/resume_visual.html" -OutputPdf "<私有目录>/resume_visual.pdf"

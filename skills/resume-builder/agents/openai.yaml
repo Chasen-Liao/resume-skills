@@ -1,7 +1,7 @@
 interface:
   display_name: "Resume Builder"
-  short_description: "Create a polished, ATS-aware A4 resume"
-  default_prompt: "Use $resume-builder to create a polished one-page HTML resume from my experience."
+  short_description: "从已确认事实创建或更新母版简历"
+  default_prompt: "使用 $resume-builder 从我已有的简历或经历开始，确认事实后制作母版。"
 
 policy:
   allow_implicit_invocation: true

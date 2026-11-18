@@ -56,13 +56,28 @@ class ResumeWorkflowTests(unittest.TestCase):
         self.assertIn("已有母版", readme)
         self.assertIn("输入 JD", readme)
 
-    def test_readme_requires_canvas_preview_for_visual_deliverables(self):
+    def test_readme_explains_optional_canvas_for_visual_deliverables(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         tutorial = (ROOT / "docs" / "tutorial.md").read_text(encoding="utf-8")
 
         self.assertIn("视觉母版或视觉定制版", readme)
+        self.assertIn("用户要求交互微调时再启动 Canvas", readme)
         self.assertIn("npx -p @chasen-liao/resume-skills@latest resume-skills editor", readme)
         self.assertIn("resume-facts.yaml", tutorial)
+
+    def test_generated_ats_delivery_examples_validate_both_artifacts(self):
+        for name in ("resume-builder", "jd-tailorer"):
+            content = (SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
+            commands = [line for line in content.splitlines()
+                        if "validate_resume.py" in line and "--mode ats" in line]
+            self.assertTrue(any("--html " in line and "--pdf " in line for line in commands), name)
+
+    def test_optional_display_limits_are_shared_with_the_example_fact_file(self):
+        references = SKILLS / "resume-builder" / "references"
+        for filename in ("resume-contract.md", "resume-facts.example.yaml"):
+            text = (references / filename).read_text(encoding="utf-8")
+            for field in ("include_in_resume", "allowed_project_ids"):
+                self.assertIn(field, text, filename)
 
     def test_visual_delivery_command_renders_and_writes_a_reproducible_manifest(self):
         skill = (SKILLS / "resume-workflow" / "SKILL.md").read_text(encoding="utf-8")

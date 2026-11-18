@@ -1,5 +1,7 @@
 import json
 import importlib.util
+import struct
+import zlib
 import subprocess
 import sys
 import tempfile
@@ -170,7 +172,64 @@ def write_unicode_pdf(
         writer.write(handle)
 
 
+def write_matching_pdf(pdf, html):
+    lines = VALIDATOR.extract_html_landmarks(html.read_text(encoding="utf-8"))
+    write_unicode_pdf(pdf, [(72, 780 - i * 20, text) for i, (_, text) in enumerate(lines)])
+
+
 class ValidateResumeTests(unittest.TestCase):
+    def test_pdf_diagnostic_and_ats_delivery_have_distinct_scopes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pdf = Path(directory) / "交付 简历.pdf"
+            html = FIXTURES / "good_ats.html"
+            lines = [value for _, value in VALIDATOR.extract_html_landmarks(html.read_text(encoding="utf-8"))]
+            write_unicode_pdf(pdf, [(72, 780 - 20 * i, line) for i, line in enumerate(lines)])
+            for args, scope, deliverable in [
+                (["--html", html], "html", False),
+                (["--pdf", pdf], "pdf", False),
+                (["--html", html, "--pdf", pdf], "html+pdf", True),
+            ]:
+                result = run_validator(*args, "--mode", "ats", "--json")
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                report = json.loads(result.stdout)
+                self.assertTrue(report["ok"])
+                self.assertEqual(report["scope"], scope)
+                self.assertEqual(report["deliverable"], deliverable)
+
+            visual = run_validator("--html", html, "--pdf", pdf, "--mode", "visual", "--json")
+            self.assertEqual(visual.returncode, 0, visual.stdout)
+            self.assertFalse(json.loads(visual.stdout)["deliverable"])
+
+            for wrong_lines in (lines[:-1], [lines[1], lines[0], *lines[2:]]):
+                write_unicode_pdf(pdf, [(72, 780 - 20 * i, line) for i, line in enumerate(wrong_lines)])
+                result = run_validator("--html", html, "--pdf", pdf, "--mode", "ats", "--json")
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertFalse(json.loads(result.stdout)["deliverable"])
+
+    def test_high_resolution_preview_keeps_dimensions_and_rejects_truncation(self):
+        def chunk(kind, payload):
+            return struct.pack(">I", len(payload)) + kind + payload + struct.pack(">I", zlib.crc32(kind + payload))
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "preview.png"
+            width, height = 1654, 2339
+            header = chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0))
+            png = bytes.fromhex("89504e470d0a1a0a") + header
+            path.write_bytes(png + chunk(b"IDAT", zlib.compress(bytes((width + 1) * height))) + chunk(b"IEND", b""))
+            metadata = VALIDATOR.preview_metadata(path)
+            self.assertEqual((metadata["width"], metadata["height"]), (width, height))
+            path.write_bytes(png)
+            self.assertIsNone(VALIDATOR.preview_metadata(path))
+
+    def test_manifest_for_missing_file_reports_structured_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "invalid.json"
+            result = run_validator("--html", FIXTURES / "good_ats.html", "--pdf", manifest.with_suffix(".pdf"),
+                                   "--manifest", manifest, "--renderer", "test@1", "--json")
+            self.assertEqual(result.returncode, 1)
+            self.assertFalse(json.loads(result.stdout)["deliverable"])
+            self.assertEqual(json.loads(manifest.read_text(encoding="utf-8"))["status"], "invalid")
+
     def test_pdf_text_bounds_compose_current_and_text_matrices(self):
         class TransformedPage:
             def extract_text(self, visitor_text):
@@ -237,6 +296,12 @@ class ValidateResumeTests(unittest.TestCase):
         self.assertEqual(report["deliverable"], False)
         self.assertEqual(result.returncode, 2)
 
+    def test_custom_fill_threshold_reaches_browser_layout_check(self):
+        layout = VALIDATOR.check_html_overflow(
+            FIXTURES / "visual-medium.html", SCRIPT.with_name("measure_resume_layout.mjs"), [], 0.9,
+        )
+        self.assertEqual(layout["targetFillRatio"], 0.9)
+
     def test_check_layout_is_undeliverable_without_pypdf(self):
         with tempfile.TemporaryDirectory() as directory:
             pdf = Path(directory) / "resume.pdf"
@@ -262,7 +327,7 @@ class ValidateResumeTests(unittest.TestCase):
             pdf = Path(directory) / "resume.pdf"
             manifest = Path(directory) / "resume.resume-manifest.json"
             html.write_text((FIXTURES / "good_ats.html").read_text(encoding="utf-8"), encoding="utf-8")
-            write_mock_pdf(pdf)
+            write_matching_pdf(pdf, html)
 
             generated = run_validator(
                 "--html", html, "--pdf", pdf, "--mode", "ats",
@@ -275,6 +340,14 @@ class ValidateResumeTests(unittest.TestCase):
             self.assertEqual(len(record["html"]["sha256"]), 64)
             self.assertEqual(len(record["pdf"]["sha256"]), 64)
             self.assertTrue(record["validation"]["ok"])
+
+            verified = run_validator("--html", html, "--pdf", pdf, "--verify-manifest", manifest, "--json")
+            self.assertTrue(json.loads(verified.stdout)["deliverable"], verified.stdout)
+            record["validation"].pop("scope")
+            record["validation"].pop("mode")
+            manifest.write_text(json.dumps(record), encoding="utf-8")
+            legacy = run_validator("--html", html, "--pdf", pdf, "--mode", "ats", "--verify-manifest", manifest, "--json")
+            self.assertTrue(json.loads(legacy.stdout)["deliverable"], legacy.stdout)
 
             html.write_text(html.read_text(encoding="utf-8") + "\n<!-- changed -->", encoding="utf-8")
             verified = run_validator(
@@ -289,7 +362,7 @@ class ValidateResumeTests(unittest.TestCase):
             pdf = Path(directory) / "resume.pdf"
             manifest = Path(directory) / "resume.resume-manifest.json"
             html.write_text((FIXTURES / "good_ats.html").read_text(encoding="utf-8"), encoding="utf-8")
-            write_mock_pdf(pdf)
+            write_matching_pdf(pdf, html)
             generated = run_validator(
                 "--html", html, "--pdf", pdf, "--mode", "ats",
                 "--manifest", manifest, "--renderer", "playwright@1.62.1", "--json",
@@ -314,7 +387,7 @@ class ValidateResumeTests(unittest.TestCase):
             pdf = Path(directory) / "resume.pdf"
             manifest = Path(directory) / "resume.resume-manifest.json"
             html.write_text((FIXTURES / "good_ats.html").read_text(encoding="utf-8"), encoding="utf-8")
-            write_mock_pdf(pdf)
+            write_matching_pdf(pdf, html)
             generated = run_validator(
                 "--html", html, "--pdf", pdf, "--mode", "ats",
                 "--manifest", manifest, "--renderer", "playwright@1.62.1", "--json",
@@ -340,7 +413,7 @@ class ValidateResumeTests(unittest.TestCase):
             pdf = Path(directory) / "resume.pdf"
             manifest = Path(directory) / "resume.resume-manifest.json"
             html.write_text((FIXTURES / "good_ats.html").read_text(encoding="utf-8"), encoding="utf-8")
-            write_mock_pdf(pdf)
+            write_matching_pdf(pdf, html)
             generated = run_validator(
                 "--html", html, "--pdf", pdf, "--mode", "ats",
                 "--manifest", manifest, "--renderer", "playwright@1.62.1", "--json",
@@ -364,7 +437,7 @@ class ValidateResumeTests(unittest.TestCase):
     def test_pdf_requires_extractable_text_and_required_text(self):
         with tempfile.TemporaryDirectory() as directory:
             pdf = Path(directory) / "resume.pdf"
-            write_mock_pdf(pdf)
+            write_unicode_pdf(pdf, [(72, 720, "Chasen Zhang")])
             passed = run_validator("--pdf", pdf, "--required-text", "Chasen Zhang")
             self.assertEqual(passed.returncode, 0, passed.stdout + passed.stderr)
             missing = run_validator("--pdf", pdf, "--required-text", "Missing phrase")

@@ -15,5 +15,9 @@ claims: []
 #   evidence: ["What supports this statement"]
 #   metric_status: "not_applicable"
 #   confirmed_at: "2026-07-16"
+# Optional display restrictions; keep existing workspace conventions:
+#   include_in_resume: false            # Exclude from all resume output, including summaries
+#   allowed_project_ids: ["project-a"]  # When included, use only inside this project's entry
+# An explicit exclusion takes precedence over an allowed project.
 
 pending_claims: []

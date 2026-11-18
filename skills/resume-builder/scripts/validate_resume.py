@@ -13,6 +13,8 @@ import struct
 import subprocess
 import sys
 import unicodedata
+import zlib
+from tempfile import NamedTemporaryFile
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
@@ -114,31 +116,53 @@ def file_hash(path: Path) -> str:
 
 
 def preview_metadata(path: Path) -> dict[str, Any] | None:
-    """Validate a low-resolution PNG preview without requiring Pillow."""
+    """Read PNG dimensions and verify chunk boundaries and CRCs without decoding pixels."""
     try:
         data = path.read_bytes()
     except OSError:
         return None
-    if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n" or data[12:16] != b"IHDR":
+    if data[:8] != bytes.fromhex("89504e470d0a1a0a"):
         return None
-    width, height = struct.unpack(">II", data[16:24])
-    if not width or not height or width > 1600 or height > 1600:
-        return None
-    return {"path": str(path.resolve()), "sha256": file_hash(path), "width": width, "height": height}
+    offset = 8
+    width = height = 0
+    has_pixels = False
+    while offset + 12 <= len(data):
+        size = struct.unpack_from(">I", data, offset)[0]
+        end = offset + 8 + size
+        if end + 4 > len(data):
+            return None
+        kind = data[offset + 4:offset + 8]
+        if zlib.crc32(memoryview(data)[offset + 4:end]) != struct.unpack_from(">I", data, end)[0]:
+            return None
+        if offset == 8:
+            if kind != b"IHDR" or size != 13:
+                return None
+            width, height = struct.unpack_from(">II", data, offset + 8)
+            if not (0 < width < 2**31 and 0 < height < 2**31):
+                return None
+        elif kind == b"IDAT" and size:
+            has_pixels = True
+        elif kind == b"IEND":
+            if not has_pixels or size or end + 4 != len(data):
+                return None
+            return {"path": str(path.resolve()), "sha256": hashlib.sha256(data).hexdigest(),
+                    "width": width, "height": height}
+        offset = end + 4
+    return None
 
 
 def validate_preview(path: Path, checks: list[Check]) -> dict[str, Any] | None:
     metadata = preview_metadata(path)
     if metadata is None:
-        add(checks, "preview", "fail", "低分辨率预览不存在、不是有效 PNG，或尺寸超过 1600px")
+        add(checks, "preview", "fail", "预览不存在或 PNG 文件不完整")
     else:
-        add(checks, "preview", "pass", f"低分辨率预览 {metadata['width']}×{metadata['height']}px")
+        add(checks, "preview", "pass", f"整页预览 {metadata['width']}×{metadata['height']}px")
     return metadata
 
 
 def parse_renderer(value: str) -> dict[str, str]:
     name, separator, version = value.rpartition("@")
-    if not separator or not name or not version:
+    if not separator or not name or not version or "unknown" in (name, version):
         raise ValueError("renderer must use NAME@VERSION, for example playwright@1.62.1")
     return {"name": name, "version": version}
 
@@ -173,12 +197,18 @@ def verify_manifest_record(
     validation_is_deliverable = False
     valid_statuses = {"pass", "warn", "fail", "degraded"}
     checks_are_valid = isinstance(stored_checks, list) and all(
-        isinstance(item, dict) and item.get("status") in valid_statuses for item in stored_checks
+        isinstance(item, dict) and isinstance(item.get("name"), str)
+        and isinstance(item.get("status"), str) and item["status"] in valid_statuses for item in stored_checks
     )
     if not checks_are_valid:
         add(checks, "manifest validation", "fail", "validation.checks must be a list of checks with valid statuses")
     else:
-        expected_deliverable = not any(item["status"] in {"fail", "degraded"} for item in stored_checks)
+        passed = {item.get("name") for item in stored_checks if item["status"] == "pass"}
+        expected_deliverable = (
+            {"UTF-8", "PDF text extraction", "PDF reading order"} <= passed
+            and validation.get("scope", "html+pdf") == "html+pdf"
+            and not any(item["status"] in {"fail", "degraded"} for item in stored_checks)
+        )
         consistent = (
             isinstance(validation.get("ok"), bool)
             and isinstance(validation.get("deliverable"), bool)
@@ -197,7 +227,8 @@ def verify_manifest_record(
     html_record = manifest.get("html") if isinstance(manifest.get("html"), dict) else {}
     html_matches = bool(
         html_path
-        and html_record.get("path")
+        and isinstance(html_record.get("path"), str)
+        and html_path.is_file()
         and Path(html_record["path"]).resolve() == html_path.resolve()
         and html_record.get("sha256") == file_hash(html_path)
     )
@@ -208,7 +239,8 @@ def verify_manifest_record(
     pdf_record = manifest.get("pdf") if isinstance(manifest.get("pdf"), dict) else {}
     pdf_matches = bool(
         pdf_path
-        and pdf_record.get("path")
+        and isinstance(pdf_record.get("path"), str)
+        and pdf_path.is_file()
         and Path(pdf_record["path"]).resolve() == pdf_path.resolve()
         and pdf_record.get("sha256") == file_hash(pdf_path)
     )
@@ -219,12 +251,10 @@ def verify_manifest_record(
     preview_record = manifest.get("preview")
     if preview_record is not None:
         preview_record = preview_record if isinstance(preview_record, dict) else {}
-        preview_path = Path(preview_record.get("path", ""))
-        preview_matches = bool(
-            preview_path.is_file()
-            and preview_record.get("path")
-            and preview_record.get("sha256") == file_hash(preview_path)
-            and preview_metadata(preview_path) is not None
+        stored_path = preview_record.get("path")
+        metadata = preview_metadata(Path(stored_path)) if isinstance(stored_path, str) else None
+        preview_matches = metadata is not None and all(
+            metadata[key] == preview_record.get(key) for key in ("sha256", "width", "height")
         )
         add(
             checks, "manifest preview hash", "pass" if preview_matches else "fail",
@@ -232,10 +262,15 @@ def verify_manifest_record(
         )
 
 
-def check_html_overflow(path: Path, layout_script: Path, checks: list[Check]) -> dict[str, Any] | None:
+def check_html_overflow(
+    path: Path, layout_script: Path, checks: list[Check], min_fill_ratio: float = 0.98,
+) -> dict[str, Any] | None:
+    command = ["node", str(layout_script), "--html", str(path)]
+    if min_fill_ratio != 0.98:
+        command.extend(["--min-fill-ratio", str(min_fill_ratio)])
     try:
         result = subprocess.run(
-            ["node", str(layout_script), "--html", str(path)],
+            command,
             text=True,
             encoding="utf-8",
             errors="replace",
@@ -403,6 +438,7 @@ DEMO_MARKER_RE = re.compile(r"DEMO\s*[·・.]\s*虚构示例内容")
 class HTMLReadingOrderParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
+        self.text_parts: list[str] = []
         self.landmarks: list[dict[str, Any]] = []
         self._open_tags: list[tuple[str, bool]] = []
         self._ignored_depth = 0
@@ -417,7 +453,7 @@ class HTMLReadingOrderParser(HTMLParser):
         attr_map = {name.lower(): (value or "") for name, value in attrs}
         classes = set(attr_map.get("class", "").split())
         ignored_here = (
-            tag in {"script", "style", "template", "svg"}
+            tag in {"head", "script", "style", "template", "svg"}
             or "hidden" in attr_map
             or attr_map.get("aria-hidden", "").lower() == "true"
             or "no-print" in classes
@@ -457,9 +493,10 @@ class HTMLReadingOrderParser(HTMLParser):
                 break
 
     def handle_data(self, data: str) -> None:
-        if self._ignored_depth or not self._landmark_stack:
+        if self._ignored_depth:
             return
-        if data:
+        self.text_parts.append(data)
+        if self._landmark_stack and data:
             self._landmark_stack[-1]["parts"].append(data)
 
 
@@ -642,11 +679,28 @@ def check_pdf_text_quality(text: str, source_html: str | None, checks: list[Chec
         add(checks, "PDF text quality", "pass", "no corrupted glyphs, unauthorized U+2212, or template markers detected")
 
 
-def check_pdf_reading_order(reader: Any, text: str, source_html: str | None, checks: list[Check]) -> None:
+def check_pdf_reading_order(reader: Any, text: str, source_html: str | None, checks: list[Check],
+                            *, ats: bool = False) -> None:
     if not text.strip():
         return
 
-    if source_html is not None:
+    if ats and source_html is not None:
+        parser = HTMLReadingOrderParser()
+        parser.feed(source_html)
+        parser.close()
+        norm_pdf = _normalize_order_key(text)
+        cursor = 0
+        for part in parser.text_parts:
+            key = _normalize_order_key(part)
+            if not key:
+                continue
+            pos = norm_pdf.find(key, cursor)
+            if pos < 0:
+                add(checks, "PDF reading order", "fail",
+                    f"HTML text missing or out of order in extracted PDF: {part.strip()[:60]}")
+                return
+            cursor = pos + len(key)
+    elif source_html is not None:
         norm_pdf = _normalize_order_key(text)
         landmarks = extract_html_landmarks(source_html)
         located: list[tuple[str, str, str, int, int]] = []
@@ -694,7 +748,10 @@ def check_pdf_reading_order(reader: Any, text: str, source_html: str | None, che
                         return
                 anchors.append((x, y, snippet))
 
-    add(checks, "PDF reading order", "pass", "PDF text stream matches expected reading order")
+    if source_html is not None:
+        add(checks, "PDF reading order", "pass", "checked PDF stream order against source HTML")
+    elif reader is not None:
+        add(checks, "PDF stream order", "pass", "checked stream geometry; source HTML was not supplied")
 
 
 CJK_OR_FULLWIDTH_CLASS = (
@@ -739,6 +796,7 @@ def validate_pdf(
     page_margin_pt: float = 10 * 72 / 25.4,
     bottom_margin_pt: float = 9 * 72 / 25.4,
     source_html: str | None = None,
+    ats: bool = False,
 ) -> dict[str, Any] | None:
     try:
         data = path.read_bytes()
@@ -756,12 +814,11 @@ def validate_pdf(
         reader = PdfReader(str(path))
         page_count = len(reader.pages)
         text = "\n".join(page.extract_text() or "" for page in reader.pages)
-    except ImportError as exc:
-        dependency_error = str(exc)
-        page_count = len(re.findall(rb"/Type\s*/Page(?:\s|/|>)", data))
-        text = pdf_literal_text(data)
     except Exception as exc:
+        reader = None
         dependency_error = str(exc)
+        add(checks, "PDF parser", "degraded" if isinstance(exc, ImportError) else "fail",
+            f"pypdf extraction unavailable: {exc}; raw PDF scan is diagnostic only")
         page_count = len(re.findall(rb"/Type\s*/Page(?:\s|/|>)", data))
         text = pdf_literal_text(data)
 
@@ -782,7 +839,8 @@ def validate_pdf(
             add(checks, f"required text: {value}", "fail", "required text is missing from PDF text")
     check_pdf_fonts(reader, data, checks)
     check_pdf_text_quality(text, source_html, checks)
-    check_pdf_reading_order(reader, text, source_html, checks)
+    if reader is not None:
+        check_pdf_reading_order(reader, text, source_html, checks, ats=ats)
 
     if check_layout:
         if reader is None:
@@ -866,7 +924,7 @@ def margin_mm(value: str) -> float:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Validate HTML/PDF resume output")
     parser.add_argument("--html", type=Path)
-    parser.add_argument("--mode", choices=("visual", "ats"), default="visual")
+    parser.add_argument("--mode", choices=("visual", "ats"), help="defaults to the stored manifest mode, otherwise visual")
     parser.add_argument("--pdf", type=Path)
     parser.add_argument("--required-text", nargs="+", default=[], metavar="TEXT")
     parser.add_argument("--json", action="store_true", dest="as_json")
@@ -890,7 +948,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--page-margin-mm", type=margin_mm, help="PDF top margin; otherwise use measured HTML or 10 mm")
     parser.add_argument("--bottom-margin-mm", type=margin_mm, help="total PDF bottom margin; otherwise use measured HTML or 9 mm (no added safety zone)")
-    parser.add_argument("--preview", type=Path, help="low-resolution PNG preview produced alongside the PDF")
+    parser.add_argument("--preview", type=Path, help="full-page PNG preview produced alongside the PDF")
     parser.add_argument("--manifest", type=Path, help="write an HTML/PDF delivery manifest")
     parser.add_argument("--verify-manifest", type=Path, help="verify hashes in an existing delivery manifest")
     parser.add_argument("--renderer", help="renderer identity in NAME@VERSION form")
@@ -903,6 +961,23 @@ def main(argv: list[str] | None = None) -> int:
     html: str | None = None
     html_layout = None
     pdf_layout = None
+    manifest = None
+    if args.verify_manifest:
+        try:
+            manifest = json.loads(args.verify_manifest.read_text(encoding="utf-8"))
+            if not isinstance(manifest, dict):
+                raise ValueError("manifest root must be an object")
+            verify_manifest_record(manifest, args.html, args.pdf, args.renderer, checks)
+        except (OSError, ValueError) as exc:
+            manifest = None
+            add(checks, "manifest", "fail", f"cannot verify manifest: {exc}")
+    stored_validation = manifest.get("validation") if manifest else None
+    stored_mode = stored_validation.get("mode") if isinstance(stored_validation, dict) else None
+    if stored_mode is not None and (stored_mode not in ("ats", "visual") or
+                                    args.mode and stored_mode != args.mode):
+        add(checks, "manifest mode", "fail", "validation mode differs from requested mode or is invalid")
+    # Version 1 records before mode was stored can be rechecked explicitly as ATS.
+    mode = args.mode or (stored_mode if stored_mode in ("visual", "ats") else "visual")
     if not math.isfinite(args.min_fill_ratio) or not 0 < args.min_fill_ratio <= 1:
         add(checks, "layout configuration", "fail", "min-fill-ratio must be finite and in (0, 1]")
     if not args.html and not args.pdf:
@@ -910,9 +985,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.html:
         html = read_html(args.html, checks)
         if html is not None:
-            validate_html(html, args.mode, args.required_text, checks)
+            validate_html(html, mode, args.required_text, checks)
             if args.check_overflow or args.check_layout:
-                html_layout = check_html_overflow(args.html, args.layout_script, checks)
+                html_layout = check_html_overflow(args.html, args.layout_script, checks, args.min_fill_ratio)
     margins = (html_layout or {}).get("measurement", {}).get("marginsMm", {})
     top_margin_mm = margins.get("top", 10)
     bottom_margin_mm = margins.get("bottom", 9)
@@ -934,72 +1009,87 @@ def main(argv: list[str] | None = None) -> int:
             page_margin_pt=top_margin_mm * 72 / 25.4,
             bottom_margin_pt=bottom_margin_mm * 72 / 25.4,
             source_html=html,
+            ats=mode == "ats",
         )
     preview = validate_preview(args.preview, checks) if args.preview else None
 
-    if args.verify_manifest:
-        try:
-            manifest = json.loads(args.verify_manifest.read_text(encoding="utf-8"))
-            if not isinstance(manifest, dict):
-                raise ValueError("manifest root must be an object")
-            verify_manifest_record(manifest, args.html, args.pdf, args.renderer, checks)
-        except (OSError, ValueError, json.JSONDecodeError) as exc:
-            add(checks, "manifest", "fail", f"cannot verify manifest: {exc}")
-
-    has_failures = any(check.status == "fail" for check in checks)
-    degraded = any(check.status == "degraded" for check in checks)
-    deliverable = not has_failures and not degraded
-    ok = deliverable
+    scope = "+".join(name for name in ("html", "pdf") if getattr(args, name)) or "none"
     layout_record = {**(pdf_layout or {}), "marginsMm": margins,
                      "density": (html_layout or {}).get("density")}
-    report = {
-        "ok": ok,
-        "layout": layout_record,
-        "deliverable": deliverable,
-        "checks": [check.as_dict() for check in checks],
-        "summary": {
-            "pass": sum(check.status == "pass" for check in checks),
-            "warn": sum(check.status == "warn" for check in checks),
-            "fail": sum(check.status == "fail" for check in checks),
-            "degraded": sum(check.status == "degraded" for check in checks),
-        },
-    }
     if args.manifest:
-        if not args.html or not args.pdf:
+        if scope != "html+pdf":
             add(checks, "manifest inputs", "fail", "manifest generation requires both --html and --pdf")
-            deliverable = False
-            report["ok"] = False
-            report["deliverable"] = False
         try:
             renderer = parse_renderer(args.renderer or "")
         except ValueError as exc:
             renderer = {"name": "unknown", "version": "unknown"}
             add(checks, "manifest renderer", "degraded", str(exc))
-            deliverable = False
-            report["ok"] = False
-            report["deliverable"] = False
-        report["checks"] = [check.as_dict() for check in checks]
-        report["summary"] = {
-            "pass": sum(check.status == "pass" for check in checks),
-            "warn": sum(check.status == "warn" for check in checks),
-            "fail": sum(check.status == "fail" for check in checks),
-            "degraded": sum(check.status == "degraded" for check in checks),
-        }
+        records = {}
+        for key in ("html", "pdf"):
+            path = getattr(args, key)
+            records[key] = None
+            if path and path.is_file():
+                try:
+                    records[key] = {"path": str(path.resolve()), "sha256": file_hash(path)}
+                except OSError as exc:
+                    add(checks, "manifest inputs", "fail", str(exc))
+
+    layout_verified = pdf_layout is not None and html_layout is not None and preview is not None
+    if isinstance(stored_validation, dict) and not args.manifest:
+        stored_checks = stored_validation.get("checks")
+        if isinstance(stored_checks, list):
+            passed = {item["name"] for item in stored_checks if isinstance(item, dict)
+                      and isinstance(item.get("name"), str) and item.get("status") == "pass"}
+            layout_verified |= bool(manifest.get("preview")) and {
+                "overflow measurement", "page fill", "preview"
+            } <= passed
+    delivery_checks_complete = scope == "html+pdf" and (mode == "ats" or layout_verified)
+    if args.manifest and scope == "html+pdf" and mode == "visual" and not layout_verified:
+        add(checks, "manifest layout", "fail", "visual delivery requires measured layout and a full-page preview")
+
+    def build_report():
+        counts = {status: sum(c.status == status for c in checks)
+                  for status in ("pass", "warn", "fail", "degraded")}
+        ok = not (counts["fail"] or counts["degraded"])
+        return {"scope": scope, "mode": mode, "ok": ok, "deliverable": ok and delivery_checks_complete,
+                "layout": layout_record, "checks": [c.as_dict() for c in checks], "summary": counts}
+
+    report = build_report()
+    if args.manifest:
         record = {
             "schemaVersion": 1,
-            "status": "valid" if deliverable else "invalid",
-            "html": {"path": str(args.html.resolve()), "sha256": file_hash(args.html)} if args.html else None,
-            "pdf": {"path": str(args.pdf.resolve()), "sha256": file_hash(args.pdf)} if args.pdf else None,
+            "status": "valid" if report["deliverable"] else "invalid",
+            **records,
             "preview": preview,
             "renderer": renderer,
             "layout": layout_record,
             "validation": report,
         }
-        args.manifest.parent.mkdir(parents=True, exist_ok=True)
-        args.manifest.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        temp_path = None
+        try:
+            if any(path and path.resolve() == args.manifest.resolve()
+                   for path in (args.html, args.pdf, args.preview, args.verify_manifest)):
+                raise ValueError("manifest output must differ from input files")
+            args.manifest.parent.mkdir(parents=True, exist_ok=True)
+            with NamedTemporaryFile("w", encoding="utf-8", dir=args.manifest.parent, delete=False) as handle:
+                temp_path = Path(handle.name)
+                json.dump(record, handle, ensure_ascii=False, indent=2)
+                handle.write("\n")
+            temp_path.replace(args.manifest)
+        except (OSError, ValueError) as exc:
+            add(checks, "manifest output", "fail", str(exc))
+            report = build_report()
+        finally:
+            if temp_path is not None:
+                temp_path.unlink(missing_ok=True)
     if args.as_json:
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
+        scope_labels = {"html": "HTML only; PDF not checked", "pdf": "PDF only; source HTML not checked",
+                        "html+pdf": "HTML and PDF", "none": "no input"}
+        print(f"[SCOPE] {scope_labels[scope]}")
+        if scope == "html+pdf" and mode == "visual" and not layout_verified:
+            print("[SCOPE] visual delivery layout or full-page preview not verified")
         for check in checks:
             print(f"[{check.status.upper()}] {check.name}: {check.message}")
     if any(check.status == "fail" for check in checks):

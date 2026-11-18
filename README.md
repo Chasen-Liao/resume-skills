@@ -46,7 +46,9 @@ npx skills add Chasen-Liao/resume-skills --list
 - GitHub 仓库中的 `SKILL.md`：提供简历采访、JD 定制、ATS 检查和版本管理流程
 - npm 包：提供 `resume-skills` CLI 和本地 Canvas 编辑器
 
-仓库当前版本为 **0.10.3**。此版本在 0.10.2 基础上，全面修复了 6 套视觉模板导出 PDF 时的 `Type3` 轮廓字体退化（康熙部首乱码、`U+2212` 减号替换、伪空格）、定位/裁剪导致的 PDF 内容流乱序、技能词粘连以及 300 DPI OCR 视觉干扰，完善了 Canvas 打印链路，并在 `validate_resume.py` 与交付门禁中内置了 PDF 字体、文本质量与默认阅读顺序自动校验；GitHub 推送与 npm 发布独立进行，`@latest` 是否包含这些能力以 npm 实际版本为准。完整 PDF 渲染环境及命令路径见 [运行时初始化说明](skills/resume-builder/references/runtime-setup.md)。
+仓库当前版本为 **0.11.0**。本版精简了已有母版的 JD 定制流程，并区分 HTML 草稿检查与最终 PDF 验收。使用校验器的调用方应读取 `scope` 和 `deliverable` 判断成品状态。[完整变更](CHANGELOG.md)
+
+完整 PDF 渲染环境及命令路径见 [运行时初始化说明](skills/resume-builder/references/runtime-setup.md)。
 
 Skill 的安装不依赖 npm 包；只有需要手动打开本地 Canvas 时才需要使用 npm CLI：
 
@@ -71,7 +73,7 @@ resume-skills editor resume_visual.html
 
 #### 空的简历工作区：先建立母版
 
-没有 `resume-facts.yaml` 和母版时，调用 `resume-workflow`。可以导入已有简历或采访真实经历，确认事实后生成母版：
+没有 `resume-facts.yaml` 和母版时，调用 `resume-workflow`；精简安装可直接调用 `resume-builder`。可以导入已有简历或采访真实经历，确认事实后生成母版：
 
 ```text
 使用 `resume-workflow` 帮我创建或更新简历。我想申请前端开发实习，请先确认事实，不要编造任何经历或数据。
@@ -87,50 +89,31 @@ resume-skills editor resume_visual.html
 请用我的简历母版分析这份 JD，先告诉我匹配点和真实缺口，再生成定制版。不要把 JD 要求当成我的经历。
 ```
 
-`jd-tailorer` 会输出岗位定制版和匹配分析，不会覆盖你的母版。
+只问“我适合这个岗位吗”时，`jd-tailorer` 在对话中返回要求、证据与缺口。需要投递文件时，先确认一次改法，再从母版派生到独立岗位目录。默认沿用母版样式及私有工作区的文件命名。
 
 ## 你可以使用的 4 个核心 Skills
 
 | Skill | 什么时候用 | 主要输入 | 主要输出 |
 |---|---|---|---|
-| `resume-workflow` | 希望由 Agent 串联完整流程，不想自己挑选单个 skill | 已有简历或真实经历；可附 JD | 完整端到端生命周期编排（母版制作 + 针对 JD 定制） |
+| `resume-workflow` | 希望由 Agent 串联完整流程，不想自己挑选单个 skill | 已有简历或真实经历；可附 JD | 按任务进入母版制作、岗位分析、定制或微调 |
 | `resume-builder` | 创建或更新简历母版、就地打磨经历 | 已有简历或真实个人信息、经历、项目、技能 | 经确认的母版事实库、视觉版或 ATS-safe 版 HTML/PDF |
-| `jd-tailorer` | 针对具体岗位 JD 进行结构化解构、匹配评估与定向定制 | 目标 JD 文本/链接 + 简历母版/事实库 | 变更预览确认后的定制 HTML/PDF、匹配分析报告与版本归档 |
+| `jd-tailorer` | 针对具体岗位 JD 进行结构化解构、匹配评估与定向定制 | 目标 JD 文本/链接 + 简历母版/事实库 | 对话匹配结论，或确认变更后的定制 HTML/PDF 与岗位记录 |
 | `resume-canvas` | 视觉版生成并验证后，进行本地可视化微调与重验闭环 | 已验证的视觉 HTML；可附带 manifest | 本地微调后 HTML、重新验证的 PDF 与更新的 manifest |
 
 ### 推荐工作流
 
 ```text
-空的简历工作区 → resume-workflow（端到端总编排）
-    ↓
-【阶段一：母版生命周期】
-已有简历 ──→ 解析 → 确认 → 增量追问 ──┐
-                                        ├→ resume-builder → 就地打磨经历 → 渲染单页母版
-从零开始 ──→ 逐步采访 ─────────────────┘
-    ↓
-（可选微调）resume-canvas → 本地可视化微调排版与文字 → 保存后重验闭环
-    ↓
-【阶段二：岗位定制生命周期】
-输入目标 JD ──→ jd-tailorer ──→ 结构化解构 JD & 输出要求地图
-                                  ↓
-                              变更预览（前置经历 / 对齐术语 / 真实缺口）
-                                  ↓
-                              用户确认门禁
-                                  ↓
-                              生成定制版 HTML/PDF + matching-analysis.md
-                                  ↓
-                              ATS 质量门禁与单页验证（validate_resume.py）
-                                  ↓
-                              输出至 tailored/<公司>-<岗位>/ 并更新版本记录
-    ↓
-（可选微调）resume-canvas → 本地微调定制版 → 保存后重验闭环
+创建或更新母版 → resume-builder → 确认事实 → 选择样式 → 生成并验证
+只分析岗位     → jd-tailorer → 对照 JD 与事实 → 在对话中交付证据与缺口
+生成岗位版本   → jd-tailorer → 确认变更 → 导出、验证 → 记录实际交付文件
+调整视觉简历   → resume-canvas → 保存 HTML → 检查事实改动 → 重新导出并验证
 ```
 
-每个专业 Skill 均可单独使用；全程只基于用户明确确认的事实，不编造经历，不静默覆盖母版。
+完整安装可以让 `resume-workflow` 选择入口。精简安装保留 `resume-builder` 和 `jd-tailorer` 即可创建母版、分析岗位与定制。
 
 ## 两种输出模式
 
-开始生成前，Agent 会让你选择模式。两种模式使用同一份已确认的事实，不会因为换版式而增加经历。
+新建母版时，Agent 会在事实确认后询问模式；已有母版默认继承样式，需要切换 ATS 或换模板时再选择。两种模式使用同一份已确认的事实，不会因为换版式而增加经历。
 
 ### 视觉 HTML/PDF
 
@@ -169,19 +152,21 @@ resume-skills editor resume_visual.html
 </tr>
 </table>
 
-视觉版以 A4 单页和有效区域至少 98% 为目标。`resume-builder`、`jd-tailorer` 或 `resume-workflow` 生成视觉母版或视觉定制版并完成 PDF 验证后，应先询问用户是否需要 Canvas 预览：用户选择需要时，再执行 `npx -p @chasen-liao/resume-skills@latest resume-skills editor <实际生成的_visual.html路径> --manifest <实际_manifest路径>`；用户暂时不需要时不启动 Canvas，也不阻塞 HTML/PDF 交付。渲染脚本会对声明 `data-resume-layout="full-page"` 的视觉 HTML 先在密度上限内放大短内容的字号、行距与间距，再均匀分配剩余空间；长内容在安全密度下限内压缩，并生成低分辨率 `*.preview.png`。六套模板默认使用 **9mm 总底部边距**，不再叠加额外安全区，上/左右边距保留原值。若仍无法达到 98%、单页或底部安全区，必须明确报告原因。若用户选择 Canvas 但当前环境不能执行 `npx`，Agent 必须明确说明未启动并给出完整手动命令。内容过多时，应优先删减或确认事实，而不是为了塞进一页而缩小到难以阅读。最终 PDF 必须有 `*.resume-manifest.json`，其中 HTML/PDF/preview hash、Playwright renderer 版本、有效边距、实际底部距离、密度与验证结果都对应当前文件。PDF 校验读取 HTML 实测边距；有效区域占用率 100% 不等于纸张没有物理留白。
+内置满页模板要求 A4 单页、有效区域占用至少 98%，默认总底边距为 9 mm。视觉母版或视觉定制版交付前，需要校验最终 HTML、PDF 和 manifest，并查看整页预览。用户要求交互微调时再启动 Canvas；自定义文件名时用 `--manifest` 指向实际清单。[视觉交付与保存后重验](skills/resume-builder/references/delivery-gate.md)
 
 ### ATS-safe HTML/PDF
 
 适合招聘平台或机器解析风险较高的投递场景。它使用单栏布局、标准章节标题、可复制文本和清晰的阅读顺序，尽量减少图片、复杂表格和装饰对解析的影响。
 
+仅给 HTML 可以检查草稿。验收投递版本时，同时传入同一版 HTML 和最终 PDF，核对提取文字与阅读顺序。[ATS 成品验收命令](skills/resume-builder/references/delivery-gate.md#ats-safe-模式验证)
+
 ATS-safe 只是降低解析风险，不代表一定通过任何 ATS，也不代表一定获得面试。当前项目输出 HTML 和浏览器打印 PDF，不生成 DOCX。
 
 ## 本地 Canvas 编辑器
 
-AI 生成简历 HTML 之后，常常只需要一些小修小补：改一个错别字、微调字号或对齐。不必为这些小事重走一遍 Agent 工作流——在终端打开本地 Web 预览端，改完直接保存回本地 HTML，再导出 PDF 即可。
+AI 生成简历 HTML 之后，常常只需要一些小修小补：改一个错别字、微调字号或对齐。不必为这些小事重走一遍 Agent 工作流——在终端打开本地 Web 预览端，改完保存到本地 HTML，再导出并验证最终 PDF。
 
-完整闭环：**AI 生成 HTML → 打开 Web 预览端 → 小修小补 → 保存到本地 → 导出 PDF**。分步实操见 [Canvas 预览端指南](docs/canvas-editor-guide.md)。
+完整闭环：**AI 生成 HTML → 打开 Web 预览端 → 小修小补 → 保存到本地 → 导出并验证最终 PDF**。分步实操见 [Canvas 预览端指南](docs/canvas-editor-guide.md)。
 
 Canvas 只负责已生成视觉简历的最后文字与排版微调，不负责采访、AI 改写、JD 匹配或重新设计结构。文字修改后必须回到 Agent 工作流重新确认事实并验证 PDF。HTML 中已有的本地相对图片路径（例如 `../证件照/证件照-new.png`）可在预览中显示；保存时仍保留原始 `src`，不会把图片内嵌为 base64。
 
@@ -205,7 +190,7 @@ Canvas 只负责已生成视觉简历的最后文字与排版微调，不负责�
 
 4. **检查页面状态**：左侧会显示 A4 垂直溢出提示。出现溢出时，先回到内容或排版流程处理，不要把字号压缩到难以阅读。
 
-5. **保存修改后的 HTML**：点击左侧“保存修改”，会直接覆盖原始 HTML，并把同名前缀的 PDF manifest 标为失效。保存后必须重新渲染和验证 PDF。
+5. **保存修改后的 HTML**：点击左侧“保存修改”，会直接覆盖原始 HTML，并将显式指定的关联 manifest 标为失效。省略 `--manifest` 时，只检查与 HTML 同目录、同前缀且关联当前 HTML 的清单。保存后必须重新渲染和验证 PDF。
 
 6. **打印 PDF**：点击“打印为 PDF”，在浏览器打印面板中选择 A4，并按需要关闭浏览器默认的页眉和页脚后保存。
 
@@ -250,7 +235,7 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor resume_visual.html
 
 编辑器建立连接后支持 **Live Preview 实时热重载**：当源 HTML 文件在外部或由 Agent 更新时，预览与 Canvas 编辑器会自动拉取并刷新最新页面内容。
 
-点击“保存修改”后，文字修改和排版覆盖会原子写回原始 HTML（内置浏览器扩展免疫机制，保存时基于源文件白名单自动剔除沉浸式翻译、Dark Reader 等插件向页面注入的外部样式与脚本，确保落盘文件纯净）；关联的 `*.resume-manifest.json` 会立即失效，防止旧 PDF 被误认为仍对应当前 HTML。若 manifest 不在同目录或文件名不同，请用 `--manifest <path>` 显式关联。
+点击“保存修改”后，文字修改和排版覆盖会原子写回原始 HTML（内置浏览器扩展免疫机制，保存时基于源文件白名单自动剔除沉浸式翻译、Dark Reader 等插件向页面注入的外部样式与脚本，确保落盘文件纯净）；保存时找到的关联清单会立即失效，防止旧 PDF 被误认为仍对应当前 HTML。若 manifest 不在同目录或文件名不同，请用 `--manifest <path>` 显式关联。
 
 点击“打印为 PDF”后，在浏览器打印面板中选择 A4 并保存 PDF。若浏览器没有自动打开，请直接打开终端中显示的本地地址。
 
@@ -260,7 +245,7 @@ npx -p @chasen-liao/resume-skills@latest resume-skills editor resume_visual.html
 
 ```text
 resume/
-├── resume-facts.yaml                 # 唯一事实源；不存放未确认内容
+├── resume-facts.yaml                 # 已确认事实与独立的待确认区
 ├── resume_visual.html
 ├── resume_visual.pdf
 ├── resume_visual.preview.png
@@ -275,10 +260,10 @@ resume/
         ├── resume_visual.resume-manifest.json
         ├── resume_ats.html
         ├── resume_ats.pdf
-        └── matching-analysis.md
+        └── version-notes.md           # 匹配报告按需另存
 ```
 
-`resume-facts.yaml` 使用 `resume-facts.example.yaml` 的结构，保存每条事实的来源、证据、置信度和确认时间。`jd-tailorer` 和 `resume-version-manager` 都遵循这个思路：定制版只能基于已确认事实进行重排、强调和改写，除非你明确要求，否则不回写或覆盖母版。
+`resume-facts.yaml` 使用 `resume-facts.example.yaml` 的结构，保存每条事实的来源、证据、置信度和确认时间。生成前检查展示偏好、显式排除项和项目使用范围。岗位记录保留母版来源、变更与最终交付路径。
 
 ### 用 Git 保留版本历史（推荐）
 
@@ -341,10 +326,10 @@ resume/
 
 ### `jd-tailorer` 提示缺少参考文件
 
-重新安装全部 Skills：
+补齐定制所需的两个技能：
 
 ```bash
-npx skills add Chasen-Liao/resume-skills --skill '*' --agent codex --yes
+npx skills add Chasen-Liao/resume-skills --skill resume-builder jd-tailorer --agent codex --yes
 ```
 
 `jd-tailorer` 会共享 `resume-builder` 的事实契约和写作规范；只安装单个 Skill 可能缺少这些参考文件。

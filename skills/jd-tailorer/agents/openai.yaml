@@ -1,7 +1,7 @@
 interface:
   display_name: "JD Resume Tailorer"
-  short_description: "Tailor a resume to a job description"
-  default_prompt: "Use $jd-tailorer to tailor my resume to the job description without inventing experience."
+  short_description: "评估岗位匹配度，按需定制投递版"
+  default_prompt: "使用 $jd-tailorer 对照我的已确认事实分析这个 JD，说明匹配证据与缺口。"
 
 policy:
   allow_implicit_invocation: true

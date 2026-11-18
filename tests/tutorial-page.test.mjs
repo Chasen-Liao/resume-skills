@@ -61,8 +61,9 @@ test("tutorial follows the current core-skill delivery workflow", () => {
   for (const deprecated of deprecatedSkills) {
     assert.doesNotMatch(source, new RegExp(`\\b${deprecated}\\b`), `Deprecated skill ${deprecated} should not appear`);
   }
-  assert.match(source, /\*_visual\.html/);
-  assert.match(source, /\*_ats\.html/);
+  assert.match(source, /_visual\.html/);
+  assert.match(source, /_ats\.html/);
+  assert.match(source, /--mode ats[^\n]*--html "[^"]+" --pdf "[^"]+"/);
   assert.match(source, /npx skills add Chasen-Liao\/resume-skills --skill '\*' --agent codex --yes/);
   assert.match(source, /npx -p @chasen-liao\/resume-skills@latest resume-skills editor "<[^>]+_visual\.html路径>"/);
   assert.match(source, /Canvas[^\n]+(?:排版|文字内容)/);
